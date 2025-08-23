@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Soccer Streams</title>
+  <style>
+    :root {
+      --primary: #ee1c25;
+      --secondary: #ffffff;
+      --accent: #000000;
+      --bg-dark: #121212;
+      --shadow: rgba(0, 0, 0, 0.25);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%; background-color: var(--bg-dark);
+      color: var(--secondary); font-family: 'Segoe UI', Roboto, sans-serif;
+      display: flex; flex-direction: column;
+    }
+    .controls { padding: 2rem 1rem; text-align: center; }
+    select {
+      padding: 0.75rem 1rem; font-size: 1rem;
+      border-radius: 0.5rem; border: 2px solid var(--primary);
+      background-color: var(--bg-dark); color: var(--secondary);
+      margin-bottom: 1rem; max-width: 90%;
+    }
+    .button-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .button {
+      background: var(--primary); color: var(--secondary);
+      padding: 0.8rem 2rem; border: none; border-radius: 0.5rem;
+      font-size: 1rem; font-weight: bold; cursor: pointer;
+    }
+    .button:hover {
+      background: var(--secondary); color: var(--accent);
+      box-shadow: 0 0 10px var(--primary);
+    }
+    .stream-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; padding: 1rem; }
+    .stream-container {
+      width: 90%; max-width: 1200px; height: 70vh; background: #000;
+      border: 4px solid var(--primary); border-radius: 1rem;
+      position: relative; overflow: hidden; box-shadow: 0 10px 30px var(--shadow);
+    }
+    iframe { width: 100%; height: 100%; border: none; }
+    .loader {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); border: 6px solid #ccc;
+      border-top: 6px solid var(--primary); border-radius: 50%;
+      width: 40px; height: 40px; animation: spin 1s linear infinite; z-index: 5;
+    }
+    @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+    @media (max-width: 768px) { .stream-container { height: 50vh; } }
+  </style>
+</head>
+<body>
+
+  <div class="controls">
+    <select id="dropdown-menu" onchange="loadStream()">
+      <option value="">Select a Stream</option>
+    </select>
+
+    <div class="button-group">
+      <button class="button" onclick="refreshStream()">Refresh</button>
+      <button class="button" onclick="fetchStreams()">Fetch Streams</button>
+      <button class="button" onclick="toggleFullScreen()">Fullscreen</button>
+    </div>
+  </div>
+
+  <div class="stream-wrapper">
+    <div class="stream-container">
+      <div class="loader" id="loader"></div>
+      <iframe id="stream-iframe" allowfullscreen sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation allowTransparency" onload="hideLoader()"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const loader = document.getElementById("loader");
+    const dropdown = document.getElementById("dropdown-menu");
+
+    // Use a free CORS-friendly API from Scorebat for demo
+    const API_URL = "https://www.scorebat.com/video-api/v3/feed/?token=demo";
+
+    async function fetchStreams() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        const matches = data.response;
+
+        const selected = dropdown.value;
+        dropdown.innerHTML = '<option value="">Select a Stream</option>';
+
+        matches.forEach(match => {
+          const title = match.title || '';
+          const url = match.videos[0]?.embed || '';
+          if (url) {
+            const option = document.createElement("option");
+            option.value = url.replace(/&/g, "&amp;");
+            option.textContent = title;
+            dropdown.appendChild(option);
+          }
+        });
+
+        if ([...dropdown.options].some(o => o.value === selected)) {
+          dropdown.value = selected;
+        }
+      } catch (err) {
+        console.error("Failed to fetch streams:", err);
+      }
+    }
+
+    function loadStream() {
+      const streamUrl = dropdown.value;
+      const iframe = document.getElementById("stream-iframe");
+      if (streamUrl) {
+        loader.style.display = "block";
+        iframe.src = streamUrl;
+      } else {
+        iframe.src = '';
+      }
+    }
+
+    async function refreshStream() {
+      await fetchStreams();
+      loadStream();
+    }
+
+    function toggleFullScreen() {
+      const iframe = document.getElementById("stream-iframe");
+      if (!document.fullscreenElement) {
+        iframe.requestFullscreen?.() || iframe.webkitRequestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+
+    function hideLoader() { loader.style.display = "none"; }
+
+    fetchStreams();
+    setInterval(refreshStream, 300000);
+  </script>
+
+</body>
+</html>

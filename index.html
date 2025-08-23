@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Live Soccer Streams</title>
+  <title>Stream Selector</title>
   <style>
     :root {
       --primary: #ee1c25;
@@ -75,31 +75,36 @@
 
   <script>
     const loader = document.getElementById("loader");
-    const dropdown = document.getElementById("dropdown-menu");
+    const ALLOWED = ["England League One", "England League Two", "EPL", "England Championship"];
 
-    // Use a free CORS-friendly API from Scorebat for demo
-    const API_URL = "https://www.scorebat.com/video-api/v3/feed/?token=demo";
+    // Use AllOrigins proxy
+    const API_URL = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://klubsports.store/voodc/schedule.php");
 
     async function fetchStreams() {
       try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        const matches = data.response;
+        const matches = JSON.parse(data.contents); // actual data inside "contents"
 
-        const selected = dropdown.value;
-        dropdown.innerHTML = '<option value="">Select a Stream</option>';
+        const dropdown = document.getElementById("dropdown-menu");
+        const selected = dropdown.value; // keep current selection
+        dropdown.innerHTML = '<option value="">Select a Stream</option>'; // reset
 
         matches.forEach(match => {
-          const title = match.title || '';
-          const url = match.videos[0]?.embed || '';
-          if (url) {
+          if (match.category === "SOCCER" && ALLOWED.includes(match.info)) {
+            let title = match.title || '';
+            if (title.includes("[") && !title.toLowerCase().includes("[english]")) return;
+            let clean_title = title.replace("[english]", "").trim();
+            const match_id = match.id;
+            const url = `https://www.voodc.cfd/p/voodc37-embed.html?id=${match_id}`;
             const option = document.createElement("option");
-            option.value = url.replace(/&/g, "&amp;");
-            option.textContent = title;
+            option.value = url;
+            option.textContent = clean_title;
             dropdown.appendChild(option);
           }
         });
 
+        // restore selection if still valid
         if ([...dropdown.options].some(o => o.value === selected)) {
           dropdown.value = selected;
         }
@@ -109,8 +114,9 @@
     }
 
     function loadStream() {
-      const streamUrl = dropdown.value;
+      const dropdown = document.getElementById("dropdown-menu");
       const iframe = document.getElementById("stream-iframe");
+      const streamUrl = dropdown.value;
       if (streamUrl) {
         loader.style.display = "block";
         iframe.src = streamUrl;
@@ -120,8 +126,8 @@
     }
 
     async function refreshStream() {
-      await fetchStreams();
-      loadStream();
+      await fetchStreams(); // fetch latest streams
+      loadStream();         // reload selected stream
     }
 
     function toggleFullScreen() {
@@ -135,7 +141,10 @@
 
     function hideLoader() { loader.style.display = "none"; }
 
+    // Initial load
     fetchStreams();
+
+    // Auto-refresh every 5 minutes (300,000 ms)
     setInterval(refreshStream, 300000);
   </script>
 

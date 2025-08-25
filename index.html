@@ -1,152 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stream Selector</title>
-  <style>
-    :root {
-      --primary: #ee1c25;
-      --secondary: #ffffff;
-      --accent: #000000;
-      --bg-dark: #121212;
-      --shadow: rgba(0, 0, 0, 0.25);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%; background-color: var(--bg-dark);
-      color: var(--secondary); font-family: 'Segoe UI', Roboto, sans-serif;
-      display: flex; flex-direction: column;
-    }
-    .controls { padding: 2rem 1rem; text-align: center; }
-    select {
-      padding: 0.75rem 1rem; font-size: 1rem;
-      border-radius: 0.5rem; border: 2px solid var(--primary);
-      background-color: var(--bg-dark); color: var(--secondary);
-      margin-bottom: 1rem; max-width: 90%;
-    }
-    .button-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
-    .button {
-      background: var(--primary); color: var(--secondary);
-      padding: 0.8rem 2rem; border: none; border-radius: 0.5rem;
-      font-size: 1rem; font-weight: bold; cursor: pointer;
-    }
-    .button:hover {
-      background: var(--secondary); color: var(--accent);
-      box-shadow: 0 0 10px var(--primary);
-    }
-    .stream-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; padding: 1rem; }
-    .stream-container {
-      width: 90%; max-width: 1200px; height: 70vh; background: #000;
-      border: 4px solid var(--primary); border-radius: 1rem;
-      position: relative; overflow: hidden; box-shadow: 0 10px 30px var(--shadow);
-    }
-    iframe { width: 100%; height: 100%; border: none; }
-    .loader {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%); border: 6px solid #ccc;
-      border-top: 6px solid var(--primary); border-radius: 50%;
-      width: 40px; height: 40px; animation: spin 1s linear infinite; z-index: 5;
-    }
-    @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-    @media (max-width: 768px) { .stream-container { height: 50vh; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Streams</title>
+<style>
+:root {
+  --primary: #e63946;
+  --secondary: #f1faee;
+  --bg-dark: #1d1f21;
+  --shadow: rgba(0,0,0,0.35);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg-dark);
+  color:var(--secondary);
+  font-family:'Segoe UI', Roboto, sans-serif;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+.controls{padding:1.5rem;text-align:center;}
+select, input{
+  padding:0.75rem 1rem;
+  font-size:1rem;
+  border-radius:0.5rem;
+  border:2px solid var(--primary);
+  background:var(--bg-dark);
+  color:var(--secondary);
+  max-width:90%;
+  margin-bottom:1rem;
+}
+.button-group{
+  margin-bottom:1rem;
+  display:flex;
+  gap:1rem;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.button{
+  background:var(--primary);
+  color:var(--secondary);
+  padding:0.8rem 1.5rem;
+  border:none;
+  border-radius:0.5rem;
+  font-size:1rem;
+  font-weight:bold;
+  cursor:pointer;
+  transition: all 0.3s ease;
+}
+.button:hover{
+  background:var(--secondary);
+  color:var(--primary);
+  box-shadow:0 0 10px var(--primary);
+}
+.stream-wrapper{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+}
+.stream-container{
+  width:90%;
+  max-width:1200px;
+  aspect-ratio:16/9;
+  background:#000;
+  border:4px solid var(--primary);
+  border-radius:1rem;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 10px 30px var(--shadow);
+  margin-bottom:1rem;
+}
+iframe{width:100%; height:100%; border:none;}
+.loader{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  border:6px solid #ccc;
+  border-top:6px solid var(--primary);
+  border-radius:50%;
+  width:40px;
+  height:40px;
+  animation:spin 1s linear infinite;
+  z-index:5;
+  display:none;
+}
+@keyframes spin{
+  0%{transform:translate(-50%,-50%) rotate(0deg);}
+  100%{transform:translate(-50%,-50%) rotate(360deg);}
+}
+.source-buttons{
+  display:flex;
+  gap:0.5rem;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-bottom:1rem;
+}
+.notice-card{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(230,57,70,0.1);
+  color: #e63946;
+  font-weight:600;
+  border-radius:12px;
+  padding:0.8rem 1rem;
+  margin-bottom:1rem;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  text-align:center;
+}
+#countdown{
+  font-size:1.2rem;
+  font-weight:bold;
+  margin-bottom:0.5rem;
+  text-align:center;
+}
+#search-results div{
+  margin-bottom:0.3rem;
+  cursor:pointer;
+}
+</style>
 </head>
 <body>
 
-  <div class="controls">
-    <select id="dropdown-menu" onchange="loadStream()">
-      <option value="">Select a Stream</option>
-    </select>
-
-    <div class="button-group">
-      <button class="button" onclick="refreshStream()">Refresh</button>
-      <button class="button" onclick="fetchStreams()">Fetch Streams</button>
-      <button class="button" onclick="toggleFullScreen()">Fullscreen</button>
-    </div>
+<div class="controls">
+  <div class="notice-card">
+    Streams load when available (usually ~5 minutes before kickoff). If no stream plays, try another link.
   </div>
 
-  <div class="stream-wrapper">
-    <div class="stream-container">
-      <div class="loader" id="loader"></div>
-      <iframe id="stream-iframe" allowfullscreen sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation allowTransparency" onload="hideLoader()"></iframe>
-    </div>
+  <!-- Search box -->
+  <div style="margin-bottom:1rem;">
+    <input type="text" id="match-search" placeholder="Search for a match...">
+    <div id="search-results"></div>
   </div>
 
-  <script>
-    const loader = document.getElementById("loader");
-    const ALLOWED = ["England League One", "England League Two", "EPL", "England Championship"];
+  <!-- Live Matches button -->
+  <div class="button-group">
+    <button class="button" onclick="showLive()">Live Matches</button>
+  </div>
 
-    // Use AllOrigins proxy
-    const API_URL = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://klubsports.store/voodc/schedule.php");
+  <select id="dropdown-menu" onchange="loadDropdownMatch()">
+    <option value="">Select a Match</option>
+  </select>
+</div>
 
-    async function fetchStreams() {
-      try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        const matches = JSON.parse(data.contents); // actual data inside "contents"
+<div class="stream-wrapper">
+  <div class="source-buttons" id="source-buttons"></div>
+  <div id="countdown"></div>
+  <div class="stream-container">
+    <div class="loader" id="loader"></div>
+    <iframe id="stream-iframe" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation"></iframe>
+  </div>
+</div>
 
-        const dropdown = document.getElementById("dropdown-menu");
-        const selected = dropdown.value; // keep current selection
-        dropdown.innerHTML = '<option value="">Select a Stream</option>'; // reset
+<script>
+const API_URL = "https://streamed.pk/api/matches/football";
+const STREAM_URL = "https://streamed.pk/api/stream";
 
-        matches.forEach(match => {
-          if (match.category === "SOCCER" && ALLOWED.includes(match.info)) {
-            let title = match.title || '';
-            if (title.includes("[") && !title.toLowerCase().includes("[english]")) return;
-            let clean_title = title.replace("[english]", "").trim();
-            const match_id = match.id;
-            const url = `https://www.voodc.cfd/p/voodc37-embed.html?id=${match_id}`;
-            const option = document.createElement("option");
-            option.value = url;
-            option.textContent = clean_title;
-            dropdown.appendChild(option);
-          }
-        });
+const dropdown = document.getElementById("dropdown-menu");
+const iframe = document.getElementById("stream-iframe");
+const loader = document.getElementById("loader");
+const sourceButtonsContainer = document.getElementById("source-buttons");
+const searchInput = document.getElementById("match-search");
+const searchResults = document.getElementById("search-results");
+const countdownDiv = document.getElementById("countdown");
 
-        // restore selection if still valid
-        if ([...dropdown.options].some(o => o.value === selected)) {
-          dropdown.value = selected;
-        }
-      } catch (err) {
-        console.error("Failed to fetch streams:", err);
-      }
+let allMatches = [];
+let countdownInterval;
+
+// Fetch matches
+async function fetchMatches(){
+  loader.style.display="block";
+  try{
+    const resp = await fetch(API_URL);
+    allMatches = await resp.json();
+    allMatches.sort((a,b)=>new Date(b.start_time)-new Date(a.start_time));
+    populateDropdown(getLiveWindowMatches(allMatches));
+  } catch(e){
+    console.error(e);
+  }
+  loader.style.display="none";
+}
+
+// Get matches 2h before → 12h ahead
+function getLiveWindowMatches(matches){
+  const now = Date.now();
+  const twoHoursAgo = now - 2*60*60*1000;
+  const twelveHoursAhead = now + 12*60*60*1000;
+  return matches.filter(m=>m.date >= twoHoursAgo && m.date <= twelveHoursAhead);
+}
+
+// Populate dropdown with kickoff time
+function populateDropdown(matches){
+  dropdown.innerHTML = '<option value="">Select a Match</option>';
+  if(matches.length===0){
+    const option = document.createElement("option");
+    option.textContent = "No matches available";
+    option.disabled = true;
+    dropdown.appendChild(option);
+    return;
+  }
+
+  matches.forEach(match => {
+    if(match.teams?.home?.name && match.teams?.away?.name){
+      const option = document.createElement("option");
+      option.dataset.match = JSON.stringify(match);
+
+      const startDate = new Date(match.date);
+      const hours = startDate.getHours().toString().padStart(2,'0');
+      const minutes = startDate.getMinutes().toString().padStart(2,'0');
+
+      option.textContent = `${hours}:${minutes} ${match.teams.home.name} vs ${match.teams.away.name}`;
+      dropdown.appendChild(option);
     }
+  });
 
-    function loadStream() {
-      const dropdown = document.getElementById("dropdown-menu");
-      const iframe = document.getElementById("stream-iframe");
-      const streamUrl = dropdown.value;
-      if (streamUrl) {
-        loader.style.display = "block";
-        iframe.src = streamUrl;
-      } else {
-        iframe.src = '';
-      }
-    }
+  sourceButtonsContainer.innerHTML = "";
+  iframe.src = "";
+  countdownDiv.textContent = "";
+}
 
-    async function refreshStream() {
-      await fetchStreams(); // fetch latest streams
-      loadStream();         // reload selected stream
-    }
+// Countdown
+function startCountdown(match){
+  clearInterval(countdownInterval);
+  function update(){
+    const now = Date.now();
+    let diff = match.date - now;
+    if(diff<=0){ countdownDiv.textContent=""; clearInterval(countdownInterval); return; }
+    const h = Math.floor(diff/(1000*60*60));
+    diff%=1000*60*60;
+    const m = Math.floor(diff/(1000*60));
+    diff%=1000*60;
+    const s = Math.floor(diff/1000);
+    countdownDiv.textContent=`Starts in ${h}h ${m}m ${s}s`;
+  }
+  update();
+  countdownInterval = setInterval(update,1000);
+}
 
-    function toggleFullScreen() {
-      const iframe = document.getElementById("stream-iframe");
-      if (!document.fullscreenElement) {
-        iframe.requestFullscreen?.() || iframe.webkitRequestFullscreen?.();
-      } else {
-        document.exitFullscreen?.();
-      }
-    }
+// Load match from dropdown
+function loadDropdownMatch(){
+  const value = dropdown.selectedOptions[0]?.dataset.match;
+  if(!value){ iframe.src=""; sourceButtonsContainer.innerHTML=""; countdownDiv.textContent=""; return; }
+  loadMatch(JSON.parse(value));
+}
 
-    function hideLoader() { loader.style.display = "none"; }
+// Load a match (dropdown or search)
+function loadMatch(match){
+  startCountdown(match);
+  const sources = match.sources ?? [];
+  sourceButtonsContainer.innerHTML="";
+  if(sources.length===0){ iframe.src=""; return; }
+  if(sources.length===1){ loadStream(sources[0]); }
+  else {
+    sources.slice(0,6).forEach((src,index)=>{
+      const btn=document.createElement("button");
+      btn.className="button";
+      btn.textContent=`Link ${index+1}`;
+      btn.onclick=()=>loadStream(src);
+      sourceButtonsContainer.appendChild(btn);
+    });
+    loadStream(sources[0]);
+  }
+}
 
-    // Initial load
-    fetchStreams();
+// Load stream
+function loadStream(src){
+  loader.style.display="block";
+  fetch(`${STREAM_URL}/${src.source}/${src.id}`).then(r=>r.json()).then(arr=>{
+    if(arr.length>0 && arr[0].embedUrl) iframe.src=arr[0].embedUrl;
+    else iframe.src="";
+  }).catch(console.error).finally(()=>loader.style.display="none");
+}
 
-    // Auto-refresh every 5 minutes (300,000 ms)
-    setInterval(refreshStream, 300000);
-  </script>
+// Filter for live matches only (2h before → 12h ahead)
+function showLive(){ populateDropdown(getLiveWindowMatches(allMatches)); }
+
+// Search all future matches
+searchInput.addEventListener("input", function(){
+  const q = this.value.toLowerCase().trim();
+  searchResults.innerHTML="";
+  if(!q) return;
+  const now = Date.now();
+  const filtered = allMatches.filter(m=>{
+    if(m.date < now) return false; // only future matches
+    const h = m.teams?.home?.name?.toLowerCase()||"";
+    const a = m.teams?.away?.name?.toLowerCase()||"";
+    return h.includes(q) || a.includes(q);
+  });
+
+  if(filtered.length===0){
+    searchResults.textContent = "No matches found";
+    return;
+  }
+
+  filtered.forEach(m => {
+    const div = document.createElement("div");
+    div.textContent = `${m.teams.home.name} vs ${m.teams.away.name} - ${m.sources?.length||0} stream${(m.sources?.length||0)!==1 ? 's' : ''}`;
+    div.onclick = () => loadMatch(m);
+    searchResults.appendChild(div);
+  });
+});
+
+// Initial fetch
+fetchMatches();
+setInterval(fetchMatches, 5*60*1000);
+</script>
 
 </body>
-</html>
+      </html>

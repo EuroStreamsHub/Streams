@@ -57,17 +57,39 @@ body {
   background:#1f1f1f;
   border-radius:.5rem;
   overflow:hidden;
-  height:120px;
+  height:auto;
   display:flex;
   flex-direction:column;
+  justify-content:flex-start;
+  padding:0;
+  cursor:pointer;
+  transition: transform 0.2s;
+}
+.match-card:hover {
+  transform:translateY(-2px);
+}
+.poster {
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+  display:flex;
   justify-content:center;
-  padding:.5rem;
+  align-items:center;
+}
+.poster img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
 }
 .match-title {
   font-weight:bold;
+  padding:.5rem .5rem 0 .5rem;
 }
 .match-time {
   font-size:0.9rem;
+  padding:.2rem .5rem .5rem .5rem;
+  color:#bbb;
 }
 .live-badge {
   position:absolute;
@@ -102,7 +124,9 @@ const searchBar=document.getElementById("search-bar");
 const liveBtn=document.getElementById("live-btn");
 const popularBtn=document.getElementById("popular-btn");
 
-// Fetch matches
+// Default poster URL
+const DEFAULT_POSTER = "https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/file_000000002878620aac8483fbedf5d310.png";
+
 async function fetchMatches(){
   try{
     const res=await fetch(`${API_BASE}/matches/football`);
@@ -112,28 +136,23 @@ async function fetchMatches(){
   }catch(e){ console.error(e); }
 }
 
-// Format date string
 function formatDate(ms){
   const d = new Date(ms);
   return d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short', year:'numeric' });
 }
 
-// Render matches
 function renderMatches(filteredInput){
   matchContainer.innerHTML="";
   let filtered = filteredInput || allMatches.slice();
   const now=Date.now();
 
-  // Live: only from kickoff to 2 hours after
   if(liveBtn.classList.contains("active")){
     filtered = filtered.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
   }
-  // Popular
   if(popularBtn.classList.contains("active")){
     filtered = filtered.filter(m=>m.popular);
   }
 
-  // Group by date
   const grouped = {};
   filtered.forEach(m=>{
     const dateStr = formatDate(m.date);
@@ -141,7 +160,6 @@ function renderMatches(filteredInput){
     grouped[dateStr].push(m);
   });
 
-  // Render each date group
   Object.keys(grouped).forEach(dateStr=>{
     const dateDiv=document.createElement("div");
     dateDiv.className="match-date";
@@ -154,6 +172,19 @@ function renderMatches(filteredInput){
     grouped[dateStr].forEach(m=>{
       const card=document.createElement("div");
       card.className="match-card";
+
+      // Poster (or default if none)
+      const posterDiv = document.createElement("div");
+      posterDiv.className = "poster";
+      const img = document.createElement("img");
+      if(m.poster){
+        img.src = m.poster.startsWith("http") ? m.poster : "https://streamed.pk" + m.poster;
+      } else {
+        img.src = DEFAULT_POSTER;
+      }
+      img.onerror = () => { img.src = DEFAULT_POSTER; };
+      posterDiv.appendChild(img);
+      card.appendChild(posterDiv);
 
       // Title & KO
       const titleDiv=document.createElement("div");
@@ -175,7 +206,7 @@ function renderMatches(filteredInput){
         card.appendChild(liveBadge);
       }
 
-      // Click to open viewer.html on GitHub Pages
+      // Click to open viewer.html
       card.onclick=()=>{
         const matchParam=encodeURIComponent(JSON.stringify(m));
         window.location.href = `viewer.html?match=${matchParam}`;

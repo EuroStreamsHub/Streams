@@ -3,213 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Streams</title>
+<title>Live Football Streams</title>
 <style>
 body {
   background:#121212;
   color:#f1faee;
   font-family:'Segoe UI',Roboto,sans-serif;
+  margin:0;
   padding:1rem;
 }
-.controls {
-  max-width:1000px;
-  margin:0 auto;
+h2 {
+  font-size:1.4rem;
+  margin:1.5rem 0 1rem;
+  font-weight:700;
+  border-left:4px solid #e63946;
+  padding-left:.5rem;
 }
-#search-bar {
-  width:100%;
-  max-width:400px;
-  padding:.8rem 1rem;
-  margin-bottom:1rem;
-  border-radius:.75rem;
-  border:none;
-  background:#1f1f1f;
-  color:#f1faee;
-  box-shadow:0 4px 12px rgba(0,0,0,0.5);
-}
-.button {
-  background:#1f1f1f;
-  color:#f1faee;
-  padding:.6rem 1rem;
-  border:none;
-  border-radius:.5rem;
-  font-weight:600;
-  cursor:pointer;
-  margin:.2rem;
-  transition:.2s;
-}
-.button.active {
-  background:#e63946;
-  color:#f1faee;
-}
-.match-date {
-  font-weight:bold;
-  font-size:1.2rem;
-  margin-top:1.5rem;
-}
-.match-grid {
+.grid {
   display:grid;
-  grid-template-columns:repeat(2,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
   gap:1rem;
-  margin-top:0.5rem;
 }
-.match-card {
-  position:relative;
+.card {
   background:#1f1f1f;
-  border-radius:.5rem;
+  border-radius:1rem;
   overflow:hidden;
-  height:120px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  padding:.5rem;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  cursor:pointer;
+  transition:transform .2s, box-shadow .2s;
 }
-.match-title {
-  font-weight:bold;
+.card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.5);
 }
-.match-time {
-  font-size:0.9rem;
+.poster {
+  position:relative;
+  aspect-ratio:16/9;
+  background:#000;
+}
+.poster img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
 }
 .live-badge {
   position:absolute;
-  bottom:0.5rem;
-  right:0.5rem;
-  background:red;
-  color:white;
-  padding:0.2rem 0.5rem;
-  border-radius:.3rem;
-  font-size:0.8rem;
+  bottom:8px;
+  right:8px;
+  background:#e63946;
+  color:#fff;
+  font-size:.8rem;
   font-weight:bold;
+  padding:2px 6px;
+  border-radius:4px;
+}
+.card-body {
+  padding:.7rem;
+}
+.card-title {
+  font-weight:700;
+  font-size:1rem;
+  margin:0 0 .4rem;
+}
+.card-time {
+  color:#bbb;
+  font-size:.9rem;
 }
 </style>
 </head>
 <body>
 
-<div class="controls">
-  <input type="text" id="search-bar" placeholder="Search football matches...">
-  <div>
-    <button class="button" id="live-btn">Live</button>
-    <button class="button" id="popular-btn">Popular</button>
-  </div>
-  <div id="match-container"></div>
-</div>
+<div id="matches"></div>
 
 <script>
 const API_BASE="https://streamed.pk/api";
-let allMatches=[];
+const matchesDiv=document.getElementById("matches");
 
-const matchContainer=document.getElementById("match-container");
-const searchBar=document.getElementById("search-bar");
-const liveBtn=document.getElementById("live-btn");
-const popularBtn=document.getElementById("popular-btn");
-
-// Fetch matches
-async function fetchMatches(){
-  try{
-    const res=await fetch(`${API_BASE}/matches/football`);
-    const data=await res.json();
-    allMatches=data.filter(m=>m.date>0).sort((a,b)=>a.date-b.date);
-    renderMatches();
-  }catch(e){ console.error(e); }
-}
-
-// Format date string
-function formatDate(ms){
-  const d = new Date(ms);
-  return d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short', year:'numeric' });
-}
-
-// Render matches
-function renderMatches(filteredInput){
-  matchContainer.innerHTML="";
-  let filtered = filteredInput || allMatches.slice();
-  const now=Date.now();
-
-  // Live: only from kickoff to 2 hours after
-  if(liveBtn.classList.contains("active")){
-    filtered = filtered.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
-  }
-  // Popular
-  if(popularBtn.classList.contains("active")){
-    filtered = filtered.filter(m=>m.popular);
-  }
-
-  // Group by date
-  const grouped = {};
-  filtered.forEach(m=>{
-    const dateStr = formatDate(m.date);
-    if(!grouped[dateStr]) grouped[dateStr] = [];
-    grouped[dateStr].push(m);
-  });
-
-  // Render each date group
-  Object.keys(grouped).forEach(dateStr=>{
-    const dateDiv=document.createElement("div");
-    dateDiv.className="match-date";
-    dateDiv.textContent=dateStr;
-    matchContainer.appendChild(dateDiv);
-
-    const grid=document.createElement("div");
-    grid.className="match-grid";
-
-    grouped[dateStr].forEach(m=>{
-      const card=document.createElement("div");
-      card.className="match-card";
-
-      // Title & KO
-      const titleDiv=document.createElement("div");
-      titleDiv.className="match-title";
-      titleDiv.textContent = m.title || ((m.teams?.home?.name || "TBD") + " Vs " + (m.teams?.away?.name || "TBD"));
-      const timeDiv=document.createElement("div");
-      timeDiv.className="match-time";
-      const ko = new Date(m.date);
-      timeDiv.textContent = ko.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-
-      card.appendChild(titleDiv);
-      card.appendChild(timeDiv);
-
-      // Live badge
-      if(now >= m.date && now <= m.date + 2*60*60*1000){
-        const liveBadge=document.createElement("div");
-        liveBadge.className="live-badge";
-        liveBadge.textContent="LIVE";
-        card.appendChild(liveBadge);
-      }
-
-      // Click to open viewer.html on GitHub Pages
-      card.onclick=()=>{
-        const matchParam=encodeURIComponent(JSON.stringify(m));
-        window.location.href = `viewer.html?match=${matchParam}`;
-      };
-
-      grid.appendChild(card);
+fetch(`${API_BASE}/matches`)
+  .then(res=>res.json())
+  .then(data=>{
+    const grouped={};
+    data.forEach(m=>{
+      const date=new Date(m.date).toLocaleDateString([], {weekday:'long', day:'numeric', month:'short'});
+      if(!grouped[date]) grouped[date]=[];
+      grouped[date].push(m);
     });
 
-    matchContainer.appendChild(grid);
-  });
-}
+    for(const [date,matches] of Object.entries(grouped)){
+      const h2=document.createElement("h2");
+      h2.textContent=date;
+      matchesDiv.appendChild(h2);
 
-// Toggle buttons
-liveBtn.addEventListener("click",()=>{
-  liveBtn.classList.toggle("active");
-  renderMatches();
-});
-popularBtn.addEventListener("click",()=>{
-  popularBtn.classList.toggle("active");
-  renderMatches();
-});
+      const grid=document.createElement("div");
+      grid.className="grid";
 
-// Search
-searchBar.addEventListener("input",()=>{
-  const q = searchBar.value.toLowerCase();
-  const filtered = allMatches.filter(m=>{
-    const title=(m.title || (m.teams?.home?.name+" Vs "+m.teams?.away?.name)).toLowerCase();
-    return title.includes(q);
-  });
-  renderMatches(filtered);
-});
+      matches.forEach(m=>{
+        const card=document.createElement("div");
+        card.className="card";
+        card.onclick=()=>location.href=`viewer.html?match=${encodeURIComponent(JSON.stringify(m))}`;
 
-// Initial load
-fetchMatches();
+        const poster=document.createElement("div");
+        poster.className="poster";
+        const img=document.createElement("img");
+        img.src=m.poster ? `https://streamed.pk${m.poster}` : "https://via.placeholder.com/480x270?text=No+Poster";
+        img.onerror=()=>{img.src="https://via.placeholder.com/480x270?text=No+Poster";};
+        poster.appendChild(img);
+
+        if(m.live){
+          const badge=document.createElement("div");
+          badge.className="live-badge";
+          badge.textContent="LIVE";
+          poster.appendChild(badge);
+        }
+
+        const body=document.createElement("div");
+        body.className="card-body";
+
+        const title=document.createElement("div");
+        title.className="card-title";
+        title.textContent=m.title || (m.teams?.home?.name + " vs " + m.teams?.away?.name);
+
+        const time=document.createElement("div");
+        time.className="card-time";
+        time.textContent=m.date ? new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : "TBD";
+
+        body.appendChild(title);
+        body.appendChild(time);
+
+        card.appendChild(poster);
+        card.appendChild(body);
+        grid.appendChild(card);
+      });
+
+      matchesDiv.appendChild(grid);
+    }
+  })
+  .catch(console.error);
 </script>
+
 </body>
 </html>

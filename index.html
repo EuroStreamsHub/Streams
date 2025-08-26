@@ -3,314 +3,246 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Streams</title>
+<title>Football Matches</title>
 <style>
-:root {
-  --primary: #e63946;
-  --secondary: #f1faee;
-  --bg-dark: #1d1f21;
-  --shadow: rgba(0,0,0,0.35);
-}
-
-*{margin:0;padding:0;box-sizing:border-box;}
-body{
-  background:var(--bg-dark);
-  color:var(--secondary);
-  font-family:'Segoe UI', Roboto, sans-serif;
-  display:flex;
-  flex-direction:column;
-  min-height:100vh;
-}
-.controls{padding:1.5rem;text-align:center;}
-select, input{
-  padding:0.75rem 1rem;
-  font-size:1rem;
-  border-radius:0.5rem;
-  border:2px solid var(--primary);
-  background:var(--bg-dark);
-  color:var(--secondary);
-  max-width:90%;
-  margin-bottom:1rem;
-}
-.button-group{
-  margin-bottom:1rem;
-  display:flex;
-  gap:1rem;
-  justify-content:center;
-  flex-wrap:wrap;
-}
-.button{
-  background:var(--primary);
-  color:var(--secondary);
-  padding:0.8rem 1.5rem;
-  border:none;
-  border-radius:0.5rem;
-  font-size:1rem;
-  font-weight:bold;
-  cursor:pointer;
-  transition: all 0.3s ease;
-}
-.button:hover{
-  background:var(--secondary);
-  color:var(--primary);
-  box-shadow:0 0 10px var(--primary);
-}
-.stream-wrapper{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+body {
+  background:#121212;
+  color:#f1faee;
+  font-family:'Segoe UI',Roboto,sans-serif;
   padding:1rem;
+  margin:0;
 }
-.stream-container{
-  width:90%;
-  max-width:1200px;
-  aspect-ratio:16/9;
-  background:#000;
-  border:4px solid var(--primary);
-  border-radius:1rem;
-  position:relative;
-  overflow:hidden;
-  box-shadow:0 10px 30px var(--shadow);
+.controls {
+  max-width:1000px;
+  margin:0 auto;
+}
+#search-bar {
+  width:100%;
+  max-width:400px;
+  padding:.8rem 1rem;
   margin-bottom:1rem;
+  border-radius:.75rem;
+  border:none;
+  background:#1f1f1f;
+  color:#f1faee;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
 }
-iframe{width:100%; height:100%; border:none;}
-.loader{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%, -50%);
-  border:6px solid #ccc;
-  border-top:6px solid var(--primary);
-  border-radius:50%;
-  width:40px;
-  height:40px;
-  animation:spin 1s linear infinite;
-  z-index:5;
-  display:none;
-}
-@keyframes spin{
-  0%{transform:translate(-50%,-50%) rotate(0deg);}
-  100%{transform:translate(-50%,-50%) rotate(360deg);}
-}
-.source-buttons{
-  display:flex;
-  gap:0.5rem;
-  flex-wrap:wrap;
-  justify-content:center;
-  margin-bottom:1rem;
-}
-.notice-card{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background: rgba(230,57,70,0.1);
-  color: #e63946;
+.button {
+  background:#1f1f1f;
+  color:#f1faee;
+  padding:.6rem 1rem;
+  border:none;
+  border-radius:.5rem;
   font-weight:600;
-  border-radius:12px;
-  padding:0.8rem 1rem;
-  margin-bottom:1rem;
-  box-shadow:0 4px 12px rgba(0,0,0,0.2);
-  text-align:center;
-}
-#countdown{
-  font-size:1.2rem;
-  font-weight:bold;
-  margin-bottom:0.5rem;
-  text-align:center;
-}
-#search-results div{
-  margin-bottom:0.3rem;
   cursor:pointer;
+  margin:.2rem;
+  transition:.2s;
+}
+.button.active {
+  background:#e63946;
+}
+.match-date {
+  font-weight:bold;
+  font-size:1.2rem;
+  margin-top:1.5rem;
+}
+.match-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:1rem;
+  margin-top:0.5rem;
+}
+.match-card {
+  background:#1f1f1f;
+  border-radius:.5rem;
+  overflow:hidden;
+  padding:.5rem;
+  cursor:pointer;
+  transition:0.2s;
+}
+.match-card:hover {
+  background:linear-gradient(135deg,#e63946,#f77f00);
+}
+.match-title {
+  font-weight:bold;
+}
+.match-time {
+  font-size:0.9rem;
+  margin-top:0.2rem;
+}
+.live-badge {
+  display:inline-block;
+  background:red;
+  color:white;
+  padding:0.2rem 0.5rem;
+  border-radius:.3rem;
+  font-size:0.8rem;
+  font-weight:bold;
+  margin-top:0.3rem;
 }
 </style>
 </head>
 <body>
 
 <div class="controls">
-  <div class="notice-card">
-    Streams load when available (usually ~5 minutes before kickoff). If no stream plays, try another link.
+  <input type="text" id="search-bar" placeholder="Search football matches...">
+  <div>
+    <button class="button" id="live-btn">Live</button>
+    <button class="button" id="popular-btn">Popular</button>
   </div>
-
-  <!-- Search box -->
-  <div style="margin-bottom:1rem;">
-    <input type="text" id="match-search" placeholder="Search for a match...">
-    <div id="search-results"></div>
-  </div>
-
-  <!-- Live Matches button -->
-  <div class="button-group">
-    <button class="button" onclick="showLive()">Live Matches</button>
-  </div>
-
-  <select id="dropdown-menu" onchange="loadDropdownMatch()">
-    <option value="">Select a Match</option>
-  </select>
-</div>
-
-<div class="stream-wrapper">
-  <div class="source-buttons" id="source-buttons"></div>
-  <div id="countdown"></div>
-  <div class="stream-container">
-    <div class="loader" id="loader"></div>
-    <iframe id="stream-iframe" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation"></iframe>
-  </div>
+  <div id="match-container"></div>
 </div>
 
 <script>
-const API_URL = "https://streamed.pk/api/matches/football";
-const STREAM_URL = "https://streamed.pk/api/stream";
+const API_BASE="https://streamed.pk/api";
+let allMatches=[];
 
-const dropdown = document.getElementById("dropdown-menu");
-const iframe = document.getElementById("stream-iframe");
-const loader = document.getElementById("loader");
-const sourceButtonsContainer = document.getElementById("source-buttons");
-const searchInput = document.getElementById("match-search");
-const searchResults = document.getElementById("search-results");
-const countdownDiv = document.getElementById("countdown");
-
-let allMatches = [];
-let countdownInterval;
+const matchContainer=document.getElementById("match-container");
+const searchBar=document.getElementById("search-bar");
+const liveBtn=document.getElementById("live-btn");
+const popularBtn=document.getElementById("popular-btn");
 
 // Fetch matches
 async function fetchMatches(){
-  loader.style.display="block";
   try{
-    const resp = await fetch(API_URL);
-    allMatches = await resp.json();
-    allMatches.sort((a,b)=>new Date(b.start_time)-new Date(a.start_time));
-    populateDropdown(getLiveWindowMatches(allMatches));
-  } catch(e){
-    console.error(e);
-  }
-  loader.style.display="none";
+    const res=await fetch(`${API_BASE}/matches/football`);
+    const data=await res.json();
+    allMatches=data.filter(m=>m.date>0).sort((a,b)=>a.date-b.date);
+    renderMatches();
+  }catch(e){ console.error(e); }
 }
 
-// Get matches 2h before → 12h ahead
-function getLiveWindowMatches(matches){
-  const now = Date.now();
-  const twoHoursAgo = now - 2*60*60*1000;
-  const twelveHoursAhead = now + 12*60*60*1000;
-  return matches.filter(m=>m.date >= twoHoursAgo && m.date <= twelveHoursAhead);
+function formatDate(ms){
+  const d = new Date(ms);
+  return d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short', year:'numeric' });
 }
 
-// Populate dropdown with kickoff time
-function populateDropdown(matches){
-  dropdown.innerHTML = '<option value="">Select a Match</option>';
-  if(matches.length===0){
-    const option = document.createElement("option");
-    option.textContent = "No matches available";
-    option.disabled = true;
-    dropdown.appendChild(option);
-    return;
+function renderMatches(){
+  matchContainer.innerHTML="";
+  let filtered=allMatches.slice();
+  const now=Date.now();
+
+  if(liveBtn.classList.contains("active")){
+    filtered = filtered.filter(m => now >= m.date && now <= m.date + 2*60*60*1000);
+  }
+  if(popularBtn.classList.contains("active")){
+    filtered = filtered.filter(m=>m.popular);
   }
 
-  matches.forEach(match => {
-    if(match.teams?.home?.name && match.teams?.away?.name){
-      const option = document.createElement("option");
-      option.dataset.match = JSON.stringify(match);
-
-      const startDate = new Date(match.date);
-      const hours = startDate.getHours().toString().padStart(2,'0');
-      const minutes = startDate.getMinutes().toString().padStart(2,'0');
-
-      option.textContent = `${hours}:${minutes} ${match.teams.home.name} vs ${match.teams.away.name}`;
-      dropdown.appendChild(option);
-    }
+  // Group by date
+  const grouped = {};
+  filtered.forEach(m=>{
+    const dateStr = formatDate(m.date);
+    if(!grouped[dateStr]) grouped[dateStr] = [];
+    grouped[dateStr].push(m);
   });
 
-  sourceButtonsContainer.innerHTML = "";
-  iframe.src = "";
-  countdownDiv.textContent = "";
-}
+  // Render each date group
+  Object.keys(grouped).forEach(dateStr=>{
+    const dateDiv=document.createElement("div");
+    dateDiv.className="match-date";
+    dateDiv.textContent=dateStr;
+    matchContainer.appendChild(dateDiv);
 
-// Countdown
-function startCountdown(match){
-  clearInterval(countdownInterval);
-  function update(){
-    const now = Date.now();
-    let diff = match.date - now;
-    if(diff<=0){ countdownDiv.textContent=""; clearInterval(countdownInterval); return; }
-    const h = Math.floor(diff/(1000*60*60));
-    diff%=1000*60*60;
-    const m = Math.floor(diff/(1000*60));
-    diff%=1000*60;
-    const s = Math.floor(diff/1000);
-    countdownDiv.textContent=`Starts in ${h}h ${m}m ${s}s`;
-  }
-  update();
-  countdownInterval = setInterval(update,1000);
-}
+    const grid=document.createElement("div");
+    grid.className="match-grid";
 
-// Load match from dropdown
-function loadDropdownMatch(){
-  const value = dropdown.selectedOptions[0]?.dataset.match;
-  if(!value){ iframe.src=""; sourceButtonsContainer.innerHTML=""; countdownDiv.textContent=""; return; }
-  loadMatch(JSON.parse(value));
-}
+    grouped[dateStr].forEach(m=>{
+      const card=document.createElement("div");
+      card.className="match-card";
 
-// Load a match (dropdown or search)
-function loadMatch(match){
-  startCountdown(match);
-  const sources = match.sources ?? [];
-  sourceButtonsContainer.innerHTML="";
-  if(sources.length===0){ iframe.src=""; return; }
-  if(sources.length===1){ loadStream(sources[0]); }
-  else {
-    sources.slice(0,6).forEach((src,index)=>{
-      const btn=document.createElement("button");
-      btn.className="button";
-      btn.textContent=`Link ${index+1}`;
-      btn.onclick=()=>loadStream(src);
-      sourceButtonsContainer.appendChild(btn);
+      const titleDiv=document.createElement("div");
+      titleDiv.className="match-title";
+      titleDiv.textContent = m.title || ((m.teams?.home?.name || "TBD")+" Vs "+(m.teams?.away?.name || "TBD"));
+      const timeDiv=document.createElement("div");
+      timeDiv.className="match-time";
+      timeDiv.textContent = new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+      card.appendChild(titleDiv);
+      card.appendChild(timeDiv);
+
+      if(Date.now() >= m.date && Date.now() <= m.date + 2*60*60*1000){
+        const liveBadge=document.createElement("div");
+        liveBadge.className="live-badge";
+        liveBadge.textContent="LIVE";
+        card.appendChild(liveBadge);
+      }
+
+      card.onclick=()=>{
+        const matchParam=encodeURIComponent(JSON.stringify(m));
+        window.open(`https://eurostreamhub.blogspot.com/p/2.html?match=${matchParam}`,"_blank");
+      };
+
+      grid.appendChild(card);
     });
-    loadStream(sources[0]);
-  }
+
+    matchContainer.appendChild(grid);
+  });
 }
 
-// Load stream
-function loadStream(src){
-  loader.style.display="block";
-  fetch(`${STREAM_URL}/${src.source}/${src.id}`).then(r=>r.json()).then(arr=>{
-    if(arr.length>0 && arr[0].embedUrl) iframe.src=arr[0].embedUrl;
-    else iframe.src="";
-  }).catch(console.error).finally(()=>loader.style.display="none");
-}
+// Button toggles
+liveBtn.addEventListener("click",()=>{
+  liveBtn.classList.toggle("active");
+  renderMatches();
+});
+popularBtn.addEventListener("click",()=>{
+  popularBtn.classList.toggle("active");
+  renderMatches();
+});
 
-// Filter for live matches only (2h before → 12h ahead)
-function showLive(){ populateDropdown(getLiveWindowMatches(allMatches)); }
-
-// Search all future matches
-searchInput.addEventListener("input", function(){
-  const q = this.value.toLowerCase().trim();
-  searchResults.innerHTML="";
-  if(!q) return;
-  const now = Date.now();
+// Search
+searchBar.addEventListener("input",()=>{
+  const q = searchBar.value.toLowerCase();
+  matchContainer.innerHTML="";
   const filtered = allMatches.filter(m=>{
-    if(m.date < now) return false; // only future matches
-    const h = m.teams?.home?.name?.toLowerCase()||"";
-    const a = m.teams?.away?.name?.toLowerCase()||"";
-    return h.includes(q) || a.includes(q);
+    const title=(m.title || (m.teams?.home?.name+" Vs "+m.teams?.away?.name)).toLowerCase();
+    return title.includes(q);
   });
 
-  if(filtered.length===0){
-    searchResults.textContent = "No matches found";
-    return;
-  }
+  const grouped = {};
+  filtered.forEach(m=>{
+    const dateStr = formatDate(m.date);
+    if(!grouped[dateStr]) grouped[dateStr] = [];
+    grouped[dateStr].push(m);
+  });
 
-  filtered.forEach(m => {
-    const div = document.createElement("div");
-    div.textContent = `${m.teams.home.name} vs ${m.teams.away.name} - ${m.sources?.length||0} stream${(m.sources?.length||0)!==1 ? 's' : ''}`;
-    div.onclick = () => loadMatch(m);
-    searchResults.appendChild(div);
+  Object.keys(grouped).forEach(dateStr=>{
+    const dateDiv=document.createElement("div");
+    dateDiv.className="match-date";
+    dateDiv.textContent=dateStr;
+    matchContainer.appendChild(dateDiv);
+
+    const grid=document.createElement("div");
+    grid.className="match-grid";
+
+    grouped[dateStr].forEach(m=>{
+      const card=document.createElement("div");
+      card.className="match-card";
+
+      const titleDiv=document.createElement("div");
+      titleDiv.className="match-title";
+      titleDiv.textContent = m.title || ((m.teams?.home?.name || "TBD")+" Vs "+(m.teams?.away?.name || "TBD"));
+      const timeDiv=document.createElement("div");
+      timeDiv.className="match-time";
+      timeDiv.textContent = new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+      card.appendChild(titleDiv);
+      card.appendChild(timeDiv);
+
+      card.onclick=()=>{
+        const matchParam=encodeURIComponent(JSON.stringify(m));
+        window.open(`https://eurostreamhub.blogspot.com/p/2.html?match=${matchParam}`,"_blank");
+      };
+
+      grid.appendChild(card);
+    });
+
+    matchContainer.appendChild(grid);
   });
 });
 
 // Initial fetch
 fetchMatches();
-setInterval(fetchMatches, 5*60*1000);
 </script>
-
 </body>
-      </html>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Streams</title>
+<title>Sports Streams</title>
 <style>
 body {
   background:#121212;
@@ -14,19 +14,9 @@ body {
 .controls {
   max-width:1000px;
   margin:0 auto;
+  text-align:center;
 }
-#search-bar {
-  width:100%;
-  max-width:400px;
-  padding:.8rem 1rem;
-  margin-bottom:1rem;
-  border-radius:.75rem;
-  border:none;
-  background:#1f1f1f;
-  color:#f1faee;
-  box-shadow:0 4px 12px rgba(0,0,0,0.5);
-}
-.button {
+#sport-select, .button {
   background:#1f1f1f;
   color:#f1faee;
   padding:.6rem 1rem;
@@ -37,14 +27,19 @@ body {
   margin:.2rem;
   transition:.2s;
 }
+#sport-select {
+  min-width:200px;
+  margin-bottom:1rem;
+}
 .button.active {
-  background:#e63946;
+  background:#FF6700;
   color:#f1faee;
 }
 .match-date {
   font-weight:bold;
   font-size:1.2rem;
   margin-top:1.5rem;
+  text-align:center;
 }
 .match-grid {
   display:grid;
@@ -57,25 +52,25 @@ body {
   background:#1f1f1f;
   border-radius:.5rem;
   overflow:hidden;
-  height:auto;
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
   padding:0;
   cursor:pointer;
   transition: transform 0.2s;
+  width:100%;
 }
 .match-card:hover {
   transform:translateY(-2px);
 }
 .poster {
-  position:relative;
+  flex-grow:1;
   width:100%;
   aspect-ratio:16/9;
-  background:#000;
   display:flex;
   justify-content:center;
   align-items:center;
+  background:#000;
 }
 .poster img {
   width:100%;
@@ -84,6 +79,7 @@ body {
 }
 .match-title {
   font-weight:bold;
+  font-size:1rem;
   padding:.5rem .5rem 0 .5rem;
 }
 .match-time {
@@ -107,33 +103,55 @@ body {
 <body>
 
 <div class="controls">
-  <input type="text" id="search-bar" placeholder="Search football matches...">
+  <select id="sport-select">
+    <option value="" disabled selected>Choose sport</option>
+  </select>
   <div>
     <button class="button" id="live-btn">Live</button>
     <button class="button" id="popular-btn">Popular</button>
   </div>
-  <div id="match-container"></div>
 </div>
+
+<div id="match-container"></div>
 
 <script>
 const API_BASE="https://streamed.pk/api";
 let allMatches=[];
 
 const matchContainer=document.getElementById("match-container");
-const searchBar=document.getElementById("search-bar");
 const liveBtn=document.getElementById("live-btn");
 const popularBtn=document.getElementById("popular-btn");
+const sportSelect=document.getElementById("sport-select");
 
-// Default poster URL
 const DEFAULT_POSTER = "https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/file_000000002878620aac8483fbedf5d310.png";
 
-async function fetchMatches(){
+// Load sports into dropdown
+async function fetchSports(){
   try{
-    const res=await fetch(`${API_BASE}/matches/football`);
+    const res=await fetch(`${API_BASE}/sports`);
     const data=await res.json();
-    allMatches=data.filter(m=>m.date>0).sort((a,b)=>a.date-b.date);
+    data.forEach(s=>{
+      const opt=document.createElement("option");
+      opt.value=s.id;
+      opt.textContent=s.name;
+      sportSelect.appendChild(opt);
+    });
+  }catch(e){console.error("Sports fetch error:",e);}
+}
+
+// Fetch matches for selected sport
+async function fetchMatches(sport){
+  if(!sport) return;
+  try{
+    const res=await fetch(`${API_BASE}/matches/${sport}`);
+    const data=await res.json();
+    const matches = Array.isArray(data) ? data : (data.matches || []);
+    allMatches = matches.filter(m=>m.date>0).sort((a,b)=>a.date-b.date);
     renderMatches();
-  }catch(e){ console.error(e); }
+  }catch(e){
+    console.error("Matches fetch error:",e);
+    matchContainer.innerHTML="<p>⚠️ No matches available for this sport.</p>";
+  }
 }
 
 function formatDate(ms){
@@ -173,27 +191,22 @@ function renderMatches(filteredInput){
       const card=document.createElement("div");
       card.className="match-card";
 
-      // Poster (or default if none)
-      const posterDiv = document.createElement("div");
-      posterDiv.className = "poster";
-      const img = document.createElement("img");
-      if(m.poster){
-        img.src = m.poster.startsWith("http") ? m.poster : "https://streamed.pk" + m.poster;
-      } else {
-        img.src = DEFAULT_POSTER;
-      }
-      img.onerror = () => { img.src = DEFAULT_POSTER; };
+      // Poster
+      const posterDiv=document.createElement("div");
+      posterDiv.className="poster";
+      const img=document.createElement("img");
+      img.src = m.poster ? (m.poster.startsWith("http") ? m.poster : "https://streamed.pk" + m.poster) : DEFAULT_POSTER;
+      img.onerror=()=>{img.src = DEFAULT_POSTER;};
       posterDiv.appendChild(img);
       card.appendChild(posterDiv);
 
       // Title & KO
       const titleDiv=document.createElement("div");
       titleDiv.className="match-title";
-      titleDiv.textContent = m.title || ((m.teams?.home?.name || "TBD") + " Vs " + (m.teams?.away?.name || "TBD"));
+      titleDiv.textContent = m.title || "Match";
       const timeDiv=document.createElement("div");
       timeDiv.className="match-time";
-      const ko = new Date(m.date);
-      timeDiv.textContent = ko.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      timeDiv.textContent = new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 
       card.appendChild(titleDiv);
       card.appendChild(timeDiv);
@@ -206,10 +219,10 @@ function renderMatches(filteredInput){
         card.appendChild(liveBadge);
       }
 
-      // Click to open viewer.html
-      card.onclick=()=>{
+      // Click → viewer
+      card.onclick=()=>{ 
         const matchParam=encodeURIComponent(JSON.stringify(m));
-        window.location.href = `viewer.html?match=${matchParam}`;
+        window.location.href=`viewer.html?match=${matchParam}`;
       };
 
       grid.appendChild(card);
@@ -229,18 +242,13 @@ popularBtn.addEventListener("click",()=>{
   renderMatches();
 });
 
-// Search
-searchBar.addEventListener("input",()=>{
-  const q = searchBar.value.toLowerCase();
-  const filtered = allMatches.filter(m=>{
-    const title=(m.title || (m.teams?.home?.name+" Vs "+m.teams?.away?.name)).toLowerCase();
-    return title.includes(q);
-  });
-  renderMatches(filtered);
+// Sport change
+sportSelect.addEventListener("change",()=>{
+  fetchMatches(sportSelect.value);
 });
 
 // Initial load
-fetchMatches();
+fetchSports();
 </script>
 </body>
 </html>

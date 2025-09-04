@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -12,11 +12,13 @@ body {
   padding:0;
   margin:0;
 }
+
 .controls {
-  max-width:1000px;
+  width:100vw;
   margin:0 auto 1rem;
   text-align:center;
 }
+
 #sport-select, .button {
   background:#1f1f1f;
   color:#f1faee;
@@ -40,10 +42,9 @@ body {
 }
 
 #match-container {
-  width:100%;
-  max-width:none;
+  width:100vw;
   margin:0;
-  padding:0 0.5rem;
+  padding:0.5rem 0;
 }
 
 .match-grid {
@@ -67,6 +68,7 @@ body {
   margin-bottom:0.5rem;
   text-decoration:none;
 }
+
 .match-card:hover { transform:translateY(-2px); }
 
 .match-title {
@@ -74,15 +76,17 @@ body {
   font-size:1.1rem;
   line-height:1.3rem;
   display:-webkit-box;
-  -webkit-line-clamp:2; /* limit to 2 lines */
+  -webkit-line-clamp:2; /* 2 lines for big text */
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
+
 .match-time {
   font-size:0.9rem;
   color:#000;
   margin-top:0.2rem;
 }
+
 .live-badge {
   position:absolute;
   bottom:0.5rem;

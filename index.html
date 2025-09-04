@@ -17,7 +17,7 @@ body {
   margin:0 auto 1rem;
   text-align:center;
 }
-#sport-select, .button {
+#search-input, #sport-select, .button {
   background:#1f1f1f;
   color:#f1faee;
   padding:.6rem 1rem;
@@ -27,6 +27,10 @@ body {
   cursor:pointer;
   margin:.2rem;
   transition:.2s;
+}
+#search-input {
+  width: 60%;
+  margin-bottom: 1rem;
 }
 #sport-select { min-width:200px; margin-bottom:1rem; }
 .button.active { background:#FF6700; color:#f1faee; }
@@ -51,7 +55,7 @@ body {
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:0; /* original width preserved */
+  padding:0;
   cursor:pointer;
   transition: transform 0.2s;
   width:100%;
@@ -62,17 +66,17 @@ body {
 .match-title {
   font-weight:bold;
   font-size:1rem;
-  color:#000; /* black text */
+  color:#000;
 }
 .match-time {
   font-size:0.9rem;
-  color:#000; /* black text */
+  color:#000;
 }
 .match-sport {
   font-size:0.9rem;
   font-weight:600;
   margin-bottom:0.2rem;
-  color:#000; /* black text */
+  color:#000;
 }
 .live-badge {
   position:absolute;
@@ -90,6 +94,7 @@ body {
 <body>
 
 <div class="controls">
+  <input type="text" id="search-input" placeholder="Search matches...">
   <select id="sport-select">
     <option value="" disabled selected>Choose sport</option>
   </select>
@@ -109,20 +114,25 @@ const matchContainer=document.getElementById("match-container");
 const liveBtn=document.getElementById("live-btn");
 const popularBtn=document.getElementById("popular-btn");
 const sportSelect=document.getElementById("sport-select");
+const searchInput=document.getElementById("search-input");
 
+// Fetch all sports
 async function fetchSports(){
   try{
     const res=await fetch(`${API_BASE}/sports`);
-    const data=await res.json();
-    data.forEach(s=>{
+    const sports=await res.json();
+    sports.forEach(s=>{
       const opt=document.createElement("option");
       opt.value=s.id;
       opt.textContent=s.name;
       sportSelect.appendChild(opt);
     });
+    // Load live matches for all sports on page load
+    await fetchAllMatches(sports);
   }catch(e){console.error("Sports fetch error:",e);}
 }
 
+// Fetch matches for a single sport
 async function fetchMatches(sport){
   if(!sport) return;
   try{
@@ -135,6 +145,23 @@ async function fetchMatches(sport){
     console.error("Matches fetch error:",e);
     matchContainer.innerHTML="<p>⚠️ No matches available for this sport.</p>";
   }
+}
+
+// Fetch matches for all sports
+async function fetchAllMatches(sports){
+  allMatches = [];
+  for(const s of sports){
+    try{
+      const res=await fetch(`${API_BASE}/matches/${s.id}`);
+      const data=await res.json();
+      const matches = Array.isArray(data) ? data : (data.matches || []);
+      allMatches.push(...matches.filter(m=>m.date>0));
+    }catch(e){console.error("Error fetching sport", s.name, e);}
+  }
+  // Show only currently live matches on load
+  const now=Date.now();
+  const liveMatches = allMatches.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
+  renderMatches(liveMatches);
 }
 
 function formatDate(ms){
@@ -204,6 +231,14 @@ function renderMatches(filteredInput){
   });
 }
 
+// Search function
+searchInput.addEventListener("input",()=>{
+  const query = searchInput.value.toLowerCase();
+  const filtered = allMatches.filter(m=>m.title.toLowerCase().includes(query));
+  renderMatches(filtered);
+});
+
+// Button toggles
 liveBtn.addEventListener("click",()=>{
   liveBtn.classList.toggle("active");
   renderMatches();
@@ -213,6 +248,7 @@ popularBtn.addEventListener("click",()=>{
   renderMatches();
 });
 
+// Sport selection
 sportSelect.addEventListener("change",()=>{
   fetchMatches(sportSelect.value);
 });

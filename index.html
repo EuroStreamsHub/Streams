@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sports Streams</title>
+<title>EuroStreamHub Streams</title>
 <style>
 body {
-  background:#121212;
-  color:#f1faee;
+  background:#28a745; /* green background */
+  color:#000;
   font-family:'Segoe UI',Roboto,sans-serif;
   padding:0;
   margin:0;
@@ -36,41 +36,52 @@ body {
   font-size:1.2rem;
   margin-top:1.5rem;
   text-align:center;
+  color:#fff;
+}
+
+#match-container {
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:0 0.5rem;
 }
 
 .match-grid {
-  display:block; /* full width bars */
-  margin-top:0;
+  display:block;
+  margin:0;
 }
 
 .match-card {
   position:relative;
-  background:#1f1f1f;
+  background:#d3d3d3; /* light grey bars */
+  color:#000;          /* black text */
   border-radius:.5rem;
   overflow:hidden;
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:0;
+  padding:.8rem 1rem;
   cursor:pointer;
   transition: transform 0.2s;
   width:100%;
   margin-bottom:0.5rem;
+  text-decoration:none;
 }
 .match-card:hover { transform:translateY(-2px); }
 
 .match-title {
   font-weight:bold;
-  font-size:1rem;
+  font-size:1.1rem;
+  line-height:1.3rem;
+  display:-webkit-box;
+  -webkit-line-clamp:2; /* limit to 2 lines */
+  -webkit-box-orient:vertical;
+  overflow:hidden;
 }
 .match-time {
   font-size:0.9rem;
-  color:#bbb;
-}
-.match-sport {
-  font-size:0.9rem;
-  font-weight:600;
-  margin-bottom:0.2rem;
+  color:#000;
+  margin-top:0.2rem;
 }
 .live-badge {
   position:absolute;
@@ -172,11 +183,6 @@ function renderMatches(filteredInput){
       const card=document.createElement("a");
       card.className="match-card";
       card.href = `viewer.html?match=${encodeURIComponent(JSON.stringify(m))}`;
-
-      const sportDiv = document.createElement("div");
-      sportDiv.className="match-sport";
-      sportDiv.textContent = m.sport || "Sport";
-      card.appendChild(sportDiv);
 
       const titleDiv=document.createElement("div");
       titleDiv.className="match-title";

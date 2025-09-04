@@ -16,8 +16,20 @@ body {
   max-width:1000px;
   margin:0 auto 1rem;
   text-align:center;
+  position:relative;
 }
-#search-input, #sport-select, .button {
+#search-input {
+  background:#1f1f1f;
+  color:#f1faee;
+  padding:.6rem 1rem;
+  border:none;
+  border-radius:.5px;
+  font-weight:600;
+  cursor:text;
+  margin:.2rem;
+  width:60%;
+}
+.button {
   background:#1f1f1f;
   color:#f1faee;
   padding:.6rem 1rem;
@@ -28,12 +40,35 @@ body {
   margin:.2rem;
   transition:.2s;
 }
-#search-input {
-  width: 60%;
-  margin-bottom: 1rem;
-}
-#sport-select { min-width:200px; margin-bottom:1rem; }
 .button.active { background:#FF6700; color:#f1faee; }
+
+/* Hamburger sidebar */
+#hamburger {
+  display:inline-block;
+  cursor:pointer;
+  font-size:1.5rem;
+  margin-left:1rem;
+}
+#sidebar {
+  position:fixed;
+  top:0;
+  left:-250px;
+  width:250px;
+  height:100%;
+  background:#1f1f1f;
+  padding-top:2rem;
+  transition:0.3s;
+  overflow-y:auto;
+  z-index:1000;
+}
+#sidebar a {
+  display:block;
+  color:#f1faee;
+  padding:.8rem 1rem;
+  text-decoration:none;
+  font-weight:600;
+}
+#sidebar a:hover { background:#333; }
 
 .match-date {
   font-weight:bold;
@@ -95,39 +130,52 @@ body {
 
 <div class="controls">
   <input type="text" id="search-input" placeholder="Search matches...">
-  <select id="sport-select">
-    <option value="" disabled selected>Choose sport</option>
-  </select>
+  <span id="hamburger">&#9776;</span>
   <div>
     <button class="button" id="live-btn">Live</button>
     <button class="button" id="popular-btn">Popular</button>
   </div>
 </div>
 
+<!-- Sidebar -->
+<div id="sidebar"></div>
+
 <div id="match-container"></div>
 
 <script>
 const API_BASE="https://streamed.pk/api";
 let allMatches=[];
+let sportsMap={}; // map sportId -> sport name
 
 const matchContainer=document.getElementById("match-container");
 const liveBtn=document.getElementById("live-btn");
 const popularBtn=document.getElementById("popular-btn");
-const sportSelect=document.getElementById("sport-select");
 const searchInput=document.getElementById("search-input");
+const hamburger=document.getElementById("hamburger");
+const sidebar=document.getElementById("sidebar");
 
-// Fetch all sports
+// Toggle sidebar
+hamburger.addEventListener("click",()=>{
+  sidebar.style.left = sidebar.style.left === "0px" ? "-250px" : "0px";
+});
+
+// Fetch sports
 async function fetchSports(){
   try{
     const res=await fetch(`${API_BASE}/sports`);
     const sports=await res.json();
     sports.forEach(s=>{
-      const opt=document.createElement("option");
-      opt.value=s.id;
-      opt.textContent=s.name;
-      sportSelect.appendChild(opt);
+      sportsMap[s.id]=s.name;
+      const link=document.createElement("a");
+      link.href="#";
+      link.textContent=s.name;
+      link.addEventListener("click",(e)=>{
+        e.preventDefault();
+        fetchMatches(s.id);
+        sidebar.style.left="-250px"; // close sidebar
+      });
+      sidebar.appendChild(link);
     });
-    // Load live matches for all sports on page load
     await fetchAllMatches(sports);
   }catch(e){console.error("Sports fetch error:",e);}
 }
@@ -147,7 +195,7 @@ async function fetchMatches(sport){
   }
 }
 
-// Fetch matches for all sports
+// Fetch all matches (for live page load)
 async function fetchAllMatches(sports){
   allMatches = [];
   for(const s of sports){
@@ -169,6 +217,7 @@ function formatDate(ms){
   return d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short', year:'numeric' });
 }
 
+// Render matches
 function renderMatches(filteredInput){
   matchContainer.innerHTML="";
   let filtered = filteredInput || allMatches.slice();
@@ -204,7 +253,7 @@ function renderMatches(filteredInput){
 
       const sportDiv = document.createElement("div");
       sportDiv.className="match-sport";
-      sportDiv.textContent = m.sport || "Sport";
+      sportDiv.textContent = sportsMap[m.sport] || m.sport || "Sport";
       card.appendChild(sportDiv);
 
       const titleDiv=document.createElement("div");
@@ -231,7 +280,7 @@ function renderMatches(filteredInput){
   });
 }
 
-// Search function
+// Search
 searchInput.addEventListener("input",()=>{
   const query = searchInput.value.toLowerCase();
   const filtered = allMatches.filter(m=>m.title.toLowerCase().includes(query));
@@ -246,11 +295,6 @@ liveBtn.addEventListener("click",()=>{
 popularBtn.addEventListener("click",()=>{
   popularBtn.classList.toggle("active");
   renderMatches();
-});
-
-// Sport selection
-sportSelect.addEventListener("change",()=>{
-  fetchMatches(sportSelect.value);
 });
 
 fetchSports();

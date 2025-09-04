@@ -3,20 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sports Streams</title>
+<title>EuroStreamHub</title>
 <style>
+/* Base styling */
 body {
+  margin:0;
   background:#121212;
   color:#f1faee;
   font-family:'Segoe UI',Roboto,sans-serif;
-  padding:1rem;
 }
+header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0.5rem 1rem;
+  background:#0a3d62; /* Brand blue */
+  position:sticky;
+  top:0;
+  z-index:1000;
+}
+header h1 {
+  font-size:1.5rem;
+  font-weight:bold;
+}
+header .hamburger {
+  font-size:1.5rem;
+  cursor:pointer;
+  display:none;
+}
+.sidebar {
+  position:fixed;
+  left:-250px;
+  top:0;
+  width:250px;
+  height:100%;
+  background:#1f1f1f;
+  overflow-y:auto;
+  padding-top:3rem;
+  transition:0.3s;
+  z-index:999;
+}
+.sidebar.active { left:0; }
+.sidebar a {
+  display:block;
+  padding:1rem;
+  color:#f1faee;
+  text-decoration:none;
+  border-bottom:1px solid #2c2c2c;
+  transition:0.2s;
+}
+.sidebar a:hover { background:#0a3d62; }
+#overlay {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.5);
+  display:none;
+  z-index:998;
+}
+#overlay.active { display:block; }
+
+/* Controls & buttons */
 .controls {
   max-width:1000px;
-  margin:0 auto;
+  margin:1rem auto;
   text-align:center;
 }
-#sport-select, .button {
+.button {
   background:#1f1f1f;
   color:#f1faee;
   padding:.6rem 1rem;
@@ -27,14 +82,12 @@ body {
   margin:.2rem;
   transition:.2s;
 }
-#sport-select {
-  min-width:200px;
-  margin-bottom:1rem;
-}
 .button.active {
-  background:#FF6700;
+  background:#0a3d62;
   color:#f1faee;
 }
+
+/* Match cards */
 .match-date {
   font-weight:bold;
   font-size:1.2rem;
@@ -43,9 +96,10 @@ body {
 }
 .match-grid {
   display:grid;
-  grid-template-columns:repeat(2,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
   gap:1rem;
   margin-top:0.5rem;
+  padding:0 1rem;
 }
 .match-card {
   position:relative;
@@ -55,14 +109,10 @@ body {
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:0;
   cursor:pointer;
   transition: transform 0.2s;
-  width:100%;
 }
-.match-card:hover {
-  transform:translateY(-2px);
-}
+.match-card:hover { transform:translateY(-2px); }
 .poster {
   flex-grow:1;
   width:100%;
@@ -72,42 +122,41 @@ body {
   align-items:center;
   background:#000;
 }
-.poster img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-.match-title {
-  font-weight:bold;
-  font-size:1rem;
-  padding:.5rem .5rem 0 .5rem;
-}
-.match-time {
-  font-size:0.9rem;
-  padding:.2rem .5rem .5rem .5rem;
-  color:#bbb;
-}
+.poster img { width:100%; height:100%; object-fit:cover; }
+.match-title { font-weight:bold; font-size:1rem; padding:.5rem; }
+.match-time { font-size:0.9rem; padding:.2rem .5rem .5rem; color:#bbb; }
 .live-badge {
   position:absolute;
   bottom:0.5rem;
   right:0.5rem;
-  background:red;
+  background:#0a3d62;
   color:white;
   padding:0.2rem 0.5rem;
   border-radius:.3rem;
   font-size:0.8rem;
   font-weight:bold;
 }
+
+/* Responsive hamburger */
+@media(max-width:768px){
+  header h1 { font-size:1.2rem; }
+  header .hamburger { display:block; }
+}
 </style>
 </head>
 <body>
 
+<header>
+  <span class="hamburger">&#9776;</span>
+  <h1>EuroStreamHub</h1>
+  <a href="#" class="button active" id="live-today-btn">Live Today</a>
+</header>
+
+<div class="sidebar" id="sidebar"></div>
+<div id="overlay"></div>
+
 <div class="controls">
-  <select id="sport-select">
-    <option value="" disabled selected>Choose sport</option>
-  </select>
   <div>
-    <button class="button" id="live-btn">Live</button>
     <button class="button" id="popular-btn">Popular</button>
   </div>
 </div>
@@ -116,30 +165,38 @@ body {
 
 <script>
 const API_BASE="https://streamed.pk/api";
-let allMatches=[];
+let allMatches=[], allSports=[];
 
 const matchContainer=document.getElementById("match-container");
-const liveBtn=document.getElementById("live-btn");
 const popularBtn=document.getElementById("popular-btn");
-const sportSelect=document.getElementById("sport-select");
+const sidebar=document.getElementById("sidebar");
+const overlay=document.getElementById("overlay");
+const liveTodayBtn=document.getElementById("live-today-btn");
+const hamburger=document.querySelector(".hamburger");
 
 const DEFAULT_POSTER = "https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/file_000000002878620aac8483fbedf5d310.png";
 
-// Load sports into dropdown
+/* Sidebar toggle */
+hamburger.addEventListener("click",()=>{ sidebar.classList.add("active"); overlay.classList.add("active"); });
+overlay.addEventListener("click",()=>{ sidebar.classList.remove("active"); overlay.classList.remove("active"); });
+
+/* Load sports into sidebar */
 async function fetchSports(){
   try{
     const res=await fetch(`${API_BASE}/sports`);
     const data=await res.json();
+    allSports = data;
     data.forEach(s=>{
-      const opt=document.createElement("option");
-      opt.value=s.id;
-      opt.textContent=s.name;
-      sportSelect.appendChild(opt);
+      const link=document.createElement("a");
+      link.href="#";
+      link.textContent=s.name;
+      link.addEventListener("click",()=>fetchMatches(s.id));
+      sidebar.appendChild(link);
     });
   }catch(e){console.error("Sports fetch error:",e);}
 }
 
-// Fetch matches for selected sport
+/* Fetch matches for selected sport */
 async function fetchMatches(sport){
   if(!sport) return;
   try{
@@ -148,25 +205,22 @@ async function fetchMatches(sport){
     const matches = Array.isArray(data) ? data : (data.matches || []);
     allMatches = matches.filter(m=>m.date>0).sort((a,b)=>a.date-b.date);
     renderMatches();
-  }catch(e){
-    console.error("Matches fetch error:",e);
-    matchContainer.innerHTML="<p>⚠️ No matches available for this sport.</p>";
-  }
+    sidebar.classList.remove("active"); overlay.classList.remove("active");
+  }catch(e){ console.error("Matches fetch error:",e); }
 }
 
+/* Format date */
 function formatDate(ms){
   const d = new Date(ms);
   return d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short', year:'numeric' });
 }
 
+/* Render matches */
 function renderMatches(filteredInput){
   matchContainer.innerHTML="";
   let filtered = filteredInput || allMatches.slice();
   const now=Date.now();
 
-  if(liveBtn.classList.contains("active")){
-    filtered = filtered.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
-  }
   if(popularBtn.classList.contains("active")){
     filtered = filtered.filter(m=>m.popular);
   }
@@ -191,7 +245,6 @@ function renderMatches(filteredInput){
       const card=document.createElement("div");
       card.className="match-card";
 
-      // Poster
       const posterDiv=document.createElement("div");
       posterDiv.className="poster";
       const img=document.createElement("img");
@@ -200,10 +253,10 @@ function renderMatches(filteredInput){
       posterDiv.appendChild(img);
       card.appendChild(posterDiv);
 
-      // Title & KO
       const titleDiv=document.createElement("div");
       titleDiv.className="match-title";
       titleDiv.textContent = m.title || "Match";
+
       const timeDiv=document.createElement("div");
       timeDiv.className="match-time";
       timeDiv.textContent = new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
@@ -211,7 +264,6 @@ function renderMatches(filteredInput){
       card.appendChild(titleDiv);
       card.appendChild(timeDiv);
 
-      // Live badge
       if(now >= m.date && now <= m.date + 2*60*60*1000){
         const liveBadge=document.createElement("div");
         liveBadge.className="live-badge";
@@ -219,7 +271,6 @@ function renderMatches(filteredInput){
         card.appendChild(liveBadge);
       }
 
-      // Click → viewer
       card.onclick=()=>{ 
         const matchParam=encodeURIComponent(JSON.stringify(m));
         window.location.href=`viewer.html?match=${matchParam}`;
@@ -232,23 +283,22 @@ function renderMatches(filteredInput){
   });
 }
 
-// Toggle buttons
-liveBtn.addEventListener("click",()=>{
-  liveBtn.classList.toggle("active");
-  renderMatches();
-});
+/* Toggle Popular button */
 popularBtn.addEventListener("click",()=>{
   popularBtn.classList.toggle("active");
   renderMatches();
 });
 
-// Sport change
-sportSelect.addEventListener("change",()=>{
-  fetchMatches(sportSelect.value);
+/* Live Today button: show all live matches */
+liveTodayBtn.addEventListener("click",()=>{
+  const now=Date.now();
+  const liveMatches = allMatches.filter(m=>now>=m.date && now<=m.date+2*60*60*1000);
+  renderMatches(liveMatches);
 });
 
-// Initial load
+/* Initial load */
 fetchSports();
 </script>
+
 </body>
 </html>

@@ -253,7 +253,7 @@ function renderMatches(filteredInput){
 
       const sportDiv = document.createElement("div");
       sportDiv.className="match-sport";
-      sportDiv.textContent = sportsMap[m.sport] || m.sport || "Sport";
+      sportDiv.textContent = sportsMap[m.sport] || m.sport || "";
       card.appendChild(sportDiv);
 
       const titleDiv=document.createElement("div");

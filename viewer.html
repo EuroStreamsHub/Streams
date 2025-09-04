@@ -3,20 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Stream Viewer</title>
+<title>Match Viewer</title>
 <style>
 body {
-  background:#121212;
-  color:#f1faee;
+  background:#369991; /* match page background */
+  color:#000; /* black text for bars/cards */
   font-family:'Segoe UI',Roboto,sans-serif;
   padding:1rem;
   text-align:center;
+  margin:0;
 }
 .back-button {
   display:inline-block;
   margin:0.5rem auto 1rem auto;
   padding:.6rem 1rem;
-  background:#e63946;
+  background:#1f1f1f; /* same style as match cards */
   color:#f1faee;
   border:none;
   border-radius:.5rem;
@@ -28,11 +29,12 @@ body {
 .back-button:hover { filter:brightness(1.2); }
 h2 {
   margin-bottom:.5rem;
+  font-weight:bold;
 }
 .description {
   font-size:0.95rem;
-  color:#ccc;
   margin-bottom:1rem;
+  color:#000;
 }
 .source-buttons {
   display:flex;
@@ -54,11 +56,13 @@ h2 {
 .button:hover { filter:brightness(1.2); }
 .stream-container {
   width:90%;
-  max-width:1200px;
+  max-width:1000px;
   aspect-ratio:16/9;
   background:#000;
   margin:0 auto;
   position:relative;
+  border-radius:.5rem;
+  overflow:hidden;
 }
 iframe {
   width:100%;
@@ -71,7 +75,7 @@ iframe {
   left:50%;
   transform:translate(-50%,-50%);
   border:6px solid rgba(255,255,255,0.1);
-  border-top:6px solid #e63946;
+  border-top:6px solid #FF6700; /* match page accent color */
   border-radius:50%;
   width:50px;
   height:50px;
@@ -82,8 +86,8 @@ iframe {
 @keyframes spin {0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
 
 .vpn-banner {
-  background:#1f1f1f;
-  border:1px solid #e63946;
+  background:#d3d3d3; /* same as match bars */
+  border:1px solid #1f1f1f;
   padding:1rem;
   margin:1rem auto;
   border-radius:.5rem;
@@ -91,15 +95,14 @@ iframe {
   display:none;
   font-size:.95rem;
   line-height:1.4;
+  color:#000;
 }
 .vpn-banner a {
-  color:#e63946;
+  color:#1f1f1f;
   font-weight:bold;
   text-decoration:none;
 }
-.vpn-banner a:hover {
-  text-decoration:underline;
-}
+.vpn-banner a:hover { text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -135,8 +138,6 @@ if(!match){
   matchTitle.textContent = "No match selected";
 }else{
   matchTitle.textContent = match.title || ((match.teams?.home?.name || "TBD") + " vs " + (match.teams?.away?.name || "TBD"));
-
-  // Kickoff info + description
   const ko = match.date ? new Date(match.date).toLocaleString([], {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : "TBD";
   matchDescription.textContent = `Kick-off: ${ko}${match.description ? " — " + match.description : ""}`;
 
@@ -149,7 +150,7 @@ if(!match){
       btn.onclick = () => loadStream(s);
       sourceButtons.appendChild(btn);
     });
-    loadStream(sources[0]); // auto-load first
+    loadStream(sources[0]);
   }
 }
 
@@ -167,13 +168,12 @@ function loadStream(src){
     .finally(()=>{ loader.style.display = "none"; });
 }
 
-// 🔹 VPN Banner Detection
+// VPN Banner
 async function detectLocation() {
   try {
     const res = await fetch("https://ipapi.co/json/");
     const data = await res.json();
     const banner = document.getElementById("vpn-banner");
-
     banner.innerHTML = `
       ⚠️ It looks like you're visiting from <b>${data.country_name}</b>.<br>
       Some streams may not work in your region.<br>

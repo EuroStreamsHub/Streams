@@ -69,6 +69,13 @@ body {
 }
 .match-card:hover { transform: translateY(-2px); }
 
+.match-sport {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+  color: #000;
+}
+
 .match-title {
   font-weight: bold;
   font-size: 1.1rem;
@@ -129,7 +136,6 @@ async function fetchSports() {
       opt.textContent = s.name;
       sportSelect.appendChild(opt);
     });
-    // Show live matches on load
     fetchAllLiveMatches(sports);
   } catch (e) { console.error("Sports fetch error:", e); }
 }
@@ -145,6 +151,8 @@ async function fetchAllLiveMatches(sports) {
       const liveMatches = matches.filter(m =>
         m.date > 0 && m.date <= now && now <= m.date + 2*60*60*1000
       );
+      // Attach sport info
+      liveMatches.forEach(m => m.sportName = sport.name);
       allMatches.push(...liveMatches);
     } catch (e) { console.error(`Error fetching ${sport.name}:`, e); }
   }
@@ -157,6 +165,7 @@ async function fetchMatches(sportId) {
     const res = await fetch(`${API_BASE}/matches/${sportId}`);
     const data = await res.json();
     const matches = Array.isArray(data) ? data : (data.matches || []);
+    matches.forEach(m => m.sportName = sportSelect.options[sportSelect.selectedIndex].text);
     allMatches = matches.filter(m => m.date > 0).sort((a, b) => a.date - b.date);
     renderMatches();
   } catch(e) {
@@ -202,6 +211,11 @@ function renderMatches(filteredInput) {
       const card = document.createElement("a");
       card.className = "match-card";
       card.href = `viewer.html?match=${encodeURIComponent(JSON.stringify(m))}`;
+
+      const sportDiv = document.createElement("div");
+      sportDiv.className = "match-sport";
+      sportDiv.textContent = m.sportName || "Sport";
+      card.appendChild(sportDiv);
 
       const titleDiv = document.createElement("div");
       titleDiv.className = "match-title";

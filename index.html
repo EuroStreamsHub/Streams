@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EuroStreamHub</title>
+<title>EuroStreamHub - Live Today</title>
 <style>
 body {
   margin:0;
@@ -12,206 +12,153 @@ body {
   color:#f1faee;
 }
 header {
-  display:flex;
-  flex-direction:column;
   background:#0a3d62;
   color:white;
+  padding:0.5rem 1rem;
   position:sticky;
   top:0;
   z-index:1000;
-}
-header .top-bar {
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  padding:0.5rem 1rem;
+  align-items:center;
 }
 header h1 {
   font-size:1.5rem;
-}
-header .menu-toggle {
-  font-size:1.5rem;
-  cursor:pointer;
-}
-header .buttons {
-  display:flex;
-  gap:0.5rem;
-}
-header .buttons button {
-  background:#1f1f1f;
-  color:#f1faee;
-  border:none;
-  border-radius:.3rem;
-  padding:.4rem .8rem;
-  font-weight:bold;
-  cursor:pointer;
-  transition:.2s;
-}
-header .buttons button.active {
-  background:#ff6700; /* optional highlight */
-}
-#sidebar {
-  background:#1f1f1f;
-  display:none;
-  flex-direction:column;
-}
-#sidebar a {
-  padding:.6rem 1rem;
-  color:#f1faee;
-  text-decoration:none;
-  border-bottom:1px solid #2c2c2c;
-}
-#sidebar a:hover { background:#0a3d62; }
-#search-bar {
-  width:90%;
-  max-width:600px;
-  margin:0.5rem auto;
-  padding:.5rem;
-  font-size:1rem;
-  border-radius:.3rem;
-  border:none;
-  outline:none;
 }
 #matches {
   margin:1rem auto;
   max-width:800px;
 }
-.match-bar {
+.match-link {
   display:flex;
+  align-items:center;
   justify-content:space-between;
-  padding:.5rem 1rem;
   background:#1f1f1f;
-  margin:.3rem 0;
-  border-radius:.3rem;
-  cursor:pointer;
-  transition:.2s;
+  color:#f1faee;
+  text-decoration:none;
+  padding:0.5rem 1rem;
+  margin:0.3rem 0;
+  border-radius:5px;
+  transition:0.2s;
 }
-.match-bar:hover { background:#0a3d62; }
-.match-bar span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.match-link:hover { background:#0a3d62; }
+.match-link span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .live-badge {
   background:#ff6700;
   color:white;
   font-weight:bold;
   font-size:0.75rem;
   padding:0 0.3rem;
-  border-radius:.2rem;
-  margin-left:.5rem;
+  border-radius:0.2rem;
+  margin-left:0.5rem;
 }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="top-bar">
-    <h1>EuroStreamHub</h1>
-    <span class="menu-toggle">&#9776;</span>
-  </div>
-  <div id="sidebar"></div>
-  <div class="buttons">
-    <button id="live-today-btn">Live Today</button>
-    <button id="live-now-btn">Live Now</button>
-  </div>
-  <input type="text" id="search-bar" placeholder="Search games or teams...">
+  <h1>EuroStreamHub</h1>
 </header>
 
 <div id="matches"></div>
 
 <script>
-const API_BASE="https://streamed.pk/api";
-let allSports=[], allMatches=[], filteredMatches=[];
-
-const sidebar = document.getElementById("sidebar");
+const API_BASE = "https://streamed.pk/api";
 const matchesDiv = document.getElementById("matches");
-const searchInput = document.getElementById("search-bar");
-const liveTodayBtn = document.getElementById("live-today-btn");
-const liveNowBtn = document.getElementById("live-now-btn");
-const menuToggle = document.querySelector(".menu-toggle");
+const now = Date.now();
 
-const DEFAULT_POSTER="";
-
-// Sidebar toggle
-menuToggle.addEventListener("click",()=>{
-  sidebar.style.display = sidebar.style.display==="flex"?"none":"flex";
-});
-
-// Load sports
-async function fetchSports(){
-  const res = await fetch(`${API_BASE}/sports`);
-  allSports = await res.json();
-  sidebar.innerHTML = "";
-  allSports.forEach(s=>{
-    const a = document.createElement("a");
-    a.textContent = s.name;
-    a.href="#";
-    a.addEventListener("click",()=> fetchMatches(s.id));
-    sidebar.appendChild(a);
-  });
+// Fetch all sports
+async function fetchSports() {
+  try {
+    const res = await fetch(`${API_BASE}/sports`);
+    return await res.json();
+  } catch(e) { console.error("Sports fetch error:", e); return []; }
 }
 
 // Fetch matches for a sport
-async function fetchMatches(sportId){
-  const res = await fetch(`${API_BASE}/matches/${sportId}`);
-  const data = await res.json();
-  allMatches = Array.isArray(data) ? data : (data.matches || []);
-  filteredMatches = allMatches.sort((a,b)=>a.date-b.date);
-  renderMatches(filteredMatches);
-  sidebar.style.display="none";
+async function fetchMatchesForSport(sportId) {
+  try {
+    const res = await fetch(`${API_BASE}/matches/${sportId}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.matches || []);
+  } catch(e) { console.error("Matches fetch error:", e); return []; }
 }
 
-// Render matches
-function renderMatches(matches){
-  matchesDiv.innerHTML = "";
-  const now = Date.now();
-  matches.forEach(m=>{
-    const bar = document.createElement("div");
-    bar.className="match-bar";
-    const sport = m.sport || "#sport#";
-    const teams = m.title || "Team A vs Team B";
-    const kickoff = new Date(m.date);
-    const diffHours = ((kickoff-now)/3600000).toFixed(1);
-    bar.innerHTML=`<span>#${sport}#</span> <span>${teams}</span> <span>${diffHours}h from now</span>`;
-    if(now>=m.date && now<=m.date+2*3600000){
-      const badge = document.createElement("span");
-      badge.className="live-badge";
-      badge.textContent="LIVE";
-      bar.appendChild(badge);
-    }
-    bar.addEventListener("click",()=> window.open(m.streams?.[0]?.url||"#","_blank"));
-    matchesDiv.appendChild(bar);
-  });
-}
-
-// Search
-searchInput.addEventListener("input",()=>{
-  const term = searchInput.value.toLowerCase();
-  const filtered = filteredMatches.filter(m=>
-    (m.title||"").toLowerCase().includes(term) || (m.sport||"").toLowerCase().includes(term)
-  );
-  renderMatches(filtered);
-});
-
-// Live Today button
-liveTodayBtn.addEventListener("click",()=>{
+// Filter matches for today
+function filterToday(matches) {
   const today = new Date();
   today.setHours(0,0,0,0);
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate()+1);
-  const filtered = filteredMatches.filter(m=>{
+  return matches.filter(m => {
     const d = new Date(m.date);
-    return d>=today && d<tomorrow;
+    return d >= today && d < tomorrow;
   });
-  renderMatches(filtered);
-});
+}
 
-// Live Now button
-liveNowBtn.addEventListener("click",()=>{
-  const now = Date.now();
-  const filtered = filteredMatches.filter(m=>now>=m.date && now<=m.date+2*3600000);
-  renderMatches(filtered);
-});
+// Render matches in Streameast-style bars
+function renderMatches(matches) {
+  matchesDiv.innerHTML = "";
+  matches.forEach(m => {
+    const a = document.createElement("a");
+    a.href = m.streams?.[0]?.url || "#";
+    a.className = "match-link";
 
-// Initial load
-fetchSports();
+    // Sport label
+    const sportSpan = document.createElement("span");
+    sportSpan.textContent = m.sport || "#sport#";
+    sportSpan.style.fontWeight = "bold";
+    sportSpan.style.minWidth = "50px";
+
+    // Teams
+    const teamSpan = document.createElement("span");
+    teamSpan.textContent = m.title || "Team A vs Team B";
+    teamSpan.style.flexGrow = "1";
+    teamSpan.style.margin = "0 1rem";
+
+    // Kickoff time from now
+    const kickoff = new Date(m.date);
+    const diffHours = ((kickoff - now)/3600000).toFixed(1);
+    const timeSpan = document.createElement("span");
+    timeSpan.textContent = diffHours + "h from now";
+
+    // Optional LIVE badge
+    if(now >= m.date && now <= m.date + 2*3600000) {
+      const badge = document.createElement("span");
+      badge.className = "live-badge";
+      badge.textContent = "LIVE";
+      timeSpan.appendChild(badge);
+    }
+
+    // Arrow
+    const arrow = document.createElement("span");
+    arrow.innerHTML = "&#8250;";
+    arrow.style.color = "#ff6700"; // brand accent
+
+    // Append elements
+    a.appendChild(sportSpan);
+    a.appendChild(teamSpan);
+    a.appendChild(timeSpan);
+    a.appendChild(arrow);
+
+    matchesDiv.appendChild(a);
+  });
+}
+
+// Load all matches today
+async function loadTodayMatches() {
+  const sports = await fetchSports();
+  let allMatches = [];
+  for(const sport of sports) {
+    const matches = await fetchMatchesForSport(sport.id);
+    allMatches = allMatches.concat(matches.map(m=>({...m, sport: sport.name})));
+  }
+  const todayMatches = filterToday(allMatches).sort((a,b)=>a.date-b.date);
+  renderMatches(todayMatches);
+}
+
+// Run on page load
+loadTodayMatches();
 </script>
 
 </body>

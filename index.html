@@ -6,14 +6,15 @@
 <title>Sports Streams</title>
 <style>
 body {
-  background:#369911;
+  background:#121212;
   color:#f1faee;
   font-family:'Segoe UI',Roboto,sans-serif;
   padding:1rem;
+  margin:0;
 }
 .controls {
   max-width:1000px;
-  margin:0 auto;
+  margin:0 auto 1rem;
   text-align:center;
 }
 #sport-select, .button {
@@ -27,26 +28,21 @@ body {
   margin:.2rem;
   transition:.2s;
 }
-#sport-select {
-  min-width:200px;
-  margin-bottom:1rem;
-}
-.button.active {
-  background:#FF6700;
-  color:#f1faee;
-}
+#sport-select { min-width:200px; margin-bottom:1rem; }
+.button.active { background:#FF6700; color:#f1faee; }
+
 .match-date {
   font-weight:bold;
   font-size:1.2rem;
   margin-top:1.5rem;
   text-align:center;
 }
+
 .match-grid {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:1rem;
+  display:block; /* full width bars */
   margin-top:0.5rem;
 }
+
 .match-card {
   position:relative;
   background:#1f1f1f;
@@ -55,37 +51,26 @@ body {
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:0;
+  padding:.5rem 1rem;
   cursor:pointer;
   transition: transform 0.2s;
   width:100%;
+  margin-bottom:0.5rem;
 }
-.match-card:hover {
-  transform:translateY(-2px);
-}
-.poster {
-  flex-grow:1;
-  width:100%;
-  aspect-ratio:16/9;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:#000;
-}
-.poster img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
+.match-card:hover { transform:translateY(-2px); }
+
 .match-title {
   font-weight:bold;
   font-size:1rem;
-  padding:.5rem .5rem 0 .5rem;
 }
 .match-time {
   font-size:0.9rem;
-  padding:.2rem .5rem .5rem .5rem;
   color:#bbb;
+}
+.match-sport {
+  font-size:0.9rem;
+  font-weight:600;
+  margin-bottom:0.2rem;
 }
 .live-badge {
   position:absolute;
@@ -123,9 +108,6 @@ const liveBtn=document.getElementById("live-btn");
 const popularBtn=document.getElementById("popular-btn");
 const sportSelect=document.getElementById("sport-select");
 
-const DEFAULT_POSTER = "https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/file_000000002878620aac8483fbedf5d310.png";
-
-// Load sports into dropdown
 async function fetchSports(){
   try{
     const res=await fetch(`${API_BASE}/sports`);
@@ -139,7 +121,6 @@ async function fetchSports(){
   }catch(e){console.error("Sports fetch error:",e);}
 }
 
-// Fetch matches for selected sport
 async function fetchMatches(sport){
   if(!sport) return;
   try{
@@ -188,42 +169,31 @@ function renderMatches(filteredInput){
     grid.className="match-grid";
 
     grouped[dateStr].forEach(m=>{
-      const card=document.createElement("div");
+      const card=document.createElement("a");
       card.className="match-card";
+      card.href = `viewer.html?match=${encodeURIComponent(JSON.stringify(m))}`;
 
-      // Poster
-      const posterDiv=document.createElement("div");
-      posterDiv.className="poster";
-      const img=document.createElement("img");
-      img.src = m.poster ? (m.poster.startsWith("http") ? m.poster : "https://streamed.pk" + m.poster) : DEFAULT_POSTER;
-      img.onerror=()=>{img.src = DEFAULT_POSTER;};
-      posterDiv.appendChild(img);
-      card.appendChild(posterDiv);
+      const sportDiv = document.createElement("div");
+      sportDiv.className="match-sport";
+      sportDiv.textContent = m.sport || "Sport";
+      card.appendChild(sportDiv);
 
-      // Title & KO
       const titleDiv=document.createElement("div");
       titleDiv.className="match-title";
       titleDiv.textContent = m.title || "Match";
+      card.appendChild(titleDiv);
+
       const timeDiv=document.createElement("div");
       timeDiv.className="match-time";
       timeDiv.textContent = new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-
-      card.appendChild(titleDiv);
       card.appendChild(timeDiv);
 
-      // Live badge
       if(now >= m.date && now <= m.date + 2*60*60*1000){
         const liveBadge=document.createElement("div");
         liveBadge.className="live-badge";
         liveBadge.textContent="LIVE";
         card.appendChild(liveBadge);
       }
-
-      // Click → viewer
-      card.onclick=()=>{ 
-        const matchParam=encodeURIComponent(JSON.stringify(m));
-        window.location.href=`viewer.html?match=${matchParam}`;
-      };
 
       grid.appendChild(card);
     });
@@ -232,7 +202,6 @@ function renderMatches(filteredInput){
   });
 }
 
-// Toggle buttons
 liveBtn.addEventListener("click",()=>{
   liveBtn.classList.toggle("active");
   renderMatches();
@@ -242,12 +211,10 @@ popularBtn.addEventListener("click",()=>{
   renderMatches();
 });
 
-// Sport change
 sportSelect.addEventListener("change",()=>{
   fetchMatches(sportSelect.value);
 });
 
-// Initial load
 fetchSports();
 </script>
 </body>

@@ -1,20 +1,20 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EuroStreamHub Streams</title>
+<title>Sports Streams</title>
 <style>
 body {
   background:#28a745; /* green background */
-  color:#000;
+  color:#000; /* black text */
   font-family:'Segoe UI',Roboto,sans-serif;
   padding:0;
   margin:0;
 }
 
 .controls {
-  width:100vw;
+  max-width:1000px;
   margin:0 auto 1rem;
   text-align:center;
 }
@@ -38,55 +38,44 @@ body {
   font-size:1.2rem;
   margin-top:1.5rem;
   text-align:center;
-  color:#fff;
-}
-
-#match-container {
-  width:100vw;
-  margin:0;
-  padding:0.5rem 0;
 }
 
 .match-grid {
-  display:block;
-  margin:0;
+  display:block; /* full width bars */
+  margin-top:0;
 }
 
 .match-card {
   position:relative;
   background:#d3d3d3; /* light grey bars */
-  color:#000;          /* black text */
   border-radius:.5rem;
   overflow:hidden;
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:.8rem 1rem;
+  padding:0;
   cursor:pointer;
   transition: transform 0.2s;
   width:100%;
   margin-bottom:0.5rem;
-  text-decoration:none;
 }
-
 .match-card:hover { transform:translateY(-2px); }
 
 .match-title {
   font-weight:bold;
-  font-size:1.1rem;
-  line-height:1.3rem;
-  display:-webkit-box;
-  -webkit-line-clamp:2; /* 2 lines for big text */
-  -webkit-box-orient:vertical;
-  overflow:hidden;
+  font-size:1rem;
+  color:#000; /* black text */
 }
-
 .match-time {
   font-size:0.9rem;
-  color:#000;
-  margin-top:0.2rem;
+  color:#000; /* black text */
 }
-
+.match-sport {
+  font-size:0.9rem;
+  font-weight:600;
+  margin-bottom:0.2rem;
+  color:#000; /* black text */
+}
 .live-badge {
   position:absolute;
   bottom:0.5rem;
@@ -187,6 +176,11 @@ function renderMatches(filteredInput){
       const card=document.createElement("a");
       card.className="match-card";
       card.href = `viewer.html?match=${encodeURIComponent(JSON.stringify(m))}`;
+
+      const sportDiv = document.createElement("div");
+      sportDiv.className="match-sport";
+      sportDiv.textContent = m.sport || "Sport";
+      card.appendChild(sportDiv);
 
       const titleDiv=document.createElement("div");
       titleDiv.className="match-title";

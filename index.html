@@ -6,8 +6,8 @@
 <title>Sports Streams</title>
 <style>
 body {
-  background:#28a745; /* green background */
-  color:#000; /* black text */
+  background:#396991; /* page background */
+  color:#000;         /* default text */
   font-family:'Segoe UI',Roboto,sans-serif;
   padding:0;
   margin:0;
@@ -30,8 +30,16 @@ body {
   margin:.2rem;
   transition:.2s;
 }
-#sport-select { min-width:200px; margin-bottom:1rem; }
-.button.active { background:#FF6700; color:#f1faee; }
+
+#sport-select {
+  min-width:200px;
+  margin-bottom:1rem;
+}
+
+.button.active {
+  background:#FF6700;
+  color:#f1faee;
+}
 
 .match-date {
   font-weight:bold;
@@ -53,29 +61,31 @@ body {
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:0;
+  padding:.5rem 1rem;
   cursor:pointer;
   transition: transform 0.2s;
   width:100%;
   margin-bottom:0.5rem;
+  text-decoration:none;
+  color:#000; /* black text on bars */
 }
+
 .match-card:hover { transform:translateY(-2px); }
 
 .match-title {
   font-weight:bold;
-  font-size:1rem;
-  color:#000; /* black text */
+  font-size:1.2rem;   /* bigger text */
+  line-height:1.3rem; /* allows 2 lines */
+  word-wrap:break-word;
+  white-space:normal;
+  overflow:hidden;
 }
+
 .match-time {
   font-size:0.9rem;
-  color:#000; /* black text */
+  color:#000;
 }
-.match-sport {
-  font-size:0.9rem;
-  font-weight:600;
-  margin-bottom:0.2rem;
-  color:#000; /* black text */
-}
+
 .live-badge {
   position:absolute;
   bottom:0.5rem;
@@ -177,11 +187,7 @@ function renderMatches(filteredInput){
       card.className="match-card";
       card.href = `viewer.html?match=${encodeURIComponent(JSON.stringify(m))}`;
 
-      const sportDiv = document.createElement("div");
-      sportDiv.className="match-sport";
-      sportDiv.textContent = m.sport || "Sport";
-      card.appendChild(sportDiv);
-
+      // Title only
       const titleDiv=document.createElement("div");
       titleDiv.className="match-title";
       titleDiv.textContent = m.title || "Match";
@@ -221,5 +227,6 @@ sportSelect.addEventListener("change",()=>{
 
 fetchSports();
 </script>
+
 </body>
 </html>

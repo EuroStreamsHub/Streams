@@ -16,8 +16,20 @@ body {
   max-width:1000px;
   margin:0 auto 1rem;
   text-align:center;
+  position:relative;
 }
-#sport-select, .button {
+#search-input {
+  background:#1f1f1f;
+  color:#f1faee;
+  padding:.6rem 1rem;
+  border:none;
+  border-radius:.5px;
+  font-weight:600;
+  cursor:text;
+  margin:.2rem;
+  width:60%;
+}
+.button {
   background:#1f1f1f;
   color:#f1faee;
   padding:.6rem 1rem;
@@ -28,8 +40,35 @@ body {
   margin:.2rem;
   transition:.2s;
 }
-#sport-select { min-width:200px; margin-bottom:1rem; }
 .button.active { background:#FF6700; color:#f1faee; }
+
+/* Hamburger sidebar */
+#hamburger {
+  display:inline-block;
+  cursor:pointer;
+  font-size:1.5rem;
+  margin-left:1rem;
+}
+#sidebar {
+  position:fixed;
+  top:0;
+  left:-250px;
+  width:250px;
+  height:100%;
+  background:#1f1f1f;
+  padding-top:2rem;
+  transition:0.3s;
+  overflow-y:auto;
+  z-index:1000;
+}
+#sidebar a {
+  display:block;
+  color:#f1faee;
+  padding:.8rem 1rem;
+  text-decoration:none;
+  font-weight:600;
+}
+#sidebar a:hover { background:#333; }
 
 .match-date {
   font-weight:bold;
@@ -39,7 +78,7 @@ body {
 }
 
 .match-grid {
-  display:block; /* full width bars */
+  display:block;
   margin-top:0;
 }
 
@@ -51,25 +90,22 @@ body {
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:.5rem 1rem;
+  padding:0;
   cursor:pointer;
   transition: transform 0.2s;
   width:100%;
   margin-bottom:0.5rem;
-  color:#000;
-  text-decoration:none;
 }
 .match-card:hover { transform:translateY(-2px); }
 
 .match-title {
   font-weight:bold;
   font-size:1rem;
-  line-height:1.2rem;
+  color:#000;
 }
 .match-time {
   font-size:0.9rem;
   color:#000;
-  margin-top:0.2rem;
 }
 .match-sport {
   font-size:0.9rem;
@@ -88,80 +124,67 @@ body {
   font-size:0.8rem;
   font-weight:bold;
 }
-.search-bar {
-  width:100%;
-  max-width:1000px;
-  margin:0.5rem auto;
-  display:flex;
-  justify-content:center;
-}
-#search-input {
-  width:70%;
-  padding:.6rem 1rem;
-  border-radius:.5rem;
-  border:none;
-  margin-right:.5rem;
-}
-#search-btn {
-  padding:.6rem 1rem;
-  border-radius:.5rem;
-  border:none;
-  background:#1f1f1f;
-  color:#f1faee;
-  cursor:pointer;
-  font-weight:600;
-}
 </style>
 </head>
 <body>
 
-<div class="search-bar">
-  <input type="text" id="search-input" placeholder="Search matches...">
-  <button id="search-btn">Search</button>
-</div>
-
 <div class="controls">
-  <select id="sport-select">
-    <option value="" disabled selected>Choose sport</option>
-  </select>
+  <input type="text" id="search-input" placeholder="Search matches...">
+  <span id="hamburger">&#9776;</span>
   <div>
     <button class="button" id="live-btn">Live</button>
     <button class="button" id="popular-btn">Popular</button>
   </div>
 </div>
 
+<!-- Sidebar -->
+<div id="sidebar"></div>
+
 <div id="match-container"></div>
 
 <script>
 const API_BASE="https://streamed.pk/api";
 let allMatches=[];
-let sportsMap = {};
+let sportsMap={}; // map sportId -> sport name
 
 const matchContainer=document.getElementById("match-container");
 const liveBtn=document.getElementById("live-btn");
 const popularBtn=document.getElementById("popular-btn");
-const sportSelect=document.getElementById("sport-select");
-const searchInput = document.getElementById("search-input");
-const searchBtn = document.getElementById("search-btn");
+const searchInput=document.getElementById("search-input");
+const hamburger=document.getElementById("hamburger");
+const sidebar=document.getElementById("sidebar");
 
+// Toggle sidebar
+hamburger.addEventListener("click",()=>{
+  sidebar.style.left = sidebar.style.left === "0px" ? "-250px" : "0px";
+});
+
+// Fetch sports
 async function fetchSports(){
   try{
     const res=await fetch(`${API_BASE}/sports`);
-    const data=await res.json();
-    data.forEach(s=>{
-      const opt=document.createElement("option");
-      opt.value=s.id;
-      opt.textContent=s.name;
-      sportSelect.appendChild(opt);
-      sportsMap[s.id] = s.name; // Map sport id to name
+    const sports=await res.json();
+    sports.forEach(s=>{
+      sportsMap[s.id]=s.name;
+      const link=document.createElement("a");
+      link.href="#";
+      link.textContent=s.name;
+      link.addEventListener("click",(e)=>{
+        e.preventDefault();
+        fetchMatches(s.id);
+        sidebar.style.left="-250px"; // close sidebar
+      });
+      sidebar.appendChild(link);
     });
+    await fetchAllMatches(sports);
   }catch(e){console.error("Sports fetch error:",e);}
 }
 
+// Fetch matches for a single sport
 async function fetchMatches(sport){
-  let url = sport ? `${API_BASE}/matches/${sport}` : `${API_BASE}/matches`;
+  if(!sport) return;
   try{
-    const res=await fetch(url);
+    const res=await fetch(`${API_BASE}/matches/${sport}`);
     const data=await res.json();
     const matches = Array.isArray(data) ? data : (data.matches || []);
     allMatches = matches.filter(m=>m.date>0).sort((a,b)=>a.date-b.date);
@@ -172,11 +195,29 @@ async function fetchMatches(sport){
   }
 }
 
+// Fetch all matches (for live page load)
+async function fetchAllMatches(sports){
+  allMatches = [];
+  for(const s of sports){
+    try{
+      const res=await fetch(`${API_BASE}/matches/${s.id}`);
+      const data=await res.json();
+      const matches = Array.isArray(data) ? data : (data.matches || []);
+      allMatches.push(...matches.filter(m=>m.date>0));
+    }catch(e){console.error("Error fetching sport", s.name, e);}
+  }
+  // Show only currently live matches on load
+  const now=Date.now();
+  const liveMatches = allMatches.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
+  renderMatches(liveMatches);
+}
+
 function formatDate(ms){
   const d = new Date(ms);
   return d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short', year:'numeric' });
 }
 
+// Render matches
 function renderMatches(filteredInput){
   matchContainer.innerHTML="";
   let filtered = filteredInput || allMatches.slice();
@@ -212,7 +253,7 @@ function renderMatches(filteredInput){
 
       const sportDiv = document.createElement("div");
       sportDiv.className="match-sport";
-      sportDiv.textContent = sportsMap[m.sport] || "Sport";
+      sportDiv.textContent = sportsMap[m.sport] || m.sport || "Sport";
       card.appendChild(sportDiv);
 
       const titleDiv=document.createElement("div");
@@ -239,7 +280,14 @@ function renderMatches(filteredInput){
   });
 }
 
-// Buttons
+// Search
+searchInput.addEventListener("input",()=>{
+  const query = searchInput.value.toLowerCase();
+  const filtered = allMatches.filter(m=>m.title.toLowerCase().includes(query));
+  renderMatches(filtered);
+});
+
+// Button toggles
 liveBtn.addEventListener("click",()=>{
   liveBtn.classList.toggle("active");
   renderMatches();
@@ -248,19 +296,8 @@ popularBtn.addEventListener("click",()=>{
   popularBtn.classList.toggle("active");
   renderMatches();
 });
-sportSelect.addEventListener("change",()=>{
-  fetchMatches(sportSelect.value);
-});
 
-// Search
-searchBtn.addEventListener("click",()=>{
-  const query = searchInput.value.toLowerCase();
-  const filtered = allMatches.filter(m=>m.title.toLowerCase().includes(query));
-  renderMatches(filtered);
-});
-
-// Initial load: fetch sports and all live matches
-fetchSports().then(()=>fetchMatches());
+fetchSports();
 </script>
 </body>
 </html>

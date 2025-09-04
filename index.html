@@ -3,170 +3,252 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EuroStreamHub - Live Today</title>
+<title>Sports Streams</title>
 <style>
 body {
-  margin:0;
-  font-family:'Segoe UI',Roboto,sans-serif;
-  background:#121212;
+  background:#369911;
   color:#f1faee;
+  font-family:'Segoe UI',Roboto,sans-serif;
+  padding:1rem;
 }
-header {
-  background:#0a3d62;
-  color:white;
-  padding:0.5rem 1rem;
-  position:sticky;
-  top:0;
-  z-index:1000;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+.controls {
+  max-width:1000px;
+  margin:0 auto;
+  text-align:center;
 }
-header h1 {
-  font-size:1.5rem;
-}
-#matches {
-  margin:1rem auto;
-  max-width:800px;
-}
-.match-link {
-  display:block;
+#sport-select, .button {
   background:#1f1f1f;
   color:#f1faee;
-  text-decoration:none;
-  padding:0.8rem 1rem;
-  margin:0.5rem 0;
-  border-radius:5px;
-  transition:0.2s;
+  padding:.6rem 1rem;
+  border:none;
+  border-radius:.5rem;
+  font-weight:600;
+  cursor:pointer;
+  margin:.2rem;
+  transition:.2s;
 }
-.match-link:hover { background:#0a3d62; }
-.match-line {
-  display:flex;
-  justify-content:space-between;
-  margin:0.2rem 0;
+#sport-select {
+  min-width:200px;
+  margin-bottom:1rem;
 }
-.match-line span {
-  white-space:nowrap;
+.button.active {
+  background:#FF6700;
+  color:#f1faee;
+}
+.match-date {
+  font-weight:bold;
+  font-size:1.2rem;
+  margin-top:1.5rem;
+  text-align:center;
+}
+.match-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:1rem;
+  margin-top:0.5rem;
+}
+.match-card {
+  position:relative;
+  background:#1f1f1f;
+  border-radius:.5rem;
   overflow:hidden;
-  text-overflow:ellipsis;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  padding:0;
+  cursor:pointer;
+  transition: transform 0.2s;
+  width:100%;
+}
+.match-card:hover {
+  transform:translateY(-2px);
+}
+.poster {
+  flex-grow:1;
+  width:100%;
+  aspect-ratio:16/9;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#000;
+}
+.poster img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.match-title {
+  font-weight:bold;
+  font-size:1rem;
+  padding:.5rem .5rem 0 .5rem;
+}
+.match-time {
+  font-size:0.9rem;
+  padding:.2rem .5rem .5rem .5rem;
+  color:#bbb;
 }
 .live-badge {
-  background:#ff6700;
+  position:absolute;
+  bottom:0.5rem;
+  right:0.5rem;
+  background:red;
   color:white;
+  padding:0.2rem 0.5rem;
+  border-radius:.3rem;
+  font-size:0.8rem;
   font-weight:bold;
-  font-size:0.75rem;
-  padding:0 0.3rem;
-  border-radius:0.2rem;
-  margin-left:0.5rem;
 }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>EuroStreamHub</h1>
-</header>
+<div class="controls">
+  <select id="sport-select">
+    <option value="" disabled selected>Choose sport</option>
+  </select>
+  <div>
+    <button class="button" id="live-btn">Live</button>
+    <button class="button" id="popular-btn">Popular</button>
+  </div>
+</div>
 
-<div id="matches"></div>
+<div id="match-container"></div>
 
 <script>
-const API_BASE = "https://streamed.pk/api";
-const matchesDiv = document.getElementById("matches");
-const now = Date.now();
+const API_BASE="https://streamed.pk/api";
+let allMatches=[];
 
-// Fetch all sports
-async function fetchSports() {
-  try {
-    const res = await fetch(`${API_BASE}/sports`);
-    return await res.json();
-  } catch(e) { console.error("Sports fetch error:", e); return []; }
+const matchContainer=document.getElementById("match-container");
+const liveBtn=document.getElementById("live-btn");
+const popularBtn=document.getElementById("popular-btn");
+const sportSelect=document.getElementById("sport-select");
+
+const DEFAULT_POSTER = "https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/file_000000002878620aac8483fbedf5d310.png";
+
+// Load sports into dropdown
+async function fetchSports(){
+  try{
+    const res=await fetch(`${API_BASE}/sports`);
+    const data=await res.json();
+    data.forEach(s=>{
+      const opt=document.createElement("option");
+      opt.value=s.id;
+      opt.textContent=s.name;
+      sportSelect.appendChild(opt);
+    });
+  }catch(e){console.error("Sports fetch error:",e);}
 }
 
-// Fetch matches for a sport
-async function fetchMatchesForSport(sportId) {
-  try {
-    const res = await fetch(`${API_BASE}/matches/${sportId}`);
-    const data = await res.json();
-    return Array.isArray(data) ? data : (data.matches || []);
-  } catch(e) { console.error("Matches fetch error:", e); return []; }
-}
-
-// Filter matches for today
-function filterToday(matches) {
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate()+1);
-  return matches.filter(m => {
-    const d = new Date(m.date);
-    return d >= today && d < tomorrow;
-  });
-}
-
-// Render matches in 3-line bars
-function renderMatches(matches) {
-  matchesDiv.innerHTML = "";
-  matches.forEach(m => {
-    const link = document.createElement("a");
-    link.href = m.streams?.[0]?.url || "#";
-    link.className = "match-link";
-    link.target = "_blank"; // open in new tab
-
-    // Line 1: Sport
-    const line1 = document.createElement("div");
-    line1.className = "match-line";
-    const sportSpan = document.createElement("span");
-    sportSpan.textContent = m.sport || "#sport#";
-    sportSpan.style.fontWeight = "bold";
-    line1.appendChild(sportSpan);
-
-    // Line 2: Teams
-    const line2 = document.createElement("div");
-    line2.className = "match-line";
-    const teamsSpan = document.createElement("span");
-    teamsSpan.textContent = m.title || "Team A vs Team B";
-    line2.appendChild(teamsSpan);
-
-    // Line 3: Kickoff
-    const line3 = document.createElement("div");
-    line3.className = "match-line";
-    const kickoffSpan = document.createElement("span");
-    const kickoff = new Date(m.date);
-    const diffHours = ((kickoff - now)/3600000).toFixed(1);
-    kickoffSpan.textContent = diffHours + "h from now";
-    // LIVE badge
-    if(now >= m.date && now <= m.date + 2*3600000) {
-      const liveBadge = document.createElement("span");
-      liveBadge.className = "live-badge";
-      liveBadge.textContent = "LIVE";
-      kickoffSpan.appendChild(liveBadge);
-    }
-    line3.appendChild(kickoffSpan);
-
-    // Append all lines
-    link.appendChild(line1);
-    link.appendChild(line2);
-    link.appendChild(line3);
-
-    matchesDiv.appendChild(link);
-  });
-}
-
-// Load all matches today
-async function loadTodayMatches() {
-  const sports = await fetchSports();
-  let allMatches = [];
-  for(const sport of sports) {
-    const matches = await fetchMatchesForSport(sport.id);
-    allMatches = allMatches.concat(matches.map(m=>({...m, sport: sport.name})));
+// Fetch matches for selected sport
+async function fetchMatches(sport){
+  if(!sport) return;
+  try{
+    const res=await fetch(`${API_BASE}/matches/${sport}`);
+    const data=await res.json();
+    const matches = Array.isArray(data) ? data : (data.matches || []);
+    allMatches = matches.filter(m=>m.date>0).sort((a,b)=>a.date-b.date);
+    renderMatches();
+  }catch(e){
+    console.error("Matches fetch error:",e);
+    matchContainer.innerHTML="<p>⚠️ No matches available for this sport.</p>";
   }
-  const todayMatches = filterToday(allMatches).sort((a,b)=>a.date-b.date);
-  renderMatches(todayMatches);
 }
 
-// Run on page load
-loadTodayMatches();
-</script>
+function formatDate(ms){
+  const d = new Date(ms);
+  return d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short', year:'numeric' });
+}
 
+function renderMatches(filteredInput){
+  matchContainer.innerHTML="";
+  let filtered = filteredInput || allMatches.slice();
+  const now=Date.now();
+
+  if(liveBtn.classList.contains("active")){
+    filtered = filtered.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
+  }
+  if(popularBtn.classList.contains("active")){
+    filtered = filtered.filter(m=>m.popular);
+  }
+
+  const grouped = {};
+  filtered.forEach(m=>{
+    const dateStr = formatDate(m.date);
+    if(!grouped[dateStr]) grouped[dateStr] = [];
+    grouped[dateStr].push(m);
+  });
+
+  Object.keys(grouped).forEach(dateStr=>{
+    const dateDiv=document.createElement("div");
+    dateDiv.className="match-date";
+    dateDiv.textContent=dateStr;
+    matchContainer.appendChild(dateDiv);
+
+    const grid=document.createElement("div");
+    grid.className="match-grid";
+
+    grouped[dateStr].forEach(m=>{
+      const card=document.createElement("div");
+      card.className="match-card";
+
+      // Poster
+      const posterDiv=document.createElement("div");
+      posterDiv.className="poster";
+      const img=document.createElement("img");
+      img.src = m.poster ? (m.poster.startsWith("http") ? m.poster : "https://streamed.pk" + m.poster) : DEFAULT_POSTER;
+      img.onerror=()=>{img.src = DEFAULT_POSTER;};
+      posterDiv.appendChild(img);
+      card.appendChild(posterDiv);
+
+      // Title & KO
+      const titleDiv=document.createElement("div");
+      titleDiv.className="match-title";
+      titleDiv.textContent = m.title || "Match";
+      const timeDiv=document.createElement("div");
+      timeDiv.className="match-time";
+      timeDiv.textContent = new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+      card.appendChild(titleDiv);
+      card.appendChild(timeDiv);
+
+      // Live badge
+      if(now >= m.date && now <= m.date + 2*60*60*1000){
+        const liveBadge=document.createElement("div");
+        liveBadge.className="live-badge";
+        liveBadge.textContent="LIVE";
+        card.appendChild(liveBadge);
+      }
+
+      // Click → viewer
+      card.onclick=()=>{ 
+        const matchParam=encodeURIComponent(JSON.stringify(m));
+        window.location.href=`viewer.html?match=${matchParam}`;
+      };
+
+      grid.appendChild(card);
+    });
+
+    matchContainer.appendChild(grid);
+  });
+}
+
+// Toggle buttons
+liveBtn.addEventListener("click",()=>{
+  liveBtn.classList.toggle("active");
+  renderMatches();
+});
+popularBtn.addEventListener("click",()=>{
+  popularBtn.classList.toggle("active");
+  renderMatches();
+});
+
+// Sport change
+sportSelect.addEventListener("change",()=>{
+  fetchMatches(sportSelect.value);
+});
+
+// Initial load
+fetchSports();
+</script>
 </body>
 </html>

@@ -133,6 +133,7 @@ body {
   <span id="hamburger">&#9776;</span>
   <div>
     <button class="button" id="live-btn">Live</button>
+    <button class="button" id="starting-soon-btn">Starting Soon</button>
     <button class="button" id="popular-btn">Popular</button>
   </div>
 </div>
@@ -145,10 +146,11 @@ body {
 <script>
 const API_BASE="https://streamed.pk/api";
 let allMatches=[];
-let sportsMap={}; // map sportId -> sport name
+let sportsMap={};
 
 const matchContainer=document.getElementById("match-container");
 const liveBtn=document.getElementById("live-btn");
+const startingSoonBtn=document.getElementById("starting-soon-btn");
 const popularBtn=document.getElementById("popular-btn");
 const searchInput=document.getElementById("search-input");
 const hamburger=document.getElementById("hamburger");
@@ -172,7 +174,7 @@ async function fetchSports(){
       link.addEventListener("click",(e)=>{
         e.preventDefault();
         fetchMatches(s.id);
-        sidebar.style.left="-250px"; // close sidebar
+        sidebar.style.left="-250px";
       });
       sidebar.appendChild(link);
     });
@@ -195,7 +197,7 @@ async function fetchMatches(sport){
   }
 }
 
-// Fetch all matches (for live page load)
+// Fetch all matches
 async function fetchAllMatches(sports){
   allMatches = [];
   for(const s of sports){
@@ -206,10 +208,7 @@ async function fetchAllMatches(sports){
       allMatches.push(...matches.filter(m=>m.date>0));
     }catch(e){console.error("Error fetching sport", s.name, e);}
   }
-  // Show only currently live matches on load
-  const now=Date.now();
-  const liveMatches = allMatches.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
-  renderMatches(liveMatches);
+  renderMatches();
 }
 
 function formatDate(ms){
@@ -221,13 +220,17 @@ function formatDate(ms){
 function renderMatches(filteredInput){
   matchContainer.innerHTML="";
   let filtered = filteredInput || allMatches.slice();
-  const now=Date.now();
+  const now = Date.now();
 
+  // Filters
   if(liveBtn.classList.contains("active")){
-    filtered = filtered.filter(m=>m.date <= now && now <= m.date + 2*60*60*1000);
+    filtered = filtered.filter(m => now >= m.date && now <= m.date + 2*60*60*1000);
+  }
+  if(startingSoonBtn.classList.contains("active")){
+    filtered = filtered.filter(m => m.date - now > 0 && m.date - now <= 30*60*1000);
   }
   if(popularBtn.classList.contains("active")){
-    filtered = filtered.filter(m=>m.popular);
+    filtered = filtered.filter(m => m.popular);
   }
 
   const grouped = {};
@@ -256,19 +259,33 @@ function renderMatches(filteredInput){
       sportDiv.textContent = sportsMap[m.sport] || m.sport || "";
       card.appendChild(sportDiv);
 
-      const titleDiv=document.createElement("div");
+      const titleDiv = document.createElement("div");
       titleDiv.className="match-title";
       titleDiv.textContent = m.title || "Match";
       card.appendChild(titleDiv);
 
-      const timeDiv=document.createElement("div");
+      const timeDiv = document.createElement("div");
       timeDiv.className="match-time";
       timeDiv.textContent = new Date(m.date).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
       card.appendChild(timeDiv);
 
-      if(now >= m.date && now <= m.date + 2*60*60*1000){
-        const liveBadge=document.createElement("div");
+      const defaultDuration = 2*60*60*1000;
+      const matchDuration = m.duration ? m.duration*60*1000 : defaultDuration;
+
+      // Starting Soon badge
+      if(m.date - now <= 30*60*1000 && m.date - now > 0){
+        const soonBadge = document.createElement("div");
+        soonBadge.className="live-badge";
+        soonBadge.style.background="#FFA500"; // orange
+        soonBadge.textContent="STARTING SOON";
+        card.appendChild(soonBadge);
+      }
+
+      // LIVE badge
+      if(now >= m.date && now <= m.date + matchDuration){
+        const liveBadge = document.createElement("div");
         liveBadge.className="live-badge";
+        liveBadge.style.background="red";
         liveBadge.textContent="LIVE";
         card.appendChild(liveBadge);
       }
@@ -288,16 +305,23 @@ searchInput.addEventListener("input",()=>{
 });
 
 // Button toggles
-liveBtn.addEventListener("click",()=>{
+liveBtn.addEventListener("click", ()=>{
   liveBtn.classList.toggle("active");
   renderMatches();
 });
-popularBtn.addEventListener("click",()=>{
-  popularBtn.classList.toggle("active");
+startingSoonBtn.addEventListener("click", ()=>{
+  startingSoonBtn.classList.toggle("active");
+  renderMatches();
+});
+popularBtn.addEventListener("click", ()=>{
+  popular
+  Btn.classList.toggle("active");
   renderMatches();
 });
 
+// Initial fetch
 fetchSports();
 </script>
+
 </body>
 </html>

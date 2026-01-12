@@ -51,9 +51,23 @@ body {
   color:#000;
   display:block;
   text-align:center;
+  position:relative;
+  transition: transform 0.2s;
 }
+.match-card:hover { transform:translateY(-2px); }
+
 .match-title { font-weight:bold; margin-bottom:0.3rem; }
-.match-time { font-size:.9rem; margin-bottom:.5rem; }
+.match-time { font-size:.9rem; margin-bottom:0.5rem; }
+.badge {
+  position:absolute;
+  top:0.5rem;
+  right:0.5rem;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+}
+.badge.live { background:red; }
+.badge.soon { background:orange; }
 </style>
 </head>
 <body>
@@ -97,7 +111,7 @@ function render() {
   let list = allMatches.filter(m => m.title.toLowerCase().includes(q));
 
   if (soonMode) {
-    list = list.filter(m => m.date > now && m.date - now <= 30*60*1000);
+    list = list.filter(m => m.date > now && m.date - now <= 60*60*1000); // <1h
   }
 
   const groups = {};
@@ -121,24 +135,33 @@ function render() {
       const s = m.sources[0];
       card.href=`viewer.html?source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
 
-      // Time / Kickoff countdown
+      const matchDuration = 2 * 60 * 60 * 1000; // 2h default
+      const diff = m.date - now;
       let timeText = '';
-      if (m.date > now) {
-        const diff = m.date - now;
-        const h = Math.floor(diff/3600000);
-        const min = Math.floor((diff%3600000)/60000);
-        timeText = `${h>0?h+'h ':''}${min}m`;
+
+      // Badge
+      const badge = document.createElement('div');
+      badge.className='badge';
+      if (now >= m.date && now <= m.date + matchDuration) {
+        timeText = new Date(m.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' LIVE';
+        badge.classList.add('live');
+        card.appendChild(badge);
+      } else if (diff > 0 && diff <= 60*60*1000) {
+        const mins = Math.floor(diff/60000);
+        timeText = `${mins}m until kick off`;
+        badge.classList.add('soon');
+        card.appendChild(badge);
       } else {
         timeText = new Date(m.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
       }
 
-      card.innerHTML=`<div class="match-title">${m.title}</div><div class="match-time">${timeText}</div>`;
+      card.innerHTML += `<div class="match-title">${m.title}</div><div class="match-time">${timeText}</div>`;
       matchesDiv.appendChild(card);
     });
   }
 }
 
-/* BUTTONS */
+// BUTTONS
 liveBtn.onclick = ()=>{
   liveMode=!liveMode;
   liveBtn.classList.toggle('active',liveMode);

@@ -4,254 +4,142 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Football Streams</title>
+
 <style>
 body {
   background:#369991;
-  color:#f1faee;
   font-family:'Segoe UI',Roboto,sans-serif;
-  padding:0;
   margin:0;
+  color:#000;
 }
 .controls {
-  max-width:1000px;
-  margin:0 auto 1rem;
   text-align:center;
-  position:relative;
-}
-#search-input {
-  background:#1f1f1f;
-  color:#f1faee;
-  padding:.6rem 1rem;
-  border:none;
-  border-radius:.5px;
-  font-weight:600;
-  cursor:text;
-  margin:.2rem;
-  width:60%;
+  padding:1rem;
 }
 .button {
   background:#1f1f1f;
   color:#f1faee;
-  padding:.6rem 1rem;
   border:none;
+  padding:.6rem 1rem;
+  margin:.2rem;
   border-radius:.5rem;
   font-weight:600;
   cursor:pointer;
-  margin:.2rem;
-  transition:.2s;
 }
-.button.active { background:#FF6700; color:#f1faee; }
-
+.button.active {
+  background:#FF6700;
+}
 .match-date {
   font-weight:bold;
-  font-size:1.2rem;
-  margin-top:1.5rem;
-  text-align:center;
+  margin:1rem;
 }
-
-.match-grid {
-  display:block;
-  margin-top:0;
-}
-
 .match-card {
-  position:relative;
   background:#d3d3d3;
+  margin:.5rem 1rem;
+  padding:.8rem;
   border-radius:.5rem;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  padding:0;
-  cursor:pointer;
-  transition: transform 0.2s;
-  width:100%;
-  margin-bottom:0.5rem;
-}
-.match-card:hover { transform:translateY(-2px); }
-
-.match-title {
-  font-weight:bold;
-  font-size:1rem;
+  text-decoration:none;
   color:#000;
+  display:block;
 }
-.match-time {
-  font-size:0.9rem;
-  color:#000;
-}
-.match-sport {
-  font-size:0.9rem;
-  font-weight:600;
-  margin-bottom:0.2rem;
-  color:#000;
-}
-.live-badge {
-  position:absolute;
-  bottom:0.5rem;
-  right:0.5rem;
-  background:red;
-  color:white;
-  padding:0.2rem 0.5rem;
-  border-radius:.3rem;
-  font-size:0.8rem;
-  font-weight:bold;
-}
+.match-title { font-weight:bold; }
+.match-time { font-size:.9rem; }
 </style>
 </head>
+
 <body>
 
 <div class="controls">
-  <input type="text" id="search-input" placeholder="Search football matches...">
-  <div>
-    <button class="button" id="live-btn">Live</button>
-    <button class="button" id="starting-soon-btn">Starting Soon</button>
-  </div>
+  <button class="button" id="liveBtn">Live</button>
+  <button class="button" id="soonBtn">Starting Soon</button>
+  <button class="button" id="popularBtn">Popular</button>
 </div>
 
-<div id="match-container"></div>
+<div id="matches"></div>
 
 <script>
-const API_URL = "https://topembed.pw/api.php?format=json";
+const matchesDiv = document.getElementById("matches");
+const liveBtn = document.getElementById("liveBtn");
+const soonBtn = document.getElementById("soonBtn");
+const popularBtn = document.getElementById("popularBtn");
+
 let allMatches = [];
 
-const matchContainer = document.getElementById("match-container");
-const liveBtn = document.getElementById("live-btn");
-const startingSoonBtn = document.getElementById("starting-soon-btn");
-const searchInput = document.getElementById("search-input");
-
-// Fetch only football matches
-async function fetchFootballMatches() {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    allMatches = [];
-
-    for (const [dateStr, matches] of Object.entries(data.events || {})) {
-      matches
-        .filter(m => (m.sport || "").toLowerCase() === "football" || (m.sport || "").toLowerCase() === "soccer")
-        .forEach(m => {
-          allMatches.push({
-            date: m.unix_timestamp * 1000,
-            sport: m.sport,
-            tournament: m.tournament,
-            title: m.match,
-            channels: m.channels || []
-          });
-        });
-    }
-
-    renderMatches();
-  } catch (e) {
-    console.error("API fetch error:", e);
-    matchContainer.innerHTML = "<p>⚠️ Failed to load football events.</p>";
-  }
+function clearButtons() {
+  [liveBtn, soonBtn, popularBtn].forEach(b => b.classList.remove("active"));
 }
 
-function formatDate(ms) {
-  const d = new Date(ms);
-  return d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+async function fetchMatches(type="default") {
+  let url = "https://streamed.pk/api/matches/football";
+
+  if (type === "popular") url += "/popular";
+  if (type === "live") url = "https://streamed.pk/api/matches/live";
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  allMatches = data.filter(m => m.category === "football");
+  render();
 }
 
-// Render matches
-function renderMatches(filteredInput) {
-  matchContainer.innerHTML = "";
-  let filtered = filteredInput || allMatches.slice();
+function render() {
+  matchesDiv.innerHTML = "";
+  let list = [...allMatches];
   const now = Date.now();
 
-  // Apply filters
-  if (liveBtn.classList.contains("active")) {
-    filtered = filtered.filter(m => now >= m.date && now <= m.date + 2 * 60 * 60 * 1000);
-  }
-  if (startingSoonBtn.classList.contains("active")) {
-    filtered = filtered.filter(m => m.date - now > 0 && m.date - now <= 30 * 60 * 1000);
+  if (soonBtn.classList.contains("active")) {
+    list = list.filter(m =>
+      m.date > now && m.date - now <= 30 * 60 * 1000
+    );
   }
 
-  const grouped = {};
-  filtered.forEach(m => {
-    const dateStr = formatDate(m.date);
-    if (!grouped[dateStr]) grouped[dateStr] = [];
-    grouped[dateStr].push(m);
+  const groups = {};
+  list.forEach(m => {
+    const d = new Date(m.date).toDateString();
+    groups[d] = groups[d] || [];
+    groups[d].push(m);
   });
 
-  Object.keys(grouped).forEach(dateStr => {
-    const dateDiv = document.createElement("div");
-    dateDiv.className = "match-date";
-    dateDiv.textContent = dateStr;
-    matchContainer.appendChild(dateDiv);
+  for (const day in groups) {
+    const date = document.createElement("div");
+    date.className = "match-date";
+    date.textContent = day;
+    matchesDiv.appendChild(date);
 
-    const grid = document.createElement("div");
-    grid.className = "match-grid";
-
-    grouped[dateStr].forEach(m => {
-      const card = document.createElement("a");
-      card.className = "match-card";
-      const channel = m.channels[0] || "";
-      card.href = channel ? `viewer.html?src=${encodeURIComponent(channel)}` : "#";
-
-      const sportDiv = document.createElement("div");
-      sportDiv.className = "match-sport";
-      sportDiv.textContent = `${m.tournament}`;
-      card.appendChild(sportDiv);
-
-      const titleDiv = document.createElement("div");
-      titleDiv.className = "match-title";
-      titleDiv.textContent = m.title;
-      card.appendChild(titleDiv);
-
-      const timeDiv = document.createElement("div");
-      timeDiv.className = "match-time";
-      timeDiv.textContent = new Date(m.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      card.appendChild(timeDiv);
-
-      const defaultDuration = 2 * 60 * 60 * 1000;
-      const matchDuration = defaultDuration;
-
-      // Starting Soon badge
-      if (m.date - now <= 30 * 60 * 1000 && m.date - now > 0) {
-        const soonBadge = document.createElement("div");
-        soonBadge.className = "live-badge";
-        soonBadge.style.background = "#FFA500";
-        soonBadge.textContent = "STARTING SOON";
-        card.appendChild(soonBadge);
-      }
-
-      // LIVE badge
-      if (now >= m.date && now <= m.date + matchDuration) {
-        const liveBadge = document.createElement("div");
-        liveBadge.className = "live-badge";
-        liveBadge.style.background = "red";
-        liveBadge.textContent = "LIVE";
-        card.appendChild(liveBadge);
-      }
-
-      grid.appendChild(card);
+    groups[day].forEach(m => {
+      const s = m.sources[0];
+      const a = document.createElement("a");
+      a.className = "match-card";
+      a.href =
+        `viewer.html?source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
+      a.innerHTML = `
+        <div class="match-title">${m.title}</div>
+        <div class="match-time">${new Date(m.date).toLocaleTimeString()}</div>
+      `;
+      matchesDiv.appendChild(a);
     });
-
-    matchContainer.appendChild(grid);
-  });
+  }
 }
 
-// Search bar filter
-searchInput.addEventListener("input", () => {
-  const query = searchInput.value.toLowerCase();
-  const filtered = allMatches.filter(m =>
-    (m.title + m.sport + m.tournament).toLowerCase().includes(query)
-  );
-  renderMatches(filtered);
-});
+liveBtn.onclick = () => {
+  clearButtons();
+  liveBtn.classList.add("active");
+  fetchMatches("live");
+};
 
-// Filter buttons
-liveBtn.addEventListener("click", () => {
-  liveBtn.classList.toggle("active");
-  renderMatches();
-});
-startingSoonBtn.addEventListener("click", () => {
-  startingSoonBtn.classList.toggle("active");
-  renderMatches();
-});
+popularBtn.onclick = () => {
+  clearButtons();
+  popularBtn.classList.add("active");
+  fetchMatches("popular");
+};
 
-// Initial fetch
-fetchFootballMatches();
+soonBtn.onclick = () => {
+  clearButtons();
+  soonBtn.classList.add("active");
+  fetchMatches();
+};
+
+fetchMatches();
 </script>
 
 </body>

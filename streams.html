@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Football Streams</title>
-
 <style>
 body {
   background:#369991;
@@ -16,6 +15,15 @@ body {
   text-align:center;
   padding:1rem;
 }
+#search {
+  width:60%;
+  max-width:400px;
+  padding:.6rem 1rem;
+  border:none;
+  border-radius:.4rem;
+  font-weight:600;
+  margin-bottom:.6rem;
+}
 .button {
   background:#1f1f1f;
   color:#f1faee;
@@ -26,12 +34,13 @@ body {
   font-weight:600;
   cursor:pointer;
 }
-.button.active {
-  background:#FF6700;
-}
+.button.active { background:#FF6700; }
+
 .match-date {
   font-weight:bold;
-  margin:1rem;
+  font-size:1.2rem;
+  text-align:center;
+  margin:1rem 0 .5rem 0;
 }
 .match-card {
   background:#d3d3d3;
@@ -41,15 +50,17 @@ body {
   text-decoration:none;
   color:#000;
   display:block;
+  text-align:center;
 }
-.match-title { font-weight:bold; }
-.match-time { font-size:.9rem; }
+.match-title { font-weight:bold; margin-bottom:0.3rem; }
+.match-time { font-size:.9rem; margin-bottom:.5rem; }
 </style>
 </head>
-
 <body>
 
 <div class="controls">
+  <input id="search" placeholder="Search football matches…">
+  <br>
   <button class="button" id="liveBtn">Live</button>
   <button class="button" id="soonBtn">Starting Soon</button>
   <button class="button" id="popularBtn">Popular</button>
@@ -59,88 +70,95 @@ body {
 
 <script>
 const matchesDiv = document.getElementById("matches");
+const searchInput = document.getElementById("search");
 const liveBtn = document.getElementById("liveBtn");
 const soonBtn = document.getElementById("soonBtn");
 const popularBtn = document.getElementById("popularBtn");
 
 let allMatches = [];
+let liveMode = false, soonMode = false, popularMode = false;
 
-function clearButtons() {
-  [liveBtn, soonBtn, popularBtn].forEach(b => b.classList.remove("active"));
-}
+async function fetchMatches() {
+  const urls = [];
+  if (popularMode) urls.push('https://streamed.pk/api/matches/football/popular');
+  if (liveMode) urls.push('https://streamed.pk/api/matches/live');
+  if (!urls.length) urls.push('https://streamed.pk/api/matches/football');
 
-async function fetchMatches(type="default") {
-  let url = "https://streamed.pk/api/matches/football";
-
-  if (type === "popular") url += "/popular";
-  if (type === "live") url = "https://streamed.pk/api/matches/live";
-
-  const res = await fetch(url);
-  const data = await res.json();
-
-  allMatches = data.filter(m => m.category === "football");
+  const dataArrays = await Promise.all(urls.map(u => fetch(u).then(r => r.json())));
+  allMatches = dataArrays.flat().filter(m => m.category==='football');
   render();
 }
 
 function render() {
-  matchesDiv.innerHTML = "";
-  let list = [...allMatches];
+  matchesDiv.innerHTML = '';
   const now = Date.now();
+  const q = searchInput.value.toLowerCase();
 
-  if (soonBtn.classList.contains("active")) {
-    list = list.filter(m =>
-      m.date > now && m.date - now <= 30 * 60 * 1000
-    );
+  let list = allMatches.filter(m => m.title.toLowerCase().includes(q));
+
+  if (soonMode) {
+    list = list.filter(m => m.date > now && m.date - now <= 30*60*1000);
   }
 
   const groups = {};
   list.forEach(m => {
-    const d = new Date(m.date).toDateString();
+    const d = new Date(m.date).toLocaleDateString([], {
+      weekday:'long', day:'numeric', month:'short', year:'numeric'
+    });
     groups[d] = groups[d] || [];
     groups[d].push(m);
   });
 
   for (const day in groups) {
-    const date = document.createElement("div");
-    date.className = "match-date";
-    date.textContent = day;
-    matchesDiv.appendChild(date);
+    const dateDiv = document.createElement('div');
+    dateDiv.className='match-date';
+    dateDiv.textContent=day;
+    matchesDiv.appendChild(dateDiv);
 
-    groups[day].forEach(m => {
+    groups[day].forEach(m=>{
+      const card = document.createElement('a');
+      card.className='match-card';
       const s = m.sources[0];
-      const a = document.createElement("a");
-      a.className = "match-card";
-      a.href =
-        `viewer.html?source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
-      a.innerHTML = `
-        <div class="match-title">${m.title}</div>
-        <div class="match-time">${new Date(m.date).toLocaleTimeString()}</div>
-      `;
-      matchesDiv.appendChild(a);
+      card.href=`viewer.html?source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
+
+      // Time / Kickoff countdown
+      let timeText = '';
+      if (m.date > now) {
+        const diff = m.date - now;
+        const h = Math.floor(diff/3600000);
+        const min = Math.floor((diff%3600000)/60000);
+        timeText = `${h>0?h+'h ':''}${min}m`;
+      } else {
+        timeText = new Date(m.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      }
+
+      card.innerHTML=`<div class="match-title">${m.title}</div><div class="match-time">${timeText}</div>`;
+      matchesDiv.appendChild(card);
     });
   }
 }
 
-liveBtn.onclick = () => {
-  clearButtons();
-  liveBtn.classList.add("active");
-  fetchMatches("live");
-};
-
-popularBtn.onclick = () => {
-  clearButtons();
-  popularBtn.classList.add("active");
-  fetchMatches("popular");
-};
-
-soonBtn.onclick = () => {
-  clearButtons();
-  soonBtn.classList.add("active");
+/* BUTTONS */
+liveBtn.onclick = ()=>{
+  liveMode=!liveMode;
+  liveBtn.classList.toggle('active',liveMode);
   fetchMatches();
 };
+popularBtn.onclick = ()=>{
+  popularMode=!popularMode;
+  popularBtn.classList.toggle('active',popularMode);
+  fetchMatches();
+};
+soonBtn.onclick = ()=>{
+  soonMode=!soonMode;
+  soonBtn.classList.toggle('active',soonMode);
+  render();
+};
 
+searchInput.oninput = render;
+
+// Initial load
 fetchMatches();
 </script>
-
 </body>
 </html>

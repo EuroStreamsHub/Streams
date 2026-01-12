@@ -4,39 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Football Stream</title>
+
 <style>
 body {
   background:#369991;
-  color:#000;
   font-family:'Segoe UI',Roboto,sans-serif;
-  padding:1rem;
-  text-align:center;
   margin:0;
+  text-align:center;
 }
 .back-button {
   display:inline-block;
-  margin:0.5rem auto 1rem auto;
-  padding:.6rem 1rem;
+  margin:1rem;
   background:#1f1f1f;
-  color:#f1faee;
-  border:none;
+  color:#fff;
+  padding:.6rem 1rem;
   border-radius:.5rem;
-  font-weight:600;
-  cursor:pointer;
   text-decoration:none;
-  transition:.2s;
-}
-.back-button:hover { filter:brightness(1.2); }
-h2 {
-  margin-bottom:.5rem;
-  font-weight:bold;
 }
 .stream-container {
-  width:90%;
   max-width:1000px;
   aspect-ratio:16/9;
-  background:#000;
   margin:0 auto;
+  background:#000;
   position:relative;
   border-radius:.5rem;
   overflow:hidden;
@@ -50,85 +39,99 @@ iframe {
   position:absolute;
   top:50%;
   left:50%;
-  transform:translate(-50%,-50%);
-  border:6px solid rgba(255,255,255,0.1);
-  border-top:6px solid #FF6700;
-  border-radius:50%;
   width:50px;
   height:50px;
+  border:6px solid rgba(255,255,255,.2);
+  border-top:6px solid #FF6700;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
   animation:spin 1s linear infinite;
-  z-index:5;
 }
-@keyframes spin {0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
-
-.vpn-banner {
-  background:#d3d3d3;
-  border:1px solid #1f1f1f;
-  padding:1rem;
-  margin:1rem auto;
-  border-radius:.5rem;
-  max-width:600px;
-  display:none;
-  font-size:.95rem;
-  line-height:1.4;
-  color:#000;
+@keyframes spin {
+  to { transform:translate(-50%,-50%) rotate(360deg); }
 }
-.vpn-banner a {
-  color:#1f1f1f;
-  font-weight:bold;
-  text-decoration:none;
+.sources {
+  margin:1rem;
+  display:flex;
+  gap:.5rem;
+  justify-content:center;
+  flex-wrap:wrap;
 }
-.vpn-banner a:hover { text-decoration:underline; }
+.source-btn {
+  background:#1f1f1f;
+  color:#fff;
+  padding:.4rem .8rem;
+  border-radius:.4rem;
+  cursor:pointer;
+}
+.source-btn.active {
+  background:#FF6700;
+}
 </style>
 </head>
+
 <body>
 
-<a href="streams.html" class="back-button">⬅ Back to Matches</a>
-
-<div id="vpn-banner" class="vpn-banner"></div>
-
-<h2 id="match-title">Football Stream</h2>
+<a class="back-button" href="streams.html">⬅ Back</a>
+<h2 id="title"></h2>
 
 <div class="stream-container">
   <div class="loader" id="loader"></div>
-  <iframe id="stream-iframe" allowfullscreen></iframe>
+  <iframe id="player" allowfullscreen></iframe>
 </div>
 
+<div class="sources" id="sources"></div>
+
 <script>
-const iframe = document.getElementById("stream-iframe");
+const params = new URLSearchParams(location.search);
+const sourceParam = params.get("source");
+const idParam = params.get("id");
+const title = params.get("title");
+
+document.getElementById("title").textContent =
+  title ? decodeURIComponent(title) : "Football Stream";
+
+const player = document.getElementById("player");
 const loader = document.getElementById("loader");
+const sourcesDiv = document.getElementById("sources");
 
-// Read ?src= parameter
-const urlParams = new URLSearchParams(window.location.search);
-const src = urlParams.get("src");
-
-if (!src) {
-  document.getElementById("match-title").textContent = "No stream selected";
-} else {
+async function loadStream(source, id, btn) {
   loader.style.display = "block";
-  iframe.src = src;
-  iframe.onload = () => loader.style.display = "none";
+  document.querySelectorAll(".source-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  const res = await fetch(`https://streamed.pk/api/stream/${source}/${id}`);
+  const streams = await res.json();
+
+  const best =
+    streams.find(s => s.hd && s.language === "English") ||
+    streams.find(s => s.hd) ||
+    streams[0];
+
+  player.src = best.embedUrl;
+  player.onload = () => loader.style.display = "none";
 }
 
-// VPN Banner
-async function detectLocation() {
-  try {
-    const res = await fetch("https://ipapi.co/json/");
-    const data = await res.json();
-    const banner = document.getElementById("vpn-banner");
-    banner.innerHTML = `
-      ⚠️ It looks like you're visiting from <b>${data.country_name}</b>.<br>
-      Some streams may not work in your region.<br>
-      👉 <a href="https://refer-nordvpn.com/BoZjAlNeKcb" target="_blank">
-        Get NordVPN to unlock all matches
-      </a>
-    `;
-    banner.style.display = "block";
-  } catch(e) {
-    console.error("VPN banner error:", e);
-  }
+async function init() {
+  const res = await fetch("https://streamed.pk/api/matches/football");
+  const matches = await res.json();
+
+  const match = matches.find(m =>
+    m.sources.some(s => s.id === idParam)
+  );
+  if (!match) return;
+
+  match.sources.forEach((s, i) => {
+    const btn = document.createElement("div");
+    btn.className = "source-btn";
+    btn.textContent = s.source.toUpperCase();
+    btn.onclick = () => loadStream(s.source, s.id, btn);
+    sourcesDiv.appendChild(btn);
+    if (i === 0) loadStream(s.source, s.id, btn);
+  });
 }
-detectLocation();
+
+init();
 </script>
 
 </body>

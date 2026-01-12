@@ -36,38 +36,57 @@ body {
 }
 .button.active { background:#FF6700; }
 
-.match-date {
-  font-weight:bold;
-  font-size:1.2rem;
-  text-align:center;
-  margin:1rem 0 .5rem 0;
+.match-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+  gap:1rem;
+  padding:1rem;
 }
+
 .match-card {
   background:#d3d3d3;
-  margin:.5rem 1rem;
-  padding:.8rem;
   border-radius:.5rem;
   text-decoration:none;
   color:#000;
-  display:block;
-  text-align:center;
   position:relative;
+  overflow:hidden;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
   transition: transform 0.2s;
 }
 .match-card:hover { transform:translateY(-2px); }
 
-.match-title { font-weight:bold; margin-bottom:0.3rem; }
-.match-time { font-size:.9rem; margin-bottom:0.5rem; }
+.match-poster {
+  width:100%;
+  height:0;
+  padding-bottom:56.25%; /* 16:9 ratio */
+  position:relative;
+  background-size:cover;
+  background-position:center;
+}
+
 .badge {
   position:absolute;
   top:0.5rem;
   right:0.5rem;
-  width:12px;
-  height:12px;
+  width:14px;
+  height:14px;
   border-radius:50%;
+  border:2px solid white;
 }
 .badge.live { background:red; }
 .badge.soon { background:orange; }
+
+.match-teams {
+  font-weight:bold;
+  margin:0.5rem 0 0.2rem 0;
+}
+
+.match-time {
+  font-weight:normal;
+  margin-bottom:0.5rem;
+}
 </style>
 </head>
 <body>
@@ -80,7 +99,7 @@ body {
   <button class="button" id="popularBtn">Popular</button>
 </div>
 
-<div id="matches"></div>
+<div id="matches" class="match-grid"></div>
 
 <script>
 const matchesDiv = document.getElementById("matches");
@@ -114,54 +133,61 @@ function render() {
     list = list.filter(m => m.date > now && m.date - now <= 60*60*1000); // <1h
   }
 
-  const groups = {};
   list.forEach(m => {
-    const d = new Date(m.date).toLocaleDateString([], {
-      weekday:'long', day:'numeric', month:'short', year:'numeric'
-    });
-    groups[d] = groups[d] || [];
-    groups[d].push(m);
+    const card = document.createElement('a');
+    card.className='match-card';
+    const s = m.sources[0];
+    card.href=`viewer.html?source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
+
+    // Poster
+    const posterDiv = document.createElement('div');
+    posterDiv.className='match-poster';
+    posterDiv.style.backgroundImage = `url(https://streamed.pk${m.poster})`;
+    card.appendChild(posterDiv);
+
+    // Badge on poster
+    const matchDuration = 2 * 60 * 60 * 1000;
+    const diff = m.date - now;
+    const badgeDiv = document.createElement('div');
+    badgeDiv.className='badge';
+    if (now >= m.date && now <= m.date + matchDuration) {
+      badgeDiv.classList.add('live');
+      posterDiv.appendChild(badgeDiv);
+    } else if (diff > 0 && diff <= 60*60*1000) {
+      badgeDiv.classList.add('soon');
+      posterDiv.appendChild(badgeDiv);
+    }
+
+    // Teams
+    let teamsText = m.title;
+    if (m.teams && m.teams.home && m.teams.away) {
+      teamsText = `${m.teams.home.name} vs ${m.teams.away.name}`;
+    }
+    const teamsDiv = document.createElement('div');
+    teamsDiv.className='match-teams';
+    teamsDiv.textContent=teamsText;
+    card.appendChild(teamsDiv);
+
+    // Kickoff time
+    let timeText='';
+    if (now >= m.date && now <= m.date + matchDuration) {
+      timeText='LIVE';
+    } else if (diff>0 && diff<=60*60*1000) {
+      const mins=Math.floor(diff/60000);
+      timeText=`${mins}m until kick off`;
+    } else {
+      timeText=new Date(m.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }
+    const timeDiv = document.createElement('div');
+    timeDiv.className='match-time';
+    timeDiv.textContent=timeText;
+    card.appendChild(timeDiv);
+
+    matchesDiv.appendChild(card);
   });
-
-  for (const day in groups) {
-    const dateDiv = document.createElement('div');
-    dateDiv.className='match-date';
-    dateDiv.textContent=day;
-    matchesDiv.appendChild(dateDiv);
-
-    groups[day].forEach(m=>{
-      const card = document.createElement('a');
-      card.className='match-card';
-      const s = m.sources[0];
-      card.href=`viewer.html?source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
-
-      const matchDuration = 2 * 60 * 60 * 1000; // 2h default
-      const diff = m.date - now;
-      let timeText = '';
-
-      // Badge
-      const badge = document.createElement('div');
-      badge.className='badge';
-      if (now >= m.date && now <= m.date + matchDuration) {
-        timeText = new Date(m.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' LIVE';
-        badge.classList.add('live');
-        card.appendChild(badge);
-      } else if (diff > 0 && diff <= 60*60*1000) {
-        const mins = Math.floor(diff/60000);
-        timeText = `${mins}m until kick off`;
-        badge.classList.add('soon');
-        card.appendChild(badge);
-      } else {
-        timeText = new Date(m.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      }
-
-      card.innerHTML += `<div class="match-title">${m.title}</div><div class="match-time">${timeText}</div>`;
-      matchesDiv.appendChild(card);
-    });
-  }
 }
 
-// BUTTONS
+/* BUTTONS */
 liveBtn.onclick = ()=>{
   liveMode=!liveMode;
   liveBtn.classList.toggle('active',liveMode);

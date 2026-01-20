@@ -12,7 +12,6 @@ body {
   color:#fff;
   text-align:center;
 }
-
 .back-button {
   display:inline-block;
   margin:1rem;
@@ -22,7 +21,9 @@ body {
   border-radius:.5rem;
   text-decoration:none;
 }
-
+h2#title {
+  margin-bottom:.5rem;
+}
 .stream-container {
   max-width:1000px;
   aspect-ratio:16/9;
@@ -32,13 +33,11 @@ body {
   border-radius:.5rem;
   overflow:hidden;
 }
-
 iframe {
   width:100%;
   height:100%;
   border:none;
 }
-
 .loader {
   position:absolute;
   top:50%;
@@ -52,98 +51,150 @@ iframe {
   animation:spin 1s linear infinite;
 }
 @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
-
-.channel-list {
-  max-width:800px;
-  margin:1rem auto;
-  text-align:left;
+.controls {
+  display:flex;
+  justify-content:center;
+  gap:.5rem;
+  flex-wrap:wrap;
+  margin-bottom:1rem;
 }
-
-.channel-item {
+button {
   padding:.5rem 1rem;
-  margin-bottom:.3rem;
-  background:#1f1f1f;
+  border:none;
   border-radius:.4rem;
+  background:#1f1f1f;
+  color:#fff;
+  font-weight:600;
   cursor:pointer;
   transition:.2s;
 }
-.channel-item:hover { background:#FF6700; }
+button:hover { background:#FF6700; }
+.mirror-list {
+  display:flex;
+  justify-content:center;
+  gap:.5rem;
+  flex-wrap:wrap;
+  margin-bottom:1rem;
+}
+.mirror-list button {
+  background:#222;
+}
+.mirror-list button.active {
+  background:#FF6700;
+}
 </style>
 </head>
 <body>
 
-<a class="back-button" href="streams.html">⬅ Back</a>
+<a class="back-button" href="#">⬅ Back</a>
 <h2 id="title">Stream</h2>
+
+<div class="mirror-list" id="mirrors"></div>
 
 <div class="stream-container">
   <div class="loader" id="loader"></div>
   <iframe id="player" allowfullscreen></iframe>
 </div>
 
-<div class="channel-list" id="channelList">
-  Loading channels...
+<div class="controls">
+  <button onclick="refreshStream()">Refresh</button>
+  <button onclick="toggleFullScreen()">Fullscreen</button>
 </div>
 
 <script>
 const params = new URLSearchParams(location.search);
-const type = params.get("type");        // should be "livetv"
-const title = params.get("title");      // e.g., "Newcastle United vs Manchester City"
-const mirrorParam = params.get("mirror");// e.g., "ITV1[UK]"
+const type = params.get("type");          // "football" | "movies" | "livetv"
+const title = params.get("title");
+const source = params.get("source");      // for football mirror ID
+const id = params.get("id");              // for football match ID
+const mirror = params.get("mirror");      // for live TV channel
+const imdb = params.get("imdb");          // for movies
 
 const player = document.getElementById("player");
 const loader = document.getElementById("loader");
-const channelList = document.getElementById("channelList");
-
+const mirrorsEl = document.getElementById("mirrors");
 document.getElementById("title").textContent = title || "Stream";
 
-// Load TopEmbed channels
-async function loadChannels(){
+let currentMirror = mirror || null;
+let footballMirrors = [];
+
+/* ---------- LOAD STREAM ---------- */
+async function loadStream() {
   loader.style.display = "block";
-  channelList.textContent = "Loading channels...";
+  player.src = "";
 
   try {
-    const res = await fetch('https://beta.adstrim.ru/api/events');
-    const data = await res.json();
+    if(type === "football"){
+      if(!id){ alert("Match ID not provided"); loader.style.display="none"; return; }
 
-    // Find the match by title
-    const match = data.data.find(m=>{
-      const home = m.home_team || (m.teams?.home?.name || "");
-      const away = m.away_team || (m.teams?.away?.name || "");
-      return `${home} vs ${away}` === title;
-    });
+      // Fetch TopEmbed data for the match
+      const res = await fetch(`https://beta.adstrim.ru/api/events`);
+      const data = await res.json();
 
-    if(!match || !match.channels || match.channels.length === 0){
-      channelList.textContent = "No channels available for this match.";
-      loader.style.display = "none";
-      return;
+      const match = data.data.find(m=>m.id===id);
+      if(!match){ alert("Match not found"); loader.style.display="none"; return; }
+
+      footballMirrors = match.sources.map(s => ({
+        name: s.source,
+        url: `https://embedsports.top/embed/${s.source}/${s.id}/1`
+      }));
+
+      // If a mirror was passed, use it; otherwise first one
+      currentMirror = currentMirror || footballMirrors[0].name;
+
+      updateMirrorButtons();
+      loadMirror(currentMirror);
+
+    } else if(type === "livetv"){
+      if(!mirror){ alert("Channel not provided"); loader.style.display="none"; return; }
+
+      const encodedChannel = encodeURIComponent(mirror);
+      player.src = `https://topembed.pw/channel/${encodedChannel}`;
+      loader.style.display="none";
+
+    } else if(type === "movies"){
+      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
+      player.src = `https://vidfast.pro/movie/${imdb}?autoplay=1`;
+      loader.style.display="none";
     }
-
-    // Show list of channels
-    channelList.innerHTML = '';
-    match.channels.forEach(channel=>{
-      const item = document.createElement('div');
-      item.className = 'channel-item';
-      item.textContent = channel.name;
-      item.onclick = () => {
-        const encoded = encodeURIComponent(channel.name);
-        player.src = `https://topembed.pw/channel/${encoded}`;
-        loader.style.display = "block";
-      };
-      channelList.appendChild(item);
-    });
-
-    // Load the initial channel (mirrorParam if exists)
-    let initialChannel = mirrorParam || match.channels[0].name;
-    player.src = `https://topembed.pw/channel/${encodeURIComponent(initialChannel)}`;
   } catch(e){
     console.error(e);
-    channelList.textContent = "Error loading channels.";
+    alert("Error loading stream");
+    loader.style.display="none";
   }
-
-  player.onload = ()=>loader.style.display="none";
 }
 
-loadChannels();
+/* ---------- MIRRORS ---------- */
+function updateMirrorButtons(){
+  mirrorsEl.innerHTML = "";
+  footballMirrors.forEach(m=>{
+    const btn = document.createElement("button");
+    btn.textContent = m.name;
+    if(m.name===currentMirror) btn.classList.add("active");
+    btn.onclick = ()=>{ currentMirror=m.name; loadMirror(m.name); updateMirrorButtons(); };
+    mirrorsEl.appendChild(btn);
+  });
+}
+
+function loadMirror(name){
+  const mirrorObj = footballMirrors.find(m=>m.name===name);
+  if(mirrorObj) player.src = mirrorObj.url;
+}
+
+/* ---------- CONTROLS ---------- */
+function refreshStream(){ if(player.src){ loader.style.display="block"; player.src = player.src; } }
+function toggleFullScreen(){ if(!document.fullscreenElement){ player.requestFullscreen?.(); } else { document.exitFullscreen?.(); } }
+
+/* ---------- BACK BUTTON ---------- */
+document.querySelector(".back-button").onclick = ()=>{
+  if(type==="football") window.location.href="streams.html";
+  else if(type==="movies") window.location.href="movies.html";
+  else if(type==="livetv") window.location.href="livetv.html";
+};
+
+/* ---------- INITIAL LOAD ---------- */
+loadStream();
 </script>
+
 </body>
 </html>

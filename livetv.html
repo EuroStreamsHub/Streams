@@ -10,16 +10,11 @@ body {
   font-family:'Segoe UI',Roboto,sans-serif;
   background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
   color:#fff;
-  text-align:center;
 }
-
-/* ---------- HEADER ---------- */
 .header {
   padding:1rem;
   text-align:center;
 }
-
-/* ---------- CONTROLS ---------- */
 .controls {
   display:flex;
   justify-content:center;
@@ -34,55 +29,21 @@ body {
   width:220px;
   max-width:90%;
 }
-
-/* ---------- GRID ---------- */
 .grid {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:1rem;
+  display:flex;
+  flex-direction:column;
+  gap:.5rem;
   padding:1rem;
 }
-@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
-@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
-
-/* ---------- CARD ---------- */
 .card {
   background:#121212;
-  border-radius:.7rem;
-  overflow:hidden;
+  border-radius:.5rem;
+  padding:.8rem 1rem;
   cursor:pointer;
   transition:.2s;
-  display:flex;
-  flex-direction:column;
-  aspect-ratio:9/16;
-}
-.card:hover { transform:scale(1.03); }
-
-/* ---------- POSTER TOP HALF ---------- */
-.poster {
-  flex:1;
-  background-size:contain;
-  background-repeat:no-repeat;
-  background-position:center;
-  position:relative;
-  border-bottom:1px solid #333;
-}
-
-/* ---------- INFO BOTTOM HALF ---------- */
-.info {
-  flex:.3;
-  padding:.5rem;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  text-align:center;
-  background:#181818;
-}
-.channel-name {
   font-weight:600;
-  font-size:.95rem;
-  line-height:1.2;
 }
+.card:hover { background:#ff6700; color:#000; }
 </style>
 </head>
 <body>
@@ -97,21 +58,12 @@ body {
 <div id="grid" class="grid"></div>
 
 <script>
-// ---------- DOM ----------
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 
-// ---------- Data ----------
 let channels = [];
-let countryMap = {};
 
-// ---------- Fetch country map ----------
-async function loadCountryMap(){
-  const res = await fetch("https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/hashtag.json");
-  countryMap = await res.json();
-}
-
-// ---------- Fetch channels ----------
+// Fetch channels from API
 async function fetchChannels(){
   const res = await fetch("https://beta.adstrim.ru/api/channels");
   const data = await res.json();
@@ -119,30 +71,14 @@ async function fetchChannels(){
   render();
 }
 
-// ---------- Convert API name to GitHub URL ----------
-function getChannelLogoUrl(name){
-  // Extract channel base and country
-  const match = name.match(/^(.*?)\[(.*?)\]$/);
-  if(!match) return "";
-
-  let base = match[1].trim();       // e.g., TNTSports1
-  let country = match[2].trim();    // e.g., UK
-
-  // Map country to GitHub folder code
-  const folder = countryMap[country] || country.toLowerCase();
-
-  // Convert CamelCase & spaces to hyphens
-  const formattedBase = base
-    .replace(/([a-z])([A-Z])/g,'$1-$2')  // TNTSports -> TNT-Sports
-    .replace(/\s+/g,'-')
-    .toLowerCase();
-
-  const code = folder.toLowerCase(); // country code
-
-  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${folder.toLowerCase()}/${formattedBase}-${code}.png`;
+// Format name: remove [Country] and add spaces before capital letters
+function formatName(name){
+  let n = name.replace(/\[.*?\]/,''); // remove [Country]
+  n = n.replace(/([a-z])([A-Z])/g,'$1 $2'); // add space before capitals
+  return n.trim();
 }
 
-// ---------- Render ----------
+// Render channels
 function render(){
   grid.innerHTML = "";
   const q = searchInput.value.toLowerCase();
@@ -150,39 +86,21 @@ function render(){
   channels.filter(c=>c.name.toLowerCase().includes(q)).forEach(c=>{
     const card = document.createElement("div");
     card.className = "card";
+    card.textContent = formatName(c.name);
 
-    // Poster
-    const poster = document.createElement("div");
-    poster.className = "poster";
-    poster.style.backgroundImage = `url(${getChannelLogoUrl(c.name)})`;
-
-    // Info
-    const info = document.createElement("div");
-    info.className = "info";
-    const channelName = document.createElement("div");
-    channelName.className = "channel-name";
-    channelName.textContent = c.name.replace(/\[.*?\]/,''); // remove [UK]
-    info.appendChild(channelName);
-
-    card.appendChild(poster);
-    card.appendChild(info);
-
-    // Click to viewer
-    card.onclick = ()=>location.href=`viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(channelName.textContent)}`;
+    card.onclick = ()=>{
+      // open in viewer.html
+      location.href = `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(formatName(c.name))}`;
+    };
 
     grid.appendChild(card);
   });
 }
 
-// ---------- Events ----------
 searchInput.oninput = render;
 
-// ---------- Init ----------
-async function init(){
-  await loadCountryMap();
-  await fetchChannels();
-}
-init();
+// Initial load
+fetchChannels();
 </script>
 </body>
 </html>

@@ -12,6 +12,7 @@ body {
   color:#fff;
   text-align:center;
 }
+
 .back-button {
   display:inline-block;
   margin:1rem;
@@ -21,9 +22,11 @@ body {
   border-radius:.5rem;
   text-decoration:none;
 }
+
 h2#title {
   margin-bottom:.5rem;
 }
+
 /* Container */
 .stream-container {
   max-width:1000px;
@@ -34,12 +37,14 @@ h2#title {
   border-radius:.5rem;
   overflow:hidden;
 }
+
 /* iframe */
 iframe {
   width:100%;
   height:100%;
   border:none;
 }
+
 /* Loader */
 .loader {
   position:absolute;
@@ -54,6 +59,7 @@ iframe {
   animation:spin 1s linear infinite;
 }
 @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+
 /* Controls below iframe */
 .controls {
   display:flex;
@@ -62,6 +68,7 @@ iframe {
   flex-wrap:wrap;
   margin-bottom:1rem;
 }
+
 button {
   padding:.5rem 1rem;
   border:none;
@@ -92,28 +99,35 @@ button:hover { background:#FF6700; }
 
 <script>
 const params = new URLSearchParams(location.search);
-const type = params.get("type"); // movie | livetv | football
-const title = params.get("title") || "Stream";
-const imdb = params.get("imdb"); // for movies
-const channel = params.get("channel") || params.get("mirror"); // for live tv / football
+const type = params.get("type");        // "football" | "movie" | "livetv"
+const title = params.get("title");
+const source = params.get("source");    // for football
+const id = params.get("id");            // for football
+const mirror = params.get("mirror");    // for live TV
+const imdb = params.get("imdb");        // for movies
 
 const player = document.getElementById("player");
 const loader = document.getElementById("loader");
-document.getElementById("title").textContent = title;
+document.getElementById("title").textContent = title || "Stream";
 
-function loadStream() {
+/* ---------- LOAD STREAM ---------- */
+async function loadStream() {
   loader.style.display = "block";
 
   try {
-    if(type === "movie") {
-      if(!imdb) { alert("IMDb/Movie ID not provided"); loader.style.display="none"; return; }
-      // Remove 'tt' if user passed full ID
-      const cleanId = imdb.replace(/^tt/, '');
+    if(type === "football"){
+      if(!source || !id){ alert("Source or ID not provided"); loader.style.display="none"; return; }
+      // Top Embed Football
+      player.src = `https://embedsports.top/embed/${source}/${id}/1`;
+
+    } else if(type === "movie"){
+      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
+      const cleanId = imdb.replace(/^tt/, ''); // remove 'tt' prefix
       player.src = `https://vidfast.pro/movie/${cleanId}`;
 
-    } else if(type === "livetv" || type === "football") {
-      if(!channel) { alert("Channel not provided"); loader.style.display="none"; return; }
-      const encodedChannel = encodeURIComponent(channel);
+    } else if(type === "livetv"){
+      if(!mirror){ alert("Channel not provided"); loader.style.display="none"; return; }
+      const encodedChannel = encodeURIComponent(mirror);
       player.src = `https://topembed.pw/channel/${encodedChannel}`;
     }
   } catch(e){
@@ -124,6 +138,7 @@ function loadStream() {
   player.onload = ()=>loader.style.display="none";
 }
 
+/* ---------- CONTROLS ---------- */
 function refreshStream(){
   if(player.src){ loader.style.display="block"; player.src = player.src; }
 }
@@ -133,13 +148,14 @@ function toggleFullScreen(){
   else { document.exitFullscreen?.(); }
 }
 
-// Back button
+/* ---------- BACK BUTTON ---------- */
 document.querySelector(".back-button").onclick = ()=>{
-  if(type==="movie") window.location.href="movies.html";
-  else window.location.href="streams.html";
+  if(type==="football") window.location.href="streams.html";
+  else if(type==="movie") window.location.href="movies.html";
+  else if(type==="livetv") window.location.href="livetv.html";
 };
 
-// Initial load
+/* ---------- INITIAL LOAD ---------- */
 loadStream();
 </script>
 

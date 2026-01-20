@@ -99,68 +99,67 @@ button:hover { background:#FF6700; }
 
 <script>
 const params = new URLSearchParams(location.search);
-const type = params.get("type");
+const type = params.get("type");        // "football" | "movies" | "livetv"
 const title = params.get("title");
-const source = params.get("source");
-const id = params.get("id");
-const channel = params.get("name");
-const imdb = params.get("imdb"); // optional for movies
+const source = params.get("source");    // for football
+const id = params.get("id");            // for football
+const channel = params.get("channel");  // for Live TV
+const imdb = params.get("imdb");        // for movies
 
 const player = document.getElementById("player");
 const loader = document.getElementById("loader");
 document.getElementById("title").textContent = title || "Stream";
 
-/* Load content depending on type */
+/* ---------- LOAD STREAM ---------- */
 async function loadStream() {
   loader.style.display = "block";
 
-  if(type === "football"){
-    // fetch stream info from streamed.pk
-    const res = await fetch(`https://streamed.pk/api/stream/${source}/${id}`);
-    const streams = await res.json();
+  try {
+    if(type === "football"){
+      // streamed.pk API
+      const res = await fetch(`https://streamed.pk/api/stream/${source}/${id}`);
+      const streams = await res.json();
+      const best = streams.find(s=>s.hd && s.language==="English") || streams[0];
+      player.src = best.embedUrl;
 
-    const best = streams.find(s => s.hd && s.language==="English") || streams[0];
-    player.src = best.embedUrl;
+    } else if(type === "movies"){
+      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
+      player.src = `https://vidfast.pro/movie/${imdb}?autoplay=1`;
 
-  } else if(type === "movies"){
-    if(!imdb){
-      alert("IMDb ID not provided");
-      loader.style.display = "none";
-      return;
+    } else if(type === "livetv"){
+      if(!channel){ alert("Channel not provided"); loader.style.display="none"; return; }
+      // encode brackets for URL
+      const encodedChannel = encodeURIComponent(channel);
+      player.src = `https://topembed.pw/channel/${encodedChannel}`;
     }
-    player.src = `https://vidfast.pro/movie/${imdb}?autoplay=1`;
-
-  } else if(type === "livetv"){
-    player.src = `https://topembed.pw/channel/${(encodedchannel)}`;
+  } catch(e){
+    console.error(e);
+    alert("Error loading stream");
   }
 
   player.onload = ()=>loader.style.display="none";
 }
 
-/* Refresh and fullscreen */
+/* ---------- CONTROLS ---------- */
 function refreshStream(){
-  if(player.src){
-    loader.style.display="block";
-    player.src = player.src;
-  }
+  if(player.src){ loader.style.display="block"; player.src = player.src; }
 }
 
 function toggleFullScreen(){
-  if(!document.fullscreenElement){
-    player.requestFullscreen?.();
-  } else {
-    document.exitFullscreen?.();
-  }
+  if(!document.fullscreenElement){ player.requestFullscreen?.(); }
+  else { document.exitFullscreen?.(); }
 }
 
-/* Set Back button */
+/* ---------- BACK BUTTON ---------- */
 document.querySelector(".back-button").onclick = ()=>{
   if(type==="football") window.location.href="streams.html";
   else if(type==="movies") window.location.href="movies.html";
   else if(type==="livetv") window.location.href="livetv.html";
 };
 
+/* ---------- INITIAL LOAD ---------- */
 loadStream();
 </script>
+
 </body>
 </html>

@@ -46,32 +46,47 @@ button.active {
   background:#fff;
 }
 
+/* FORCE 2 COLUMNS */
 .grid {
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap:1rem;
   padding:1rem;
 }
 
+@media (min-width: 900px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1200px) {
+  .grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* CARD */
 .card {
+  background:#121212;
+  border-radius:.7rem;
+  overflow:hidden;
   cursor:pointer;
   transition:.2s;
+  aspect-ratio: 9 / 16;
+  display:flex;
+  flex-direction:column;
 }
 .card:hover { transform:scale(1.04); }
 
+/* TOP HALF */
 .poster {
-  width:100%;
-  aspect-ratio:16/9;
-  border-radius:.5rem;
+  flex:1;
   background-size:cover;
   background-position:center;
   position:relative;
 }
 
+/* STATUS DOT */
 .badge {
   position:absolute;
-  top:.4rem;
-  right:.4rem;
+  top:.5rem;
+  right:.5rem;
   width:12px;
   height:12px;
   border-radius:50%;
@@ -80,17 +95,27 @@ button.active {
 .badge.live { background:red; }
 .badge.soon { background:orange; }
 
-.title {
-  margin-top:.4rem;
-  font-size:.9rem;
+/* BOTTOM HALF */
+.info {
+  flex:1;
+  padding:.6rem;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
   text-align:center;
+  background:#181818;
+}
+
+.teams {
   font-weight:600;
+  font-size:.95rem;
+  line-height:1.2;
 }
 
 .time {
-  font-size:.8rem;
-  opacity:.7;
-  text-align:center;
+  margin-top:.4rem;
+  font-size:.85rem;
+  opacity:.75;
 }
 </style>
 </head>
@@ -112,7 +137,6 @@ button.active {
 <script>
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
-
 const liveBtn = document.getElementById("liveBtn");
 const soonBtn = document.getElementById("soonBtn");
 const popularBtn = document.getElementById("popularBtn");
@@ -152,8 +176,7 @@ function render() {
 
     const poster = document.createElement("div");
     poster.className = "poster";
-    poster.style.backgroundImage =
-      `url(https://streamed.pk${m.poster})`;
+    poster.style.backgroundImage = `url(https://streamed.pk${m.poster})`;
 
     const matchDuration = 2 * 60 * 60 * 1000;
     const diff = m.date - now;
@@ -169,27 +192,32 @@ function render() {
       poster.appendChild(badge);
     }
 
+    const info = document.createElement("div");
+    info.className = "info";
+
     let teams = m.title;
     if (m.teams?.home && m.teams?.away) {
       teams = `${m.teams.home.name} vs ${m.teams.away.name}`;
     }
 
-    const title = document.createElement("div");
-    title.className = "title";
-    title.textContent = teams;
+    const teamsDiv = document.createElement("div");
+    teamsDiv.className = "teams";
+    teamsDiv.textContent = teams;
 
-    const time = document.createElement("div");
-    time.className = "time";
-    time.textContent =
+    const timeDiv = document.createElement("div");
+    timeDiv.className = "time";
+    timeDiv.textContent =
       now >= m.date && now <= m.date + matchDuration
         ? "LIVE"
         : diff > 0 && diff <= 3600000
-        ? `${Math.floor(diff / 60000)}m to kick-off`
+        ? `${Math.floor(diff / 60000)}m until kick-off`
         : new Date(m.date).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
 
+    info.appendChild(teamsDiv);
+    info.appendChild(timeDiv);
+
     card.appendChild(poster);
-    card.appendChild(title);
-    card.appendChild(time);
+    card.appendChild(info);
 
     const s = m.sources[0];
     card.onclick = () => {

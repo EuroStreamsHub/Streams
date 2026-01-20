@@ -3,165 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Streaming Hub</title>
-
+<title>Streaming Portal</title>
 <style>
-/* ---------- THEME VARIABLES ---------- */
-:root {
-  --bg: linear-gradient(135deg, #369991, #2b6f6a);
-  --card: #d3d3d3;
-  --text: #000;
-  --sub: rgba(0,0,0,.7);
-}
-
-body.dark {
-  --bg: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-  --card: #1f1f1f;
-  --text: #f1faee;
-  --sub: rgba(255,255,255,.7);
-}
-
-/* ---------- BASE ---------- */
 body {
-  margin: 0;
-  min-height: 100vh;
-  background: var(--bg);
-  font-family: 'Segoe UI', Roboto, sans-serif;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin:0;
+  font-family:'Segoe UI',Roboto,sans-serif;
+  background: linear-gradient(135deg,#1e1e1e,#0b0b0b);
+  color:#fff;
 }
 
-/* ---------- LAYOUT ---------- */
-.container {
-  width: 100%;
-  max-width: 900px;
-  padding: 1.5rem;
+/* ---------- HEADER ---------- */
+header {
+  text-align:center;
+  padding:2rem 1rem 1rem;
 }
 
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+header h1 {
+  margin-bottom:1rem;
 }
 
-.title {
-  font-size: 2rem;
-  font-weight: 800;
-}
-
-/* ---------- TOGGLE ---------- */
-.toggle {
-  background: none;
-  border: 2px solid var(--text);
-  border-radius: .6rem;
-  padding: .35rem .8rem;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--text);
-}
-
-.toggle:hover {
-  background: var(--text);
-  color: var(--card);
+/* ---------- THEME TOGGLE ---------- */
+#themeToggle {
+  background:#ff6700;
+  color:#000;
+  border:none;
+  padding:.5rem 1rem;
+  border-radius:.4rem;
+  cursor:pointer;
+  font-weight:600;
 }
 
 /* ---------- GRID ---------- */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:1rem;
+  padding:1rem;
 }
 
-/* ---------- CARDS ---------- */
+@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
+@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
+
+/* ---------- CARD ---------- */
 .card {
-  background: var(--card);
-  border-radius: 1rem;
-  padding: 2rem;
-  text-decoration: none;
-  color: var(--text);
-  text-align: center;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transition: transform .2s, box-shadow .2s;
+  background:#121212;
+  border-radius:.7rem;
+  padding:2rem 1rem;
+  text-align:center;
+  cursor:pointer;
+  transition:.2s;
 }
+.card:hover{ transform:scale(1.05); }
 
-.card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 25px rgba(0,0,0,.25);
-}
-
-.card-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.card-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-.card-sub {
-  margin-top: .5rem;
-  font-size: .95rem;
-  color: var(--sub);
+.card h2{
+  font-size:1.2rem;
+  margin-top:1rem;
 }
 </style>
 </head>
-
 <body>
 
-<div class="container">
-  <div class="top-bar">
-    <div class="title">Streaming Hub</div>
-    <button class="toggle" id="themeToggle">Dark mode</button>
+<header>
+  <h1>Streaming Portal</h1>
+  <button id="themeToggle">Dark Mode</button>
+</header>
+
+<div class="grid">
+  <div class="card" onclick="location.href='streams.html'">
+    <h2>Football Streams</h2>
   </div>
-
-  <div class="grid">
-    <a href="streams.html" class="card">
-      <div class="card-icon">⚽</div>
-      <div class="card-title">Football Streams</div>
-      <div class="card-sub">Live & upcoming matches</div>
-    </a>
-
-    <a href="movies.html" class="card">
-      <div class="card-icon">🎬</div>
-      <div class="card-title">Movies</div>
-      <div class="card-sub">Watch movies online</div>
-    </a>
+  <div class="card" onclick="location.href='movies.html'">
+    <h2>Movies</h2>
+  </div>
+  <div class="card" onclick="location.href='livetv.html'">
+    <h2>Live TV</h2>
   </div>
 </div>
 
 <script>
-const toggle = document.getElementById('themeToggle');
+// Theme toggle
+const btn = document.getElementById("themeToggle");
+if(localStorage.getItem("theme")==="light") document.body.classList.add("light");
 
-/* Apply saved theme */
-if (localStorage.getItem('theme') === 'dark') {
-  document.body.classList.add('dark');
-}
-
-/* Update button text */
-function updateToggleText() {
-  toggle.textContent = document.body.classList.contains('dark')
-    ? 'Light mode'
-    : 'Dark mode';
-}
-
-updateToggleText();
-
-/* Toggle theme */
-toggle.onclick = () => {
-  document.body.classList.toggle('dark');
-  localStorage.setItem(
-    'theme',
-    document.body.classList.contains('dark') ? 'dark' : 'light'
-  );
-  updateToggleText();
+btn.onclick = () => {
+  document.body.classList.toggle("light");
+  if(document.body.classList.contains("light")){
+    btn.textContent="Light Mode";
+    localStorage.setItem("theme","light");
+  } else {
+    btn.textContent="Dark Mode";
+    localStorage.setItem("theme","dark");
+  }
 };
+
+// Light theme styles
+const style = document.createElement("style");
+style.textContent=`
+body.light{
+  background: linear-gradient(135deg,#f2f2f2,#d9d9d9);
+  color:#000;
+}
+body.light .card{
+  background:#fff;
+  color:#000;
+}
+body.light #themeToggle{
+  color:#fff;
+}
+`;
+document.head.appendChild(style);
 </script>
 
 </body>

@@ -70,6 +70,8 @@ body {
   font-weight:bold;
   font-size:1rem;
   text-align:center;
+  padding:.5rem;
+  color:#fff;
 }
 
 /* INFO BOTTOM HALF */
@@ -113,7 +115,7 @@ const channelCountry = {
   "BT Sport 1": "united-kingdom",
   "BBC One": "united-kingdom",
   "CNN": "united-states",
-  // Add more channels here
+  // add more mappings as needed
 };
 
 /* ---------- FETCH CHANNELS ---------- */
@@ -135,9 +137,18 @@ async function fetchChannels(){
 
 /* ---------- GET GITHUB LOGO URL ---------- */
 function getLogoUrl(channelName){
-  const country = channelCountry[channelName] || "other";
-  const fileName = channelName.toLowerCase().replace(/[^a-z0-9]/g,"-") + ".png";
-  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${country}/${fileName}`;
+  const country = channelCountry[channelName] || "united-kingdom";
+
+  // extract country code from brackets if exists
+  let countryCodeSuffix = "";
+  const match = channelName.match(/\[(.*?)\]/);
+  if(match) countryCodeSuffix = "-" + match[1].toLowerCase();
+
+  // remove brackets content
+  let cleanName = channelName.replace(/\[.*?\]/g, "").trim().toLowerCase();
+  cleanName = cleanName.replace(/[^a-z0-9]/g,"-");
+
+  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${country}/${cleanName}${countryCodeSuffix}.png`;
 }
 
 /* ---------- RENDER GRID ---------- */
@@ -154,20 +165,19 @@ function render(){
     poster.className="poster";
 
     const logoUrl = getLogoUrl(c.name);
-
     const img = new Image();
     img.src = logoUrl;
     img.style.maxWidth="90%";
     img.style.maxHeight="90%";
-    img.onload = () => poster.appendChild(img);
-    img.onerror = () => poster.textContent = c.name; // fallback
+    img.onload = ()=> poster.appendChild(img);
+    img.onerror = ()=> poster.textContent = c.name; // fallback
 
     const info = document.createElement("div");
     info.className="info";
 
     const nameDiv = document.createElement("div");
     nameDiv.className="channel-name";
-    nameDiv.textContent=c.name;
+    nameDiv.textContent = c.name;
 
     info.appendChild(nameDiv);
 

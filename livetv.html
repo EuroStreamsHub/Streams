@@ -12,20 +12,17 @@ body {
   color:#fff;
 }
 
-/* ---------- HEADER ---------- */
+/* HEADER & CONTROLS */
 .header {
+  padding:1rem;
   text-align:center;
-  padding:1.5rem 1rem 1rem;
 }
 
-.header h2 {
-  margin-bottom:.5rem;
-}
-
-/* ---------- SEARCH ---------- */
 .controls {
   display:flex;
+  flex-wrap:wrap;
   justify-content:center;
+  gap:.6rem;
   margin-bottom:1rem;
 }
 
@@ -33,11 +30,12 @@ body {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
-  width:240px;
-  max-width:90%;
+  font-weight:600;
+  flex:1 1 200px;
+  max-width:240px;
 }
 
-/* ---------- GRID ---------- */
+/* GRID & CARD */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -45,47 +43,57 @@ body {
   padding:1rem;
 }
 
-@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
-@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
+@media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
+@media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
 
-/* ---------- CARD ---------- */
 .card {
   background:#121212;
   border-radius:.7rem;
-  cursor:pointer;
   overflow:hidden;
+  cursor:pointer;
+  transition:.2s;
   display:flex;
   flex-direction:column;
-  transition:.2s;
-  aspect-ratio:9/16; /* 9:16 portrait */
+  aspect-ratio:9/16;
 }
+.card:hover { transform:scale(1.04); }
 
-.card:hover{ transform:scale(1.03); }
-
-/* Poster top half */
-.card .poster {
+/* POSTER TOP HALF */
+.poster {
   flex:1;
-  background:#222;
+  background-size:cover;
+  background-position:center;
+  position:relative;
   display:flex;
-  align-items:center;
   justify-content:center;
-  font-size:2rem;
+  align-items:center;
+  font-weight:bold;
+  font-size:1rem;
+  text-align:center;
 }
 
-/* Channel name bottom half */
-.card .name {
-  padding:.5rem;
+/* INFO BOTTOM HALF */
+.info {
+  flex:1;
+  padding:.6rem;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
   text-align:center;
+  background:#181818;
+}
+
+.channel-name {
   font-weight:600;
-  font-size:1rem;
-  background: #1a1a1a;
+  font-size:.95rem;
+  line-height:1.2;
 }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h2>Live TV Channels</h2>
+  <h2>Live TV</h2>
   <div class="controls">
     <input id="search" placeholder="Search channels…">
   </div>
@@ -96,60 +104,91 @@ body {
 <script>
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
+
+/* ---------- CHANNEL → COUNTRY MAPPING ---------- */
+const channelCountry = {
+  "SkySportsNews[UK]": "united-kingdom",
+  "TNT Sports 7 UK": "united-kingdom",
+  "ESPN": "united-states",
+  "BT Sport 1": "united-kingdom",
+  "BBC One": "united-kingdom",
+  "CNN": "united-states",
+  // Add more channels here
+};
+
+/* ---------- FETCH CHANNELS ---------- */
 let allChannels = [];
 
-/* Fetch Live TV channels from API */
-async function fetchChannels() {
-  try {
+async function fetchChannels(){
+  try{
     const res = await fetch("https://beta.adstrim.ru/api/channels");
     const data = await res.json();
-    allChannels = data.channels.filter(c => c.show_on_livetv);
-    render();
-  } catch(err) {
-    console.error("Failed to fetch channels:", err);
-    grid.innerHTML = "<p style='color:#f00;text-align:center'>Failed to load channels</p>";
+    if(data.status==="success"){
+      allChannels = data.channels.filter(c=>c.show_on_livetv);
+      render();
+    }
+  }catch(err){
+    console.error("Failed to fetch channels", err);
+    grid.innerHTML = "<p style='text-align:center;color:red;'>Failed to load channels</p>";
   }
 }
 
-/* Render 9:16 cards */
-function render() {
+/* ---------- GET GITHUB LOGO URL ---------- */
+function getLogoUrl(channelName){
+  const country = channelCountry[channelName] || "other";
+  const fileName = channelName.toLowerCase().replace(/[^a-z0-9]/g,"-") + ".png";
+  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${country}/${fileName}`;
+}
+
+/* ---------- RENDER GRID ---------- */
+function render(){
   grid.innerHTML = "";
   const q = searchInput.value.toLowerCase();
+  const list = allChannels.filter(c=>c.name.toLowerCase().includes(q));
 
-  let list = allChannels.filter(c => c.name.toLowerCase().includes(q));
-
-  list.forEach(c => {
+  list.forEach(c=>{
     const card = document.createElement("div");
-    card.className = "card";
+    card.className="card";
 
     const poster = document.createElement("div");
-    poster.className = "poster";
-    poster.textContent = "📺"; // placeholder for live TV poster
+    poster.className="poster";
+
+    const logoUrl = getLogoUrl(c.name);
+
+    const img = new Image();
+    img.src = logoUrl;
+    img.style.maxWidth="90%";
+    img.style.maxHeight="90%";
+    img.onload = () => poster.appendChild(img);
+    img.onerror = () => poster.textContent = c.name; // fallback
+
+    const info = document.createElement("div");
+    info.className="info";
 
     const nameDiv = document.createElement("div");
-    nameDiv.className = "name";
-    nameDiv.textContent = c.name;
+    nameDiv.className="channel-name";
+    nameDiv.textContent=c.name;
+
+    info.appendChild(nameDiv);
 
     card.appendChild(poster);
-    card.appendChild(nameDiv);
+    card.appendChild(info);
 
-    card.onclick = () => {
-      window.location.href = `viewer.html?type=livetv&name=${encodeURIComponent(c.name)}`;
-    };
+    card.onclick = ()=>location.href=`viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}`;
 
     grid.appendChild(card);
   });
 
-  if(list.length === 0){
-    grid.innerHTML = "<p style='text-align:center;opacity:.6'>No channels found</p>";
+  if(list.length===0){
+    grid.innerHTML = "<p style='text-align:center;opacity:.6;'>No channels found</p>";
   }
 }
 
-searchInput.addEventListener("input", render);
+/* ---------- EVENTS ---------- */
+searchInput.oninput = render;
 
-/* Initial load */
+/* ---------- INITIAL LOAD ---------- */
 fetchChannels();
 </script>
-
 </body>
 </html>

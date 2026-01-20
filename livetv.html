@@ -6,7 +6,6 @@
 <title>Live TV</title>
 
 <style>
-/* ---------- BODY ---------- */
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
@@ -14,13 +13,11 @@ body {
   color:#fff;
 }
 
-/* ---------- HEADER ---------- */
 .header {
   padding:1rem;
   text-align:center;
 }
 
-/* ---------- CONTROLS ---------- */
 .controls {
   display:flex;
   flex-wrap:wrap;
@@ -33,22 +30,10 @@ body {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
-  width:200px;
+  width:220px;
 }
 
-button {
-  padding:.6rem 1.2rem;
-  border:none;
-  border-radius:.4rem;
-  background:#ff6700;
-  color:#000;
-  font-weight:600;
-  cursor:pointer;
-  transition:.2s;
-}
-button.active { background:#fff; }
-
-/* ---------- GRID ---------- */
+/* GRID */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -59,43 +44,40 @@ button.active { background:#fff; }
 @media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
 @media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
 
-/* ---------- CARD ---------- */
+/* CARD 9:16 */
 .card {
+  display:flex;
+  flex-direction:column;
+  aspect-ratio:9/16;
   background:#121212;
   border-radius:.7rem;
   overflow:hidden;
   cursor:pointer;
   transition:.2s;
-  display:flex;
-  flex-direction:column;
-  aspect-ratio:9/16;
 }
 .card:hover { transform:scale(1.04); }
 
-/* ---------- POSTER TOP HALF ---------- */
+/* POSTER TOP HALF (like 512x187 proportion) */
 .poster {
   flex:1;
-  background-size:cover;
+  background-size:contain;
+  background-repeat:no-repeat;
   background-position:center;
+  background-color:#333;
   position:relative;
 }
 
-/* ---------- INFO BOTTOM HALF ---------- */
+/* INFO BOTTOM HALF */
 .info {
   flex:1;
-  padding:.6rem;
   display:flex;
-  flex-direction:column;
+  align-items:center;
   justify-content:center;
   text-align:center;
   background:#181818;
   font-size:.9rem;
-}
-
-/* FALLBACK TEXT */
-.info .text-fallback {
   font-weight:600;
-  color:#fff;
+  padding:0.5rem;
 }
 </style>
 </head>
@@ -121,19 +103,15 @@ let allChannels = [];
 function getLogoUrl(channelName){
   let countryCodeSuffix = "";
   const match = channelName.match(/\[(.*?)\]/);
-  if(match) countryCodeSuffix = "-" + match[1].toLowerCase(); // e.g. -uk
+  if(match) countryCodeSuffix = "-" + match[1].toLowerCase();
 
-  // Remove brackets
   let cleanName = channelName.replace(/\[.*?\]/g,"").trim();
-
-  // Separate letters/numbers & words with hyphen
   cleanName = cleanName.replace(/([a-zA-Z])([0-9])/g,"$1-$2");
   cleanName = cleanName.replace(/([a-z])([A-Z])/g,"$1-$2");
-
   cleanName = cleanName.toLowerCase();
   cleanName = cleanName.replace(/[^a-z0-9-]/g,"-");
 
-  const countryFolder = "united-kingdom"; // adjust if needed
+  const countryFolder = "united-kingdom";
   return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${cleanName}${countryCodeSuffix}.png`;
 }
 
@@ -154,30 +132,24 @@ function render(){
     const card = document.createElement("div");
     card.className = "card";
 
-    /* Poster top */
+    /* Poster top half */
     const poster = document.createElement("div");
     poster.className = "poster";
-
     const logoUrl = getLogoUrl(channel.name);
 
-    // Try image
+    // Try load image
     const img = new Image();
     img.src = logoUrl;
     img.onload = ()=> poster.style.backgroundImage = `url(${logoUrl})`;
-    img.onerror = ()=> poster.style.backgroundColor = "#333"; // fallback
-
+    img.onerror = ()=> poster.style.backgroundColor = "#555"; // fallback
     poster.appendChild(img);
+
     card.appendChild(poster);
 
-    /* Info bottom */
+    /* Info bottom half */
     const info = document.createElement("div");
     info.className = "info";
-
-    const textFallback = document.createElement("div");
-    textFallback.className = "text-fallback";
-    textFallback.textContent = channel.name;
-    info.appendChild(textFallback);
-
+    info.textContent = channel.name;
     card.appendChild(info);
 
     /* Click to viewer */
@@ -191,5 +163,6 @@ searchInput.oninput = render;
 
 fetchChannels();
 </script>
+
 </body>
 </html>

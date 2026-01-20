@@ -9,31 +9,32 @@
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
-  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
+  background:radial-gradient(circle at top,#1e1e1e,#0b0b0b);
   color:#fff;
 }
 
+/* Header */
 .header {
   padding:1rem;
   text-align:center;
 }
 
+/* Controls */
 .controls {
   display:flex;
-  flex-wrap:wrap;
   justify-content:center;
-  gap:.6rem;
   margin-bottom:1rem;
 }
 
 .controls input {
+  width:260px;
+  max-width:90%;
   padding:.6rem 1rem;
-  border-radius:.4rem;
   border:none;
-  width:220px;
+  border-radius:.4rem;
 }
 
-/* GRID */
+/* Grid */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -41,43 +42,52 @@ body {
   padding:1rem;
 }
 
-@media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
-@media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
+@media(min-width:900px){
+  .grid { grid-template-columns:repeat(3,1fr); }
+}
+@media(min-width:1200px){
+  .grid { grid-template-columns:repeat(4,1fr); }
+}
 
-/* CARD 9:16 */
+/* Card */
 .card {
-  display:flex;
-  flex-direction:column;
-  aspect-ratio:9/16;
   background:#121212;
   border-radius:.7rem;
   overflow:hidden;
   cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  aspect-ratio:9/16;
   transition:.2s;
 }
 .card:hover { transform:scale(1.04); }
 
-/* POSTER TOP HALF (like 512x187 proportion) */
-.poster {
-  flex:1;
-  background-size:contain;
-  background-repeat:no-repeat;
-  background-position:center;
-  background-color:#333;
-  position:relative;
-}
-
-/* INFO BOTTOM HALF */
-.info {
+/* Logo area (top half) */
+.logo-box {
   flex:1;
   display:flex;
   align-items:center;
   justify-content:center;
-  text-align:center;
+  background:#000;
+}
+
+.logo-box img {
+  max-width:90%;
+  max-height:60%;
+  object-fit:contain;
+}
+
+/* Info (bottom half) */
+.info {
+  flex:1;
   background:#181818;
-  font-size:.9rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:.6rem;
   font-weight:600;
-  padding:0.5rem;
+  font-size:.95rem;
 }
 </style>
 </head>
@@ -97,70 +107,89 @@ body {
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 
-let allChannels = [];
+let channels = [];
+let hashtagMap = {};
 
-/* ---------- GITHUB LOGO URL GENERATOR ---------- */
-function getLogoUrl(channelName){
-  let countryCodeSuffix = "";
-  const match = channelName.match(/\[(.*?)\]/);
-  if(match) countryCodeSuffix = "-" + match[1].toLowerCase();
-
-  let cleanName = channelName.replace(/\[.*?\]/g,"").trim();
-  cleanName = cleanName.replace(/([a-zA-Z])([0-9])/g,"$1-$2");
-  cleanName = cleanName.replace(/([a-z])([A-Z])/g,"$1-$2");
-  cleanName = cleanName.toLowerCase();
-  cleanName = cleanName.replace(/[^a-z0-9-]/g,"-");
-
-  const countryFolder = "united-kingdom";
-  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${cleanName}${countryCodeSuffix}.png`;
+/* Load hashtag.json */
+async function loadHashtags(){
+  const res = await fetch("hashtag.json");
+  hashtagMap = await res.json();
 }
 
-/* ---------- FETCH CHANNELS ---------- */
-async function fetchChannels(){
+/* Fetch channels */
+async function loadChannels(){
   const res = await fetch("https://beta.adstrim.ru/api/channels");
   const data = await res.json();
-  allChannels = data.channels.filter(c=>c.show_on_livetv);
+  channels = data.channels.filter(c => c.show_on_livetv && !c.hide);
   render();
 }
 
-/* ---------- RENDER GRID ---------- */
+/* Build logo URL */
+function getLogoUrl(name){
+  // Extract country code inside [ ]
+  const match = name.match(/\[(.*?)\]/);
+  if(!match) return null;
+
+  const code = match[1];
+  const countryFolder = hashtagMap[code];
+  if(!countryFolder) return null;
+
+  // Slugify channel name
+  const slug = name
+    .replace(/\[.*?\]/g,"")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g,"-");
+
+  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${slug}-${code.toLowerCase()}.png`;
+}
+
+/* Render grid */
 function render(){
   grid.innerHTML = "";
   const q = searchInput.value.toLowerCase();
 
-  allChannels.filter(c=>c.name.toLowerCase().includes(q)).forEach(channel=>{
-    const card = document.createElement("div");
-    card.className = "card";
+  channels
+    .filter(c => c.name.toLowerCase().includes(q))
+    .forEach(c=>{
+      const card = document.createElement("div");
+      card.className = "card";
 
-    /* Poster top half */
-    const poster = document.createElement("div");
-    poster.className = "poster";
-    const logoUrl = getLogoUrl(channel.name);
+      const logoBox = document.createElement("div");
+      logoBox.className = "logo-box";
 
-    // Only set background image
-    const img = new Image();
-    img.src = logoUrl;
-    img.onload = ()=> poster.style.backgroundImage = `url(${logoUrl})`;
-    img.onerror = ()=> poster.style.backgroundColor = "#555"; // fallback
+      const img = document.createElement("img");
+      const logo = getLogoUrl(c.name);
 
-    card.appendChild(poster);
+      if(logo){
+        img.src = logo;
+        img.onerror = ()=>img.remove();
+        logoBox.appendChild(img);
+      }
 
-    /* Info bottom half */
-    const info = document.createElement("div");
-    info.className = "info";
-    info.textContent = channel.name;
-    card.appendChild(info);
+      const info = document.createElement("div");
+      info.className = "info";
+      info.textContent = c.name.replace(/\[.*?\]/,"").trim();
 
-    /* Click to viewer */
-    card.onclick = ()=> location.href=`viewer.html?type=livetv&channel=${encodeURIComponent(channel.name)}`;
+      card.appendChild(logoBox);
+      card.appendChild(info);
 
-    grid.appendChild(card);
-  });
+      card.onclick = ()=>{
+        location.href =
+          `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}`;
+      };
+
+      grid.appendChild(card);
+    });
 }
 
 searchInput.oninput = render;
 
-fetchChannels();
+/* Init */
+(async()=>{
+  await loadHashtags();
+  await loadChannels();
+})();
 </script>
 
 </body>

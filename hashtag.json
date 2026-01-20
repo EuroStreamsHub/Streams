@@ -1,10 +1,6 @@
 {
   "UK": "uk",
-  "United Kingdom": "uk",
-  "US": "us",
   "USA": "us",
-  "United States": "us",
-
   "Portugal": "pt",
   "Spain": "es",
   "France": "fr",
@@ -13,7 +9,7 @@
   "Netherlands": "nl",
   "Belgium": "be",
   "Ireland": "ie",
-
+  "Greece": "gr",
   "Argentina": "ar",
   "Brazil": "br",
   "Mexico": "mx",

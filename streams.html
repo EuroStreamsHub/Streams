@@ -1,55 +1,42 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sports Streams</title>
-
+<title>Football Streams</title>
 <style>
-/* ---------- BODY ---------- */
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
   background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
   color:#fff;
 }
-
-/* ---------- HEADER ---------- */
 .header {
   padding:1rem;
   text-align:center;
 }
-
-/* ---------- CONTROLS ---------- */
 .controls {
   display:flex;
-  flex-wrap:wrap;
   justify-content:center;
-  gap:.6rem;
+  gap:.5rem;
+  flex-wrap:wrap;
   margin-bottom:1rem;
 }
-
-.controls input, .controls select {
+.controls input {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
-  font-weight:600;
+  width:220px;
+  max-width:90%;
 }
-
-.controls input { flex:1 1 200px; max-width:240px; }
-.controls select { flex:1 1 150px; background:#1f1f1f; color:#fff; cursor:pointer; }
-
-/* ---------- BUTTON ROW ---------- */
 .button-row {
   display:flex;
   gap:.5rem;
-  flex-wrap:wrap;
   justify-content:center;
   margin-top:.3rem;
 }
-
 button {
-  padding:.6rem 1.2rem;
+  padding:.6rem 1rem;
   border:none;
   border-radius:.4rem;
   background:#ff6700;
@@ -58,21 +45,17 @@ button {
   cursor:pointer;
   transition:.2s;
 }
-
 button.active { background:#fff; }
 
-/* ---------- GRID ---------- */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:1rem;
   padding:1rem;
 }
-
 @media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
 @media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
 
-/* ---------- CARD ---------- */
 .card {
   background:#121212;
   border-radius:.7rem;
@@ -83,30 +66,20 @@ button.active { background:#fff; }
   flex-direction:column;
   aspect-ratio:9/16;
 }
-.card:hover { transform:scale(1.04); }
+.card:hover { transform:scale(1.03); }
 
-/* ---------- POSTER TOP HALF ---------- */
 .poster {
   flex:1;
   background-size:cover;
   background-position:center;
-  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:.9rem;
+  color:#fff;
+  text-shadow:0 0 5px #000;
 }
 
-/* STATUS DOT */
-.badge {
-  position:absolute;
-  top:.5rem;
-  right:.5rem;
-  width:12px;
-  height:12px;
-  border-radius:50%;
-  border:2px solid #fff;
-}
-.badge.live { background:red; }
-.badge.soon { background:orange; }
-
-/* ---------- INFO BOTTOM HALF ---------- */
 .info {
   flex:1;
   padding:.6rem;
@@ -117,32 +90,27 @@ button.active { background:#fff; }
   background:#181818;
 }
 
-.teams {
-  font-weight:600;
-  font-size:.95rem;
-  line-height:1.2;
-}
+.teams { font-weight:600; font-size:.95rem; }
+.time { margin-top:.3rem; font-size:.85rem; opacity:.75; }
 
-.time {
-  margin-top:.4rem;
-  font-size:.85rem;
-  opacity:.75;
-}
+.source-row { display:flex; gap:.5rem; justify-content:center; margin-bottom:1rem; }
 </style>
 </head>
-
 <body>
 
 <div class="header">
-  <h2>Sports Streams</h2>
+  <h2>Football Streams</h2>
   <div class="controls">
     <input id="search" placeholder="Search matches…">
-    <select id="sportSelect"></select>
-  </div>
-  <div class="button-row">
-    <button id="liveBtn">Live</button>
-    <button id="soonBtn">Starting Soon</button>
-    <button id="popularBtn">Popular</button>
+    <div class="source-row">
+      <button id="source1" class="active">Source 1</button>
+      <button id="source2">Source 2</button>
+    </div>
+    <div class="button-row">
+      <button id="liveBtn">Live</button>
+      <button id="soonBtn">Starting Soon</button>
+      <button id="popularBtn">Popular</button>
+    </div>
   </div>
 </div>
 
@@ -151,124 +119,118 @@ button.active { background:#fff; }
 <script>
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
-const sportSelect = document.getElementById("sportSelect");
 const liveBtn = document.getElementById("liveBtn");
 const soonBtn = document.getElementById("soonBtn");
 const popularBtn = document.getElementById("popularBtn");
+const source1Btn = document.getElementById("source1");
+const source2Btn = document.getElementById("source2");
 
 let allMatches = [];
-let sportsList = [];
-let currentSport = 'football';
 let liveMode=false, soonMode=false, popularMode=false;
+let activeSource='source1';
 
-/* ---------- FETCH SPORTS ---------- */
-async function fetchSports(){
-  try{
-    const res = await fetch('https://streamed.pk/api/sports');
-    sportsList = await res.json();
-    sportSelect.innerHTML = sportsList.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-    sportSelect.value = currentSport;
-  }catch(e){
-    console.error("Failed to fetch sports", e);
-    sportSelect.innerHTML = `<option value="football">Football</option>`;
-  }
-}
+// Toggle source buttons
+source1Btn.onclick = ()=>{
+  activeSource='source1';
+  source1Btn.classList.add('active');
+  source2Btn.classList.remove('active');
+};
+source2Btn.onclick = ()=>{
+  activeSource='source2';
+  source2Btn.classList.add('active');
+  source1Btn.classList.remove('active');
+};
 
-/* ---------- FETCH MATCHES ---------- */
+// Fetch events from API
 async function fetchMatches(){
-  const urls = [];
-  if(popularMode) urls.push(`https://streamed.pk/api/matches/${currentSport}/popular`);
-  if(liveMode) urls.push('https://streamed.pk/api/matches/live');
-  if(!urls.length) urls.push(`https://streamed.pk/api/matches/${currentSport}`);
-
-  try{
-    const data = await Promise.all(urls.map(u=>fetch(u).then(r=>r.json())));
-    allMatches = data.flat().filter(m=>m.category===currentSport);
-    render();
-  }catch(err){
-    console.error("Failed to fetch matches", err);
-    grid.innerHTML = "<p style='text-align:center;color:red;'>Failed to load matches</p>";
-  }
+  const res = await fetch("https://beta.adstrim.ru/api/events");
+  const data = await res.json();
+  allMatches = data.data.filter(m => m.sport.toLowerCase() === 'football');
+  render();
 }
 
-/* ---------- RENDER GRID ---------- */
+// Render matches
 function render(){
-  grid.innerHTML = '';
+  grid.innerHTML='';
   const now = Date.now();
   const q = searchInput.value.toLowerCase();
 
-  let list = allMatches.filter(m=>m.title.toLowerCase().includes(q));
-  if(soonMode) list = list.filter(m=>m.date>now && m.date-now<=3600000);
+  let list = allMatches.filter(m=>{
+    const teams = `${m.home_team} vs ${m.away_team}`.toLowerCase();
+    return teams.includes(q);
+  });
+
+  if(soonMode) list = list.filter(m=>m.timestamp*1000 - now <= 3600000 && m.timestamp*1000 > now);
 
   list.forEach(m=>{
-    if(!m.poster || !m.sources?.length) return;
-
     const card = document.createElement("div");
     card.className="card";
 
-    // Poster
+    // Top half poster / placeholder
     const poster = document.createElement("div");
     poster.className="poster";
-    poster.style.backgroundImage=`url(https://streamed.pk${m.poster})`;
+    poster.textContent = `${m.home_team} vs ${m.away_team}`;
+    card.appendChild(poster);
 
-    const matchDuration = 2*60*60*1000;
-    const diff = m.date-now;
-
-    const badge = document.createElement("div");
-    badge.className="badge";
-    if(now>=m.date && now<=m.date+matchDuration) badge.classList.add("live");
-    else if(diff>0 && diff<=3600000) badge.classList.add("soon");
-    if(badge.classList.length>1) poster.appendChild(badge);
-
-    // Info
+    // Bottom info
     const info = document.createElement("div");
     info.className="info";
 
-    let teams = m.title;
-    if(m.teams?.home && m.teams?.away){
-      teams = `${m.teams.home.name} vs ${m.teams.away.name}`;
-    }
     const teamsDiv = document.createElement("div");
     teamsDiv.className="teams";
-    teamsDiv.textContent = teams;
+    teamsDiv.textContent = `${m.home_team} vs ${m.away_team}`;
 
     const timeDiv = document.createElement("div");
     timeDiv.className="time";
-    timeDiv.textContent =
-      now>=m.date && now<=m.date+matchDuration
-        ? "LIVE"
-        : diff>0 && diff<=3600000
-        ? `${Math.floor(diff/60000)}m until kick-off`
-        : new Date(m.date).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    const matchStart = m.timestamp*1000;
+    const diff = matchStart - now;
+    if(diff<=0 && diff<=m.duration*60000) timeDiv.textContent="LIVE";
+    else if(diff>0 && diff<=3600000) timeDiv.textContent=`${Math.floor(diff/60000)}m until kick-off`;
+    else timeDiv.textContent = new Date(matchStart).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
 
     info.appendChild(teamsDiv);
     info.appendChild(timeDiv);
-
-    card.appendChild(poster);
     card.appendChild(info);
 
-    // Click to viewer
-    const s = m.sources[0];
-    card.onclick=()=>location.href=`viewer.html?type=${currentSport}&source=${s.source}&id=${s.id}&title=${encodeURIComponent(teams)}`;
+    // Click to viewer with selected source
+    card.onclick=()=>{
+      let channelLink='';
+      if(activeSource==='source1'){
+        const c = m.channels.find(ch=>ch.channel_sources?.includes('sofascore'));
+        channelLink = c ? c.link : m.channels[0].link;
+      } else {
+        const c = m.channels[0]; // topembed.pw fallback
+        channelLink = c.link;
+      }
+      location.href = `viewer.html?type=football&channel=${encodeURIComponent(channelLink)}&title=${encodeURIComponent(`${m.home_team} vs ${m.away_team}`)}`;
+    };
 
     grid.appendChild(card);
   });
-
-  if(list.length===0){
-    grid.innerHTML = "<p style='text-align:center;opacity:.6;'>No matches found</p>";
-  }
 }
 
-/* ---------- EVENT LISTENERS ---------- */
-liveBtn.onclick=()=>{ liveMode=!liveMode; liveBtn.classList.toggle("active",liveMode); fetchMatches(); };
-popularBtn.onclick=()=>{ popularMode=!popularMode; popularBtn.classList.toggle("active",popularMode); fetchMatches(); };
-soonBtn.onclick=()=>{ soonMode=!soonMode; soonBtn.classList.toggle("active",soonMode); render(); };
+// Button toggles
+liveBtn.onclick = ()=>{
+  liveMode=!liveMode;
+  liveBtn.classList.toggle('active',liveMode);
+  render();
+};
+soonBtn.onclick = ()=>{
+  soonMode=!soonMode;
+  soonBtn.classList.toggle('active',soonMode);
+  render();
+};
+popularBtn.onclick = ()=>{
+  popularMode=!popularMode;
+  popularBtn.classList.toggle('active',popularMode);
+  fetchMatches();
+};
 
-searchInput.oninput=render;
-sportSelect.onchange=()=>{ currentSport=sportSelect.value; fetchMatches(); };
+searchInput.oninput = render;
 
-/* ---------- INITIAL LOAD ---------- */
-fetchSports().then(fetchMatches);
+// Initial load
+fetchMatches();
 </script>
+
 </body>
 </html>

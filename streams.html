@@ -6,6 +6,7 @@
 <title>Football Streams</title>
 
 <style>
+/* ---------- BODY ---------- */
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
@@ -13,23 +14,35 @@ body {
   color:#fff;
 }
 
+/* ---------- HEADER ---------- */
 .header {
   padding:1rem;
   text-align:center;
 }
 
+/* ---------- CONTROLS ---------- */
 .controls {
   display:flex;
-  justify-content:center;
-  gap:.5rem;
-  flex-wrap:wrap;
+  flex-direction:column;
+  align-items:center;
+  gap:.6rem;
+  margin-bottom:1rem;
 }
 
-input {
+.controls input {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
   width:240px;
+  max-width:90%;
+}
+
+.button-row {
+  display:flex;
+  gap:.5rem;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:.3rem;
 }
 
 button {
@@ -40,41 +53,38 @@ button {
   color:#000;
   font-weight:600;
   cursor:pointer;
+  transition:.2s;
 }
 
 button.active {
   background:#fff;
 }
 
-/* FORCE 2 COLUMNS */
+/* ---------- GRID ---------- */
 .grid {
   display:grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns:repeat(2,1fr);
   gap:1rem;
   padding:1rem;
 }
 
-@media (min-width: 900px) {
-  .grid { grid-template-columns: repeat(3, 1fr); }
-}
-@media (min-width: 1200px) {
-  .grid { grid-template-columns: repeat(4, 1fr); }
-}
+@media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
+@media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
 
-/* CARD */
+/* ---------- CARD ---------- */
 .card {
   background:#121212;
   border-radius:.7rem;
   overflow:hidden;
   cursor:pointer;
   transition:.2s;
-  aspect-ratio: 9 / 16;
   display:flex;
   flex-direction:column;
+  aspect-ratio:9/16;
 }
 .card:hover { transform:scale(1.04); }
 
-/* TOP HALF */
+/* ---------- POSTER TOP HALF ---------- */
 .poster {
   flex:1;
   background-size:cover;
@@ -95,7 +105,7 @@ button.active {
 .badge.live { background:red; }
 .badge.soon { background:orange; }
 
-/* BOTTOM HALF */
+/* ---------- INFO BOTTOM HALF ---------- */
 .info {
   flex:1;
   padding:.6rem;
@@ -126,10 +136,11 @@ button.active {
   <h2>Football Streams</h2>
   <div class="controls">
     <input id="search" placeholder="Search matches…">
-    <br>
-    <button id="liveBtn">Live</button>
-    <button id="soonBtn">Starting Soon</button>
-    <button id="popularBtn">Popular</button>
+    <div class="button-row">
+      <button id="liveBtn">Live</button>
+      <button id="soonBtn">Starting Soon</button>
+      <button id="popularBtn">Popular</button>
+    </div>
   </div>
 </div>
 
@@ -138,26 +149,27 @@ button.active {
 <script>
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
+
 const liveBtn = document.getElementById("liveBtn");
 const soonBtn = document.getElementById("soonBtn");
 const popularBtn = document.getElementById("popularBtn");
 
 let allMatches = [];
-let liveMode = false;
-let soonMode = false;
-let popularMode = false;
+let liveMode = false, soonMode = false, popularMode = false;
 
+/* ---------- FETCH MATCHES ---------- */
 async function fetchMatches() {
   const urls = [];
-  if (popularMode) urls.push("https://streamed.pk/api/matches/football/popular");
-  if (liveMode) urls.push("https://streamed.pk/api/matches/live");
-  if (!urls.length) urls.push("https://streamed.pk/api/matches/football");
+  if(popularMode) urls.push("https://streamed.pk/api/matches/football/popular");
+  if(liveMode) urls.push("https://streamed.pk/api/matches/live");
+  if(!urls.length) urls.push("https://streamed.pk/api/matches/football");
 
-  const data = await Promise.all(urls.map(u => fetch(u).then(r => r.json())));
-  allMatches = data.flat().filter(m => m.category === "football");
+  const data = await Promise.all(urls.map(u=>fetch(u).then(r=>r.json())));
+  allMatches = data.flat().filter(m=>m.category==="football");
   render();
 }
 
+/* ---------- RENDER GRID ---------- */
 function render() {
   grid.innerHTML = "";
   const now = Date.now();
@@ -165,53 +177,52 @@ function render() {
 
   let list = allMatches.filter(m => m.title.toLowerCase().includes(q));
 
-  if (soonMode) {
-    list = list.filter(m => m.date > now && m.date - now <= 3600000);
+  if(soonMode){
+    list = list.filter(m => m.date>now && m.date-now<=3600000);
   }
 
-  list.forEach(m => {
-    if (!m.poster || !m.sources?.length) return;
+  list.forEach(m=>{
+    if(!m.poster || !m.sources?.length) return;
 
     const card = document.createElement("div");
-    card.className = "card";
+    card.className="card";
 
+    /* Poster top half */
     const poster = document.createElement("div");
-    poster.className = "poster";
-    poster.style.backgroundImage = `url(https://streamed.pk${m.poster})`;
+    poster.className="poster";
+    poster.style.backgroundImage=`url(https://streamed.pk${m.poster})`;
 
-    const matchDuration = 2 * 60 * 60 * 1000;
+    const matchDuration = 2*60*60*1000;
     const diff = m.date - now;
 
     const badge = document.createElement("div");
-    badge.className = "badge";
+    badge.className="badge";
 
-    if (now >= m.date && now <= m.date + matchDuration) {
-      badge.classList.add("live");
-      poster.appendChild(badge);
-    } else if (diff > 0 && diff <= 3600000) {
-      badge.classList.add("soon");
-      poster.appendChild(badge);
-    }
+    if(now>=m.date && now<=m.date+matchDuration) badge.classList.add("live");
+    else if(diff>0 && diff<=3600000) badge.classList.add("soon");
 
+    if(badge.classList.length>1) poster.appendChild(badge);
+
+    /* Info bottom half */
     const info = document.createElement("div");
-    info.className = "info";
+    info.className="info";
 
     let teams = m.title;
-    if (m.teams?.home && m.teams?.away) {
+    if(m.teams?.home && m.teams?.away){
       teams = `${m.teams.home.name} vs ${m.teams.away.name}`;
     }
 
     const teamsDiv = document.createElement("div");
-    teamsDiv.className = "teams";
+    teamsDiv.className="teams";
     teamsDiv.textContent = teams;
 
     const timeDiv = document.createElement("div");
-    timeDiv.className = "time";
+    timeDiv.className="time";
     timeDiv.textContent =
-      now >= m.date && now <= m.date + matchDuration
+      now>=m.date && now<=m.date+matchDuration
         ? "LIVE"
-        : diff > 0 && diff <= 3600000
-        ? `${Math.floor(diff / 60000)}m until kick-off`
+        : diff>0 && diff<=3600000
+        ? `${Math.floor(diff/60000)}m until kick-off`
         : new Date(m.date).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
 
     info.appendChild(teamsDiv);
@@ -220,38 +231,33 @@ function render() {
     card.appendChild(poster);
     card.appendChild(info);
 
+    /* Click to viewer */
     const s = m.sources[0];
-    card.onclick = () => {
-      location.href =
-        `viewer.html?type=football&source=${s.source}&id=${s.id}&title=${encodeURIComponent(teams)}`;
-    };
+    card.onclick=()=>location.href=`viewer.html?type=football&source=${s.source}&id=${s.id}&title=${encodeURIComponent(teams)}`;
 
     grid.appendChild(card);
   });
 }
 
-liveBtn.onclick = () => {
-  liveMode = !liveMode;
+/* ---------- BUTTON HANDLERS ---------- */
+liveBtn.onclick=()=>{
+  liveMode=!liveMode;
   liveBtn.classList.toggle("active", liveMode);
   fetchMatches();
 };
-
-popularBtn.onclick = () => {
-  popularMode = !popularMode;
+popularBtn.onclick=()=>{
+  popularMode=!popularMode;
   popularBtn.classList.toggle("active", popularMode);
   fetchMatches();
 };
-
-soonBtn.onclick = () => {
-  soonMode = !soonMode;
+soonBtn.onclick=()=>{
+  soonMode=!soonMode;
   soonBtn.classList.toggle("active", soonMode);
   render();
 };
-
-searchInput.oninput = render;
+searchInput.oninput=render;
 
 fetchMatches();
 </script>
-
 </body>
 </html>

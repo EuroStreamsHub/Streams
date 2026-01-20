@@ -3,37 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live TV</title>
+<title>Streaming Portal</title>
 <style>
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
-  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
+  background: linear-gradient(135deg,#1e1e1e,#0b0b0b);
   color:#fff;
 }
 
-.header {
-  padding:1rem;
+/* ---------- HEADER ---------- */
+header {
   text-align:center;
+  padding:2rem 1rem 1rem;
 }
 
-.controls {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:.6rem;
+header h1 {
   margin-bottom:1rem;
 }
 
-.controls input {
-  padding:.6rem 1rem;
-  border-radius:.4rem;
+/* ---------- THEME TOGGLE ---------- */
+#themeToggle {
+  background:#ff6700;
+  color:#000;
   border:none;
-  width:240px;
-  max-width:90%;
+  padding:.5rem 1rem;
+  border-radius:.4rem;
+  cursor:pointer;
+  font-weight:600;
 }
 
-/* Grid */
+/* ---------- GRID ---------- */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -41,91 +41,98 @@ body {
   padding:1rem;
 }
 
-@media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
-@media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
+@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
+@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
 
-/* Card */
+/* ---------- CARD ---------- */
 .card {
   background:#121212;
   border-radius:.7rem;
-  padding:1rem;
   cursor:pointer;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  transition:.2s;
+  aspect-ratio:9/16; /* 9:16 portrait */
+}
+
+.card:hover{ transform:scale(1.05); }
+
+/* Placeholder poster for now */
+.card .poster {
+  width:100%;
+  flex:1;
+  background:#222;
   display:flex;
   align-items:center;
   justify-content:center;
-  text-align:center;
-  transition:.2s;
-}
-.card:hover { transform:scale(1.03); }
-
-.card .name {
+  font-size:2rem;
   font-weight:600;
-  font-size:1rem;
+}
+
+.card h2 {
+  margin:0.5rem 0;
+  text-align:center;
+  font-size:1.1rem;
+  padding:.2rem .5rem;
 }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h2>Live TV Channels</h2>
-  <div class="controls">
-    <input id="search" placeholder="Search channels…">
+<header>
+  <h1>Streaming Portal</h1>
+  <button id="themeToggle">Dark Mode</button>
+</header>
+
+<div class="grid">
+  <div class="card" onclick="location.href='streams.html'">
+    <div class="poster">⚽</div>
+    <h2>Football Streams</h2>
+  </div>
+  <div class="card" onclick="location.href='movies.html'">
+    <div class="poster">🎬</div>
+    <h2>Movies</h2>
+  </div>
+  <div class="card" onclick="location.href='livetv.html'">
+    <div class="poster">📺</div>
+    <h2>Live TV</h2>
   </div>
 </div>
 
-<div id="grid" class="grid"></div>
-
 <script>
-const grid = document.getElementById("grid");
-const searchInput = document.getElementById("search");
-let allChannels = [];
+// Theme toggle
+const btn = document.getElementById("themeToggle");
+if(localStorage.getItem("theme")==="light") document.body.classList.add("light");
 
-/* Fetch API */
-async function fetchChannels() {
-  try {
-    const res = await fetch("https://beta.adstrim.ru/api/channels");
-    const data = await res.json();
-    allChannels = data.channels.filter(c => c.show_on_livetv);
-    render();
-  } catch(err) {
-    console.error("Failed to fetch channels:", err);
-    grid.innerHTML = "<p style='color:#f00;text-align:center'>Failed to load channels</p>";
+btn.onclick = () => {
+  document.body.classList.toggle("light");
+  if(document.body.classList.contains("light")){
+    btn.textContent="Light Mode";
+    localStorage.setItem("theme","light");
+  } else {
+    btn.textContent="Dark Mode";
+    localStorage.setItem("theme","dark");
   }
+};
+
+// Light theme styles
+const style = document.createElement("style");
+style.textContent=`
+body.light{
+  background: linear-gradient(135deg,#f2f2f2,#d9d9d9);
+  color:#000;
 }
-
-/* Render Grid */
-function render() {
-  grid.innerHTML = "";
-  const q = searchInput.value.toLowerCase();
-
-  let list = allChannels.filter(c => c.name.toLowerCase().includes(q));
-
-  list.forEach(c => {
-    const card = document.createElement("div");
-    card.className = "card";
-
-    const nameDiv = document.createElement("div");
-    nameDiv.className = "name";
-    nameDiv.textContent = c.name;
-
-    card.appendChild(nameDiv);
-
-    card.onclick = () => {
-      window.location.href = `viewer.html?type=livetv&name=${encodeURIComponent(c.name)}`;
-    };
-
-    grid.appendChild(card);
-  });
-
-  if(list.length === 0){
-    grid.innerHTML = "<p style='text-align:center;opacity:.6'>No channels found</p>";
-  }
+body.light .card{
+  background:#fff;
+  color:#000;
 }
-
-searchInput.addEventListener("input", render);
-
-/* Initial load */
-fetchChannels();
+body.light #themeToggle{
+  color:#fff;
+}
+`;
+document.head.appendChild(style);
 </script>
 
 </body>

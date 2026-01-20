@@ -137,12 +137,11 @@ function render(){
     poster.className = "poster";
     const logoUrl = getLogoUrl(channel.name);
 
-    // Try load image
+    // Only set background image
     const img = new Image();
     img.src = logoUrl;
     img.onload = ()=> poster.style.backgroundImage = `url(${logoUrl})`;
     img.onerror = ()=> poster.style.backgroundColor = "#555"; // fallback
-    poster.appendChild(img);
 
     card.appendChild(poster);
 

@@ -11,32 +11,22 @@ body {
   background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
   color:#fff;
 }
+
+/* HEADER */
 .header {
   padding:1rem;
   text-align:center;
 }
-.controls {
+
+/* SOURCE BUTTONS */
+.source-row {
   display:flex;
   justify-content:center;
-  gap:.5rem;
-  flex-wrap:wrap;
+  gap:0.5rem;
   margin-bottom:1rem;
 }
-.controls input {
-  padding:.6rem 1rem;
-  border-radius:.4rem;
-  border:none;
-  width:220px;
-  max-width:90%;
-}
-.button-row {
-  display:flex;
-  gap:.5rem;
-  justify-content:center;
-  margin-top:.3rem;
-}
-button {
-  padding:.6rem 1rem;
+.source-row button {
+  padding:.5rem 1.2rem;
   border:none;
   border-radius:.4rem;
   background:#ff6700;
@@ -45,72 +35,88 @@ button {
   cursor:pointer;
   transition:.2s;
 }
-button.active { background:#fff; }
+.source-row button.active { background:#fff; }
 
+/* SEARCH + FILTER */
+.controls {
+  display:flex;
+  justify-content:center;
+  gap:1rem;
+  margin-bottom:1rem;
+}
+.controls input {
+  padding:.6rem 1rem;
+  border-radius:.4rem;
+  border:none;
+  width:200px;
+}
+.controls button {
+  padding:.5rem 1rem;
+  border:none;
+  border-radius:.4rem;
+  background:#ff6700;
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+.controls button.active { background:#fff; }
+
+/* GRID */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:1rem;
   padding:1rem;
 }
-@media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
-@media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
+@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
+@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
 
+/* CARD */
 .card {
   background:#121212;
   border-radius:.7rem;
-  overflow:hidden;
   cursor:pointer;
-  transition:.2s;
   display:flex;
   flex-direction:column;
   aspect-ratio:9/16;
+  overflow:hidden;
+  transition:.2s;
 }
-.card:hover { transform:scale(1.03); }
+.card:hover{ transform:scale(1.03); }
 
 .poster {
   flex:1;
   background-size:cover;
   background-position:center;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:.9rem;
-  color:#fff;
-  text-shadow:0 0 5px #000;
 }
-
 .info {
-  flex:1;
-  padding:.6rem;
+  flex:.8;
   display:flex;
   flex-direction:column;
   justify-content:center;
+  align-items:center;
   text-align:center;
   background:#181818;
+  padding:.5rem;
 }
-
 .teams { font-weight:600; font-size:.95rem; }
 .time { margin-top:.3rem; font-size:.85rem; opacity:.75; }
-
-.source-row { display:flex; gap:.5rem; justify-content:center; margin-bottom:1rem; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h2>Football Streams</h2>
+  <div class="source-row">
+    <button id="source1Btn" class="active">Source 1 (Streamed.pk)</button>
+    <button id="source2Btn">Source 2 (TopEmbed)</button>
+  </div>
   <div class="controls">
     <input id="search" placeholder="Search matches…">
-    <div class="source-row">
-      <button id="source1" class="active">Source 1</button>
-      <button id="source2">Source 2</button>
-    </div>
-    <div class="button-row">
-      <button id="liveBtn">Live</button>
-      <button id="soonBtn">Starting Soon</button>
-      <button id="popularBtn">Popular</button>
-    </div>
+    <button id="liveBtn">Live</button>
+    <button id="soonBtn">Starting Soon</button>
+    <button id="popularBtn">Popular</button>
   </div>
 </div>
 
@@ -122,115 +128,110 @@ const searchInput = document.getElementById("search");
 const liveBtn = document.getElementById("liveBtn");
 const soonBtn = document.getElementById("soonBtn");
 const popularBtn = document.getElementById("popularBtn");
-const source1Btn = document.getElementById("source1");
-const source2Btn = document.getElementById("source2");
+const source1Btn = document.getElementById("source1Btn");
+const source2Btn = document.getElementById("source2Btn");
 
+let activeSource = 1; // 1 = streamed.pk, 2 = topembed
 let allMatches = [];
-let liveMode=false, soonMode=false, popularMode=false;
-let activeSource='source1';
+let liveMode = false, soonMode = false, popularMode = false;
 
-// Toggle source buttons
-source1Btn.onclick = ()=>{
-  activeSource='source1';
-  source1Btn.classList.add('active');
-  source2Btn.classList.remove('active');
-};
-source2Btn.onclick = ()=>{
-  activeSource='source2';
-  source2Btn.classList.add('active');
-  source1Btn.classList.remove('active');
-};
+/* SWITCH SOURCE */
+source1Btn.onclick = () => { activeSource=1; source1Btn.classList.add("active"); source2Btn.classList.remove("active"); fetchMatches(); };
+source2Btn.onclick = () => { activeSource=2; source2Btn.classList.add("active"); source1Btn.classList.remove("active"); fetchMatches(); };
 
-// Fetch events from API
-async function fetchMatches(){
-  const res = await fetch("https://beta.adstrim.ru/api/events");
-  const data = await res.json();
-  allMatches = data.data.filter(m => m.sport.toLowerCase() === 'football');
-  render();
+/* FETCH MATCHES */
+async function fetchMatches() {
+  grid.innerHTML = "Loading…";
+  try {
+    let url="";
+    if(activeSource===1){
+      // Streamed.pk football
+      url="https://streamed.pk/api/matches/football";
+    } else {
+      // TopEmbed / Adstrim API
+      url="https://beta.adstrim.ru/api/events";
+    }
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if(activeSource===1){
+      allMatches = data.filter(m=>m.category==="football");
+    } else {
+      // TopEmbed API
+      allMatches = data.data.filter(m=>m.sport==="Football");
+    }
+
+    render();
+  } catch(e){
+    grid.innerHTML = "Failed to load matches";
+    console.error(e);
+  }
 }
 
-// Render matches
+/* RENDER GRID */
 function render(){
-  grid.innerHTML='';
+  grid.innerHTML="";
   const now = Date.now();
   const q = searchInput.value.toLowerCase();
-
   let list = allMatches.filter(m=>{
-    const teams = `${m.home_team} vs ${m.away_team}`.toLowerCase();
-    return teams.includes(q);
+    if(activeSource===1) return m.title.toLowerCase().includes(q);
+    return (m.home_team+" vs "+m.away_team).toLowerCase().includes(q);
   });
 
-  if(soonMode) list = list.filter(m=>m.timestamp*1000 - now <= 3600000 && m.timestamp*1000 > now);
+  if(soonMode) list = list.filter(m=>{
+    if(activeSource===1) return m.date>now && m.date-now<=3600000;
+    return m.timestamp*1000>now && m.timestamp*1000-now<=3600000;
+  });
 
   list.forEach(m=>{
-    const card = document.createElement("div");
+    const card=document.createElement("div");
     card.className="card";
 
-    // Top half poster / placeholder
-    const poster = document.createElement("div");
+    const poster=document.createElement("div");
     poster.className="poster";
-    poster.textContent = `${m.home_team} vs ${m.away_team}`;
+    poster.style.background="#333"; // placeholder
     card.appendChild(poster);
 
-    // Bottom info
-    const info = document.createElement("div");
+    const info=document.createElement("div");
     info.className="info";
-
-    const teamsDiv = document.createElement("div");
+    const teamsDiv=document.createElement("div");
     teamsDiv.className="teams";
-    teamsDiv.textContent = `${m.home_team} vs ${m.away_team}`;
-
-    const timeDiv = document.createElement("div");
+    teamsDiv.textContent = activeSource===1 ? m.title : `${m.home_team} vs ${m.away_team}`;
+    const timeDiv=document.createElement("div");
     timeDiv.className="time";
-    const matchStart = m.timestamp*1000;
-    const diff = matchStart - now;
-    if(diff<=0 && diff<=m.duration*60000) timeDiv.textContent="LIVE";
-    else if(diff>0 && diff<=3600000) timeDiv.textContent=`${Math.floor(diff/60000)}m until kick-off`;
-    else timeDiv.textContent = new Date(matchStart).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    if(activeSource===1){
+      const diff = m.date - now;
+      timeDiv.textContent = diff>0 && diff<=3600000 ? `${Math.floor(diff/60000)}m until kick-off` : new Date(m.date).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+    } else {
+      const diff = m.timestamp*1000 - now;
+      timeDiv.textContent = diff>0 && diff<=3600000 ? `${Math.floor(diff/60000)}m until kick-off` : new Date(m.timestamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+    }
 
     info.appendChild(teamsDiv);
     info.appendChild(timeDiv);
     card.appendChild(info);
 
-    // Click to viewer with selected source
+    // Click → viewer with selected source
     card.onclick=()=>{
-      let channelLink='';
-      if(activeSource==='source1'){
-        const c = m.channels.find(ch=>ch.channel_sources?.includes('sofascore'));
-        channelLink = c ? c.link : m.channels[0].link;
-      } else {
-        const c = m.channels[0]; // topembed.pw fallback
-        channelLink = c.link;
-      }
-      location.href = `viewer.html?type=football&channel=${encodeURIComponent(channelLink)}&title=${encodeURIComponent(`${m.home_team} vs ${m.away_team}`)}`;
+      let viewerUrl="viewer.html?type=football&title=";
+      viewerUrl+=encodeURIComponent(activeSource===1 ? m.title : `${m.home_team} vs ${m.away_team}`);
+      if(activeSource===1) viewerUrl+=`&source=streamedpk&id=${m.sources[0]?.id}`;
+      else viewerUrl+=`&channel=${m.channels[0]?.name}`;
+      location.href=viewerUrl;
     };
 
     grid.appendChild(card);
   });
 }
 
-// Button toggles
-liveBtn.onclick = ()=>{
-  liveMode=!liveMode;
-  liveBtn.classList.toggle('active',liveMode);
-  render();
-};
-soonBtn.onclick = ()=>{
-  soonMode=!soonMode;
-  soonBtn.classList.toggle('active',soonMode);
-  render();
-};
-popularBtn.onclick = ()=>{
-  popularMode=!popularMode;
-  popularBtn.classList.toggle('active',popularMode);
-  fetchMatches();
-};
+/* BUTTON HANDLERS */
+liveBtn.onclick=()=>{ liveMode=!liveMode; liveBtn.classList.toggle("active",liveMode); render(); };
+soonBtn.onclick=()=>{ soonMode=!soonMode; soonBtn.classList.toggle("active",soonMode); render(); };
+popularBtn.onclick=()=>{ popularMode=!popularMode; popularBtn.classList.toggle("active",popularMode); fetchMatches(); };
+searchInput.oninput=render;
 
-searchInput.oninput = render;
-
-// Initial load
 fetchMatches();
 </script>
-
 </body>
 </html>

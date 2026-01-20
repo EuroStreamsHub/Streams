@@ -48,16 +48,34 @@ header h1 {
 .card {
   background:#121212;
   border-radius:.7rem;
-  padding:2rem 1rem;
-  text-align:center;
   cursor:pointer;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
   transition:.2s;
+  aspect-ratio:9/16; /* 9:16 portrait */
 }
+
 .card:hover{ transform:scale(1.05); }
 
-.card h2{
-  font-size:1.2rem;
-  margin-top:1rem;
+/* Placeholder poster for now */
+.card .poster {
+  width:100%;
+  flex:1;
+  background:#222;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2rem;
+  font-weight:600;
+}
+
+.card h2 {
+  margin:0.5rem 0;
+  text-align:center;
+  font-size:1.1rem;
+  padding:.2rem .5rem;
 }
 </style>
 </head>
@@ -70,12 +88,15 @@ header h1 {
 
 <div class="grid">
   <div class="card" onclick="location.href='streams.html'">
+    <div class="poster">⚽</div>
     <h2>Football Streams</h2>
   </div>
   <div class="card" onclick="location.href='movies.html'">
+    <div class="poster">🎬</div>
     <h2>Movies</h2>
   </div>
   <div class="card" onclick="location.href='livetv.html'">
+    <div class="poster">📺</div>
     <h2>Live TV</h2>
   </div>
 </div>

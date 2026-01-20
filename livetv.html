@@ -10,31 +10,39 @@ body {
   font-family:'Segoe UI',Roboto,sans-serif;
   background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
   color:#fff;
-}
-.header {
   text-align:center;
+}
+
+/* Header + controls */
+.header {
   padding:1rem;
 }
 .controls {
   display:flex;
   justify-content:center;
-  gap:1rem;
+  align-items:center;
+  gap:.5rem;
+  flex-wrap:wrap;
   margin-bottom:1rem;
 }
 .controls input {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
-  width:220px;
+  width:200px;
 }
+
+/* Grid layout */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:1rem;
   padding:1rem;
 }
-@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
-@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
+@media(min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
+@media(min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
+
+/* Card 9:16 */
 .card {
   background:#121212;
   border-radius:.7rem;
@@ -45,24 +53,28 @@ body {
   aspect-ratio:9/16;
   transition:.2s;
 }
-.card:hover{ transform:scale(1.04); }
-.logo {
+.card:hover { transform:scale(1.03); }
+
+/* Top logo half */
+.poster {
   flex:1;
+  background:#1e1e1e;
   background-size:contain;
   background-repeat:no-repeat;
   background-position:center;
-  background-color:#000;
 }
+
+/* Bottom info */
 .info {
-  flex:.3;
-  text-align:center;
+  flex:1;
+  background:#181818;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:.4rem;
+  text-align:center;
   font-weight:600;
   font-size:.95rem;
-  background:#181818;
+  padding:.5rem;
 }
 </style>
 </head>
@@ -81,78 +93,70 @@ body {
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 
-let channels = [];
+// Load hashtags.json for country folder mapping
 let hashtags = {};
+fetch('https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/hashtag.json')
+  .then(r => r.json())
+  .then(data => hashtags = data)
+  .then(init);
 
-/* ---------- FETCH HASHTAGS JSON ---------- */
-async function loadHashtags() {
-  const res = await fetch("https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/hashtag.json");
-  hashtags = await res.json();
+// Format API channel name to GitHub logo style
+function formatChannelName(name) {
+  name = name.replace(/\[.*?\]/,'');       // remove [COUNTRY]
+  name = name.replace(/([a-z])([A-Z0-9])/g,'$1-$2'); // insert hyphen
+  name = name.replace(/\s+/g,'-');         // spaces to hyphen
+  return name.toLowerCase();
 }
 
-/* ---------- FETCH CHANNELS ---------- */
-async function loadChannels() {
-  const res = await fetch("https://beta.adstrim.ru/api/channels");
+// Fetch API channels and render
+async function init() {
+  const res = await fetch('https://beta.adstrim.ru/api/channels');
   const data = await res.json();
-  channels = data.channels.filter(c=>c.show_on_livetv);
-  render();
-}
+  const channels = data.channels.filter(c => c.show_on_livetv);
 
-/* ---------- RENDER GRID ---------- */
-function render() {
-  const q = searchInput.value.toLowerCase();
-  grid.innerHTML = "";
+  function render() {
+    const q = searchInput.value.toLowerCase();
+    grid.innerHTML = '';
 
-  channels
-    .filter(c => c.name.toLowerCase().includes(q))
-    .forEach(c => {
-      const card = document.createElement("div");
-      card.className="card";
+    channels.forEach(c => {
+      const countryMatch = c.name.match(/\[(.*?)\]/);
+      let countryKey = countryMatch ? countryMatch[1] : '';
+      let countryFolder = hashtags[countryKey] || countryKey.toLowerCase();
 
-      /* Build logo URL from hashtag.json */
-      let country = c.name.match(/\[(.*?)\]/);
-      country = country ? country[1] : "international";
-      const countryData = hashtags[country] || hashtags["International"] || {folder:"international", code:"int"};
+      const formattedName = formatChannelName(c.name);
+      const countryCode = countryKey.toLowerCase();
+      const logoUrl = `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${formattedName}-${countryCode}.png`;
 
-      // Format name for GitHub file
-      let fileName = c.name.replace(/\[.*?\]/,"") // remove [UK]
-                        .replace(/\s+/g,"-")
-                        .replace(/[^a-zA-Z0-9\-]/g,"")
-                        .toLowerCase();
-      const logoUrl = `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryData.folder}/${fileName}-${countryData.code}.png`;
+      // Filter by search
+      if(!c.name.toLowerCase().includes(q)) return;
 
-      const logoDiv = document.createElement("div");
-      logoDiv.className="logo";
-      logoDiv.style.backgroundImage=`url(${logoUrl})`;
+      const card = document.createElement('div');
+      card.className = 'card';
 
-      const infoDiv = document.createElement("div");
-      infoDiv.className="info";
-      infoDiv.textContent = c.name.replace(/\[.*?\]/,"");
+      const poster = document.createElement('div');
+      poster.className = 'poster';
+      poster.style.backgroundImage = `url(${logoUrl})`;
 
-      card.appendChild(logoDiv);
-      card.appendChild(infoDiv);
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.textContent = c.onsatname || c.name;
 
-      /* Click to viewer */
+      card.appendChild(poster);
+      card.appendChild(info);
+
+      // Click to viewer
       card.onclick = () => {
-        const encoded = encodeURIComponent(c.name);
-        window.location.href = `viewer.html?type=livetv&channel=${encoded}&title=${encodeURIComponent(c.name)}`;
+        const url = `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(c.onsatname||c.name)}`;
+        window.location.href = url;
       };
 
       grid.appendChild(card);
     });
+  }
+
+  searchInput.oninput = render;
+  render();
 }
-
-/* ---------- EVENTS ---------- */
-searchInput.oninput = render;
-
-/* ---------- INIT ---------- */
-async function init() {
-  await loadHashtags();
-  await loadChannels();
-}
-
-init();
 </script>
-
 </body>
 </html>

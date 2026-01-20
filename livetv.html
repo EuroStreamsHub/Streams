@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live TV</title>
+
 <style>
+/* ---------- BODY ---------- */
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
@@ -12,12 +14,13 @@ body {
   color:#fff;
 }
 
-/* HEADER & CONTROLS */
+/* ---------- HEADER ---------- */
 .header {
   padding:1rem;
   text-align:center;
 }
 
+/* ---------- CONTROLS ---------- */
 .controls {
   display:flex;
   flex-wrap:wrap;
@@ -30,12 +33,22 @@ body {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
-  font-weight:600;
-  flex:1 1 200px;
-  max-width:240px;
+  width:200px;
 }
 
-/* GRID & CARD */
+button {
+  padding:.6rem 1.2rem;
+  border:none;
+  border-radius:.4rem;
+  background:#ff6700;
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+button.active { background:#fff; }
+
+/* ---------- GRID ---------- */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -46,6 +59,7 @@ body {
 @media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
 @media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
 
+/* ---------- CARD ---------- */
 .card {
   background:#121212;
   border-radius:.7rem;
@@ -58,23 +72,15 @@ body {
 }
 .card:hover { transform:scale(1.04); }
 
-/* POSTER TOP HALF */
+/* ---------- POSTER TOP HALF ---------- */
 .poster {
   flex:1;
   background-size:cover;
   background-position:center;
   position:relative;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-weight:bold;
-  font-size:1rem;
-  text-align:center;
-  padding:.5rem;
-  color:#fff;
 }
 
-/* INFO BOTTOM HALF */
+/* ---------- INFO BOTTOM HALF ---------- */
 .info {
   flex:1;
   padding:.6rem;
@@ -83,15 +89,17 @@ body {
   justify-content:center;
   text-align:center;
   background:#181818;
+  font-size:.9rem;
 }
 
-.channel-name {
+/* FALLBACK TEXT */
+.info .text-fallback {
   font-weight:600;
-  font-size:.95rem;
-  line-height:1.2;
+  color:#fff;
 }
 </style>
 </head>
+
 <body>
 
 <div class="header">
@@ -107,88 +115,80 @@ body {
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 
-/* ---------- FETCH CHANNELS ---------- */
 let allChannels = [];
 
-async function fetchChannels(){
-  try{
-    const res = await fetch("https://beta.adstrim.ru/api/channels");
-    const data = await res.json();
-    if(data.status==="success"){
-      allChannels = data.channels.filter(c=>c.show_on_livetv);
-      render();
-    }
-  }catch(err){
-    console.error("Failed to fetch channels", err);
-    grid.innerHTML = "<p style='text-align:center;color:red;'>Failed to load channels</p>";
-  }
-}
-
-/* ---------- AUTO-GENERATE GITHUB LOGO URL ---------- */
+/* ---------- GITHUB LOGO URL GENERATOR ---------- */
 function getLogoUrl(channelName){
-  // Extract country code from brackets if exists
   let countryCodeSuffix = "";
   const match = channelName.match(/\[(.*?)\]/);
-  if(match) countryCodeSuffix = "-" + match[1].toLowerCase();
+  if(match) countryCodeSuffix = "-" + match[1].toLowerCase(); // e.g. -uk
 
-  // Remove brackets content
-  let cleanName = channelName.replace(/\[.*?\]/g, "").trim().toLowerCase();
+  // Remove brackets
+  let cleanName = channelName.replace(/\[.*?\]/g,"").trim();
 
-  // Replace non-alphanumeric chars with hyphens
-  cleanName = cleanName.replace(/[^a-z0-9]/g,"-");
+  // Separate letters/numbers & words with hyphen
+  cleanName = cleanName.replace(/([a-zA-Z])([0-9])/g,"$1-$2");
+  cleanName = cleanName.replace(/([a-z])([A-Z])/g,"$1-$2");
 
-  // Default country folder
-  const countryFolder = "united-kingdom";
+  cleanName = cleanName.toLowerCase();
+  cleanName = cleanName.replace(/[^a-z0-9-]/g,"-");
 
+  const countryFolder = "united-kingdom"; // adjust if needed
   return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${cleanName}${countryCodeSuffix}.png`;
+}
+
+/* ---------- FETCH CHANNELS ---------- */
+async function fetchChannels(){
+  const res = await fetch("https://beta.adstrim.ru/api/channels");
+  const data = await res.json();
+  allChannels = data.channels.filter(c=>c.show_on_livetv);
+  render();
 }
 
 /* ---------- RENDER GRID ---------- */
 function render(){
   grid.innerHTML = "";
   const q = searchInput.value.toLowerCase();
-  const list = allChannels.filter(c=>c.name.toLowerCase().includes(q));
 
-  list.forEach(c=>{
+  allChannels.filter(c=>c.name.toLowerCase().includes(q)).forEach(channel=>{
     const card = document.createElement("div");
-    card.className="card";
+    card.className = "card";
 
+    /* Poster top */
     const poster = document.createElement("div");
-    poster.className="poster";
+    poster.className = "poster";
 
-    const logoUrl = getLogoUrl(c.name);
+    const logoUrl = getLogoUrl(channel.name);
+
+    // Try image
     const img = new Image();
     img.src = logoUrl;
-    img.style.maxWidth="90%";
-    img.style.maxHeight="90%";
-    img.onload = ()=> poster.appendChild(img);
-    img.onerror = ()=> poster.textContent = c.name; // fallback to text
+    img.onload = ()=> poster.style.backgroundImage = `url(${logoUrl})`;
+    img.onerror = ()=> poster.style.backgroundColor = "#333"; // fallback
 
-    const info = document.createElement("div");
-    info.className="info";
-
-    const nameDiv = document.createElement("div");
-    nameDiv.className="channel-name";
-    nameDiv.textContent = c.name;
-
-    info.appendChild(nameDiv);
+    poster.appendChild(img);
     card.appendChild(poster);
+
+    /* Info bottom */
+    const info = document.createElement("div");
+    info.className = "info";
+
+    const textFallback = document.createElement("div");
+    textFallback.className = "text-fallback";
+    textFallback.textContent = channel.name;
+    info.appendChild(textFallback);
+
     card.appendChild(info);
 
-    card.onclick = ()=>location.href=`viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}`;
+    /* Click to viewer */
+    card.onclick = ()=> location.href=`viewer.html?type=livetv&channel=${encodeURIComponent(channel.name)}`;
 
     grid.appendChild(card);
   });
-
-  if(list.length===0){
-    grid.innerHTML = "<p style='text-align:center;opacity:.6;'>No channels found</p>";
-  }
 }
 
-/* ---------- EVENTS ---------- */
 searchInput.oninput = render;
 
-/* ---------- INITIAL LOAD ---------- */
 fetchChannels();
 </script>
 </body>

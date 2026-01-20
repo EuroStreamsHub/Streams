@@ -3,34 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Streaming Portal</title>
+<title>Live TV</title>
 <style>
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
-  background: linear-gradient(135deg,#1e1e1e,#0b0b0b);
+  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
   color:#fff;
 }
 
 /* ---------- HEADER ---------- */
-header {
+.header {
   text-align:center;
-  padding:2rem 1rem 1rem;
+  padding:1.5rem 1rem 1rem;
 }
 
-header h1 {
+.header h2 {
+  margin-bottom:.5rem;
+}
+
+/* ---------- SEARCH ---------- */
+.controls {
+  display:flex;
+  justify-content:center;
   margin-bottom:1rem;
 }
 
-/* ---------- THEME TOGGLE ---------- */
-#themeToggle {
-  background:#ff6700;
-  color:#000;
-  border:none;
-  padding:.5rem 1rem;
+.controls input {
+  padding:.6rem 1rem;
   border-radius:.4rem;
-  cursor:pointer;
-  font-weight:600;
+  border:none;
+  width:240px;
+  max-width:90%;
 }
 
 /* ---------- GRID ---------- */
@@ -52,87 +56,99 @@ header h1 {
   overflow:hidden;
   display:flex;
   flex-direction:column;
-  align-items:center;
   transition:.2s;
   aspect-ratio:9/16; /* 9:16 portrait */
 }
 
-.card:hover{ transform:scale(1.05); }
+.card:hover{ transform:scale(1.03); }
 
-/* Placeholder poster for now */
+/* Poster top half */
 .card .poster {
-  width:100%;
   flex:1;
   background:#222;
   display:flex;
   align-items:center;
   justify-content:center;
   font-size:2rem;
-  font-weight:600;
 }
 
-.card h2 {
-  margin:0.5rem 0;
+/* Channel name bottom half */
+.card .name {
+  padding:.5rem;
   text-align:center;
-  font-size:1.1rem;
-  padding:.2rem .5rem;
+  font-weight:600;
+  font-size:1rem;
+  background: #1a1a1a;
 }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Streaming Portal</h1>
-  <button id="themeToggle">Dark Mode</button>
-</header>
-
-<div class="grid">
-  <div class="card" onclick="location.href='streams.html'">
-    <div class="poster">⚽</div>
-    <h2>Football Streams</h2>
-  </div>
-  <div class="card" onclick="location.href='movies.html'">
-    <div class="poster">🎬</div>
-    <h2>Movies</h2>
-  </div>
-  <div class="card" onclick="location.href='livetv.html'">
-    <div class="poster">📺</div>
-    <h2>Live TV</h2>
+<div class="header">
+  <h2>Live TV Channels</h2>
+  <div class="controls">
+    <input id="search" placeholder="Search channels…">
   </div>
 </div>
 
+<div id="grid" class="grid"></div>
+
 <script>
-// Theme toggle
-const btn = document.getElementById("themeToggle");
-if(localStorage.getItem("theme")==="light") document.body.classList.add("light");
+const grid = document.getElementById("grid");
+const searchInput = document.getElementById("search");
+let allChannels = [];
 
-btn.onclick = () => {
-  document.body.classList.toggle("light");
-  if(document.body.classList.contains("light")){
-    btn.textContent="Light Mode";
-    localStorage.setItem("theme","light");
-  } else {
-    btn.textContent="Dark Mode";
-    localStorage.setItem("theme","dark");
+/* Fetch Live TV channels from API */
+async function fetchChannels() {
+  try {
+    const res = await fetch("https://beta.adstrim.ru/api/channels");
+    const data = await res.json();
+    allChannels = data.channels.filter(c => c.show_on_livetv);
+    render();
+  } catch(err) {
+    console.error("Failed to fetch channels:", err);
+    grid.innerHTML = "<p style='color:#f00;text-align:center'>Failed to load channels</p>";
   }
-};
+}
 
-// Light theme styles
-const style = document.createElement("style");
-style.textContent=`
-body.light{
-  background: linear-gradient(135deg,#f2f2f2,#d9d9d9);
-  color:#000;
+/* Render 9:16 cards */
+function render() {
+  grid.innerHTML = "";
+  const q = searchInput.value.toLowerCase();
+
+  let list = allChannels.filter(c => c.name.toLowerCase().includes(q));
+
+  list.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const poster = document.createElement("div");
+    poster.className = "poster";
+    poster.textContent = "📺"; // placeholder for live TV poster
+
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "name";
+    nameDiv.textContent = c.name;
+
+    card.appendChild(poster);
+    card.appendChild(nameDiv);
+
+    card.onclick = () => {
+      window.location.href = `viewer.html?type=livetv&name=${encodeURIComponent(c.name)}`;
+    };
+
+    grid.appendChild(card);
+  });
+
+  if(list.length === 0){
+    grid.innerHTML = "<p style='text-align:center;opacity:.6'>No channels found</p>";
+  }
 }
-body.light .card{
-  background:#fff;
-  color:#000;
-}
-body.light #themeToggle{
-  color:#fff;
-}
-`;
-document.head.appendChild(style);
+
+searchInput.addEventListener("input", render);
+
+/* Initial load */
+fetchChannels();
 </script>
 
 </body>

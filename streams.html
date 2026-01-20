@@ -3,187 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Streams</title>
+<title>Streams</title>
 <style>
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
   background:#121212;
   color:#fff;
+  text-align:center;
 }
-
-.header { text-align:center; padding:1rem; }
-
-.controls {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:1rem;
-  flex-wrap:wrap;
-  margin-bottom:1rem;
-}
-
-button.source-btn {
-  padding:.5rem 1rem;
+.sources { margin:1rem 0; }
+.sources button {
+  margin-right:.3rem;
+  padding:.4rem 1rem;
   border:none;
   border-radius:.4rem;
+  cursor:pointer;
   background:#1f1f1f;
   color:#fff;
   font-weight:600;
-  cursor:pointer;
-  transition:.2s;
 }
-button.source-btn.active { background:#FF6700; }
+.sources button.active { background:#FF6700; color:#fff; }
+#search { margin:0.5rem 0 1rem; padding:.5rem; width:90%; max-width:500px; border-radius:.4rem; border:none; font-size:1rem; }
 
-input#search {
-  padding:.5rem 1rem;
-  border-radius:.4rem;
-  border:none;
-  width:200px;
-}
-
-.button-row {
-  display:flex;
-  gap:.5rem;
-  justify-content:center;
-  margin-top:.5rem;
-}
-
-button.filter-btn {
-  padding:.5rem 1rem;
-  border:none;
-  border-radius:.4rem;
+.match-bar {
   background:#1f1f1f;
   color:#fff;
-  font-weight:600;
+  margin:0.3rem 1rem;
+  padding:0.6rem;
+  border-radius:.4rem;
   cursor:pointer;
-}
-button.filter-btn.active { background:#FF6700; }
-
-.grid {
-  display:grid;
-  grid-template-columns:1fr;
-  gap:.5rem;
-  padding:1rem;
-}
-
-.card {
-  background:#1f1f1f;
-  padding:.8rem;
-  border-radius:.5rem;
-  cursor:pointer;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
   transition:.2s;
+  font-weight:600;
 }
-.card:hover { background:#333; }
-
-.team-names { font-weight:600; }
+.match-bar:hover { background:#FF6700; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h2>Football Streams</h2>
-  <div class="controls">
-    <button class="source-btn active" data-source="streamedpk">Source 1</button>
-    <button class="source-btn" data-source="topembed">Source 2</button>
-    <input id="search" placeholder="Search matches…">
-  </div>
-  <div class="button-row">
-    <button class="filter-btn active" id="liveBtn">Live</button>
-    <button class="filter-btn" id="soonBtn">Starting Soon</button>
-  </div>
+<h2>Live Streams</h2>
+
+<div class="sources">
+  <button id="source1" class="active">Source 1</button>
+  <button id="source2">Source 2</button>
 </div>
 
-<div id="grid" class="grid"></div>
+<input type="text" id="search" placeholder="Search...">
+
+<div id="streamsContainer"></div>
 
 <script>
-const grid = document.getElementById("grid");
+let currentSource = 1; // 1=Streamed.pk, 2=TopEmbed
+const streamsContainer = document.getElementById("streamsContainer");
 const searchInput = document.getElementById("search");
 
-let allMatches = [];
-let selectedSource = "streamedpk";
-let liveMode = true, soonMode = false;
-
-/* ---------- SOURCE BUTTONS ---------- */
-document.querySelectorAll(".source-btn").forEach(btn=>{
-  btn.onclick=()=>{
-    selectedSource=btn.dataset.source;
-    document.querySelectorAll(".source-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    render();
-  };
-});
-
-/* ---------- FILTER BUTTONS ---------- */
-document.getElementById("liveBtn").onclick=()=>{
-  liveMode=true;
-  soonMode=false;
-  document.getElementById("liveBtn").classList.add("active");
-  document.getElementById("soonBtn").classList.remove("active");
-  render();
+document.getElementById("source1").onclick = ()=>{
+    currentSource = 1;
+    loadStreams();
+    setActiveSource(1);
 };
-document.getElementById("soonBtn").onclick=()=>{
-  liveMode=false;
-  soonMode=true;
-  document.getElementById("liveBtn").classList.remove("active");
-  document.getElementById("soonBtn").classList.add("active");
-  render();
+document.getElementById("source2").onclick = ()=>{
+    currentSource = 2;
+    loadStreams();
+    setActiveSource(2);
 };
-searchInput.oninput=render;
 
-/* ---------- FETCH MATCHES ---------- */
-async function fetchMatches(){
-  try {
-    const res = await fetch("https://beta.adstrim.ru/api/events");
-    const data = await res.json();
-    allMatches = data.data.filter(m=>m.sport==="Football");
-    render();
-  } catch(e){ console.error(e); }
+function setActiveSource(n){
+    document.getElementById("source1").classList.toggle("active", n===1);
+    document.getElementById("source2").classList.toggle("active", n===2);
 }
 
-/* ---------- RENDER ---------- */
-function render(){
-  grid.innerHTML="";
-  const now=Date.now();
-  const query = searchInput.value.toLowerCase();
+async function loadStreams(){
+    streamsContainer.innerHTML = "Loading...";
+    let data = [];
 
-  let matches = allMatches.filter(m=>m.title?.toLowerCase().includes(query) || m.home_team.toLowerCase().includes(query) || m.away_team.toLowerCase().includes(query));
+    try {
+      if(currentSource===1){
+        const res = await fetch('https://beta.adstrim.ru/api/events'); // streamed.pk style API
+        const json = await res.json();
+        data = json.data.filter(e => e.sources && e.sources.length>0 && e.category==="football");
+      } else {
+        const res = await fetch('https://beta.adstrim.ru/api/events'); // topembed API
+        const json = await res.json();
+        data = json.data.filter(e => e.channels && e.channels.length>0);
+      }
 
-  if(liveMode) matches = matches.filter(m=>m.timestamp*1000 <= now && now <= m.timestamp*1000 + m.duration*60000);
-  if(soonMode) matches = matches.filter(m=>m.timestamp*1000 > now && m.timestamp*1000-now <= 3600000);
+      streamsContainer.innerHTML = "";
 
-  matches.forEach(m=>{
-    const card = document.createElement("div");
-    card.className="card";
+      // Shuffle to show variety
+      data.sort(()=>Math.random()-0.5);
 
-    const teams = document.createElement("div");
-    teams.className="team-names";
-    teams.textContent = `${m.home_team} vs ${m.away_team}`;
+      const searchTerm = searchInput.value.toLowerCase();
 
-    const time = document.createElement("div");
-    const diff = m.timestamp*1000 - now;
-    time.textContent = liveMode?"LIVE":soonMode?`${Math.floor(diff/60000)}m until kickoff`:new Date(m.timestamp*1000).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      data.forEach(item=>{
+          let title = item.title || `${item.teams?.home?.name || ''} vs ${item.teams?.away?.name || ''}`;
+          // Remove [country] if present
+          title = title.replace(/\[.*?\]/g,'').replace(/-/g,' - ').trim();
+          if(searchTerm && !title.toLowerCase().includes(searchTerm)) return;
 
-    card.appendChild(teams);
-    card.appendChild(time);
+          const div = document.createElement("div");
+          div.className = "match-bar";
+          div.textContent = title;
 
-    card.onclick=()=>{
-      // find the selected source for this match
-      const matchSource = m.channels.find(c=>c.channel_sources?.includes(selectedSource) || (selectedSource==="topembed" && !c.channel_sources)) || m.channels[0];
-      const channelId = matchSource?.link;
-      const matchTitle = `${m.home_team} vs ${m.away_team}`;
+          div.onclick = ()=>{
+              let mirrorId, mirrorSource;
+              if(currentSource===1){ // Streamed.pk
+                mirrorId = item.sources[0].id;
+                mirrorSource = item.sources[0].source;
+              } else { // TopEmbed
+                mirrorId = item.channels[0].link;
+                mirrorSource = item.channels[0].name;
+              }
+              window.location.href = `viewer.html?type=football&source=${currentSource}&id=${mirrorId}&mirror=${mirrorSource}&title=${encodeURIComponent(title)}`;
+          };
 
-      window.location.href=`viewer.html?type=football&source=${selectedSource}&id=${channelId}&title=${encodeURIComponent(matchTitle)}`;
-    };
+          streamsContainer.appendChild(div);
+      });
 
-    grid.appendChild(card);
-  });
+    } catch(e){
+      console.error(e);
+      streamsContainer.innerHTML = "Error loading streams.";
+    }
 }
 
-fetchMatches();
+// Search updates
+searchInput.addEventListener("input", loadStreams);
+
+// Initial load
+loadStreams();
 </script>
 </body>
 </html>

@@ -27,59 +27,54 @@ button:hover { background:#FF6700; }
   <iframe id="player" allowfullscreen></iframe>
 </div>
 
-<div class="controls" id="mirrorControls"></div>
+<div class="controls">
+  <button onclick="refreshStream()">Refresh</button>
+  <button onclick="toggleFullScreen()">Fullscreen</button>
+</div>
 
 <script>
 const params = new URLSearchParams(location.search);
-const type = params.get("type");
+const type = params.get("type");       // football | movies | livetv
 const title = params.get("title");
-const source = params.get("source");   // streamedpk / topembed
-const id = params.get("id");           // channel or match id
+const source = parseInt(params.get("source")); // 1 = streamed.pk, 2 = topembed
+const id = params.get("id");
+const mirror = params.get("mirror");   // source name / channel
+const imdb = params.get("imdb");       // for movies
 
 const player = document.getElementById("player");
 const loader = document.getElementById("loader");
-const mirrorControls = document.getElementById("mirrorControls");
 document.getElementById("title").textContent = title || "Stream";
 
-let mirrors = []; // array of iframe URLs
+function loadStream(){
+  loader.style.display = "block";
 
-function buildMirrors(){
-  mirrors = [];
-  if(source==="streamedpk"){
-    // Example: 1–5 mirrors for streamed.pk
-    for(let i=1;i<=5;i++){
-      mirrors.push(`https://embedsports.top/embed/${source}/${id}/${i}`);
+  try {
+    if(type==="football"){
+      if(source===1){
+        player.src = `https://embedsports.top/embed/${mirror}/${id}/1`;
+      } else if(source===2){
+        player.src = `https://topembed.pw/channel/${encodeURIComponent(mirror)}`;
+      }
+    } else if(type==="livetv"){
+      player.src = `https://topembed.pw/channel/${encodeURIComponent(mirror)}`;
+    } else if(type==="movies"){
+      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
+      player.src = `https://vidfast.pro/movie/${imdb}?autoplay=1`;
     }
-  } else if(source==="topembed"){
-    mirrors.push(`https://topembed.pw/channel/${encodeURIComponent(id)}`);
+  } catch(e){
+    console.error(e);
+    alert("Error loading stream");
   }
 
-  mirrorControls.innerHTML="";
-  mirrors.forEach((url,i)=>{
-    const btn = document.createElement("button");
-    btn.textContent = `Mirror ${i+1}`;
-    btn.onclick=()=>loadMirror(i);
-    mirrorControls.appendChild(btn);
-  });
+  player.onload = ()=>loader.style.display="none";
 }
 
-function loadMirror(index){
-  loader.style.display="block";
-  player.src = mirrors[index];
-  player.onload=()=>loader.style.display="none";
-}
-
-function refreshStream(){ if(player.src){ loader.style.display="block"; player.src=player.src; } }
+function refreshStream(){ if(player.src){ loader.style.display="block"; player.src = player.src; } }
 function toggleFullScreen(){ if(!document.fullscreenElement){ player.requestFullscreen?.(); } else { document.exitFullscreen?.(); } }
+document.querySelector(".back-button").onclick = ()=>{ window.history.back(); }
 
-document.querySelector(".back-button").onclick=()=>{
-  if(type==="football") window.location.href="streams.html";
-  else if(type==="movies") window.location.href="movies.html";
-  else if(type==="livetv") window.location.href="livetv.html";
-};
-
-buildMirrors();
-loadMirror(0);
+loadStream();
 </script>
+
 </body>
 </html>

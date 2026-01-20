@@ -10,127 +10,89 @@ body {
   font-family:'Segoe UI',Roboto,sans-serif;
   background:#121212;
   color:#fff;
-  text-align:center;
 }
-.sources { margin:1rem 0; }
-.sources button {
-  margin-right:.3rem;
-  padding:.4rem 1rem;
-  border:none;
-  border-radius:.4rem;
-  cursor:pointer;
-  background:#1f1f1f;
-  color:#fff;
-  font-weight:600;
+h1 { text-align:center; margin:1rem; }
+.search-container {
+  text-align:center; margin:1rem;
 }
-.sources button.active { background:#FF6700; color:#fff; }
-#search { margin:0.5rem 0 1rem; padding:.5rem; width:90%; max-width:500px; border-radius:.4rem; border:none; font-size:1rem; }
-
-.match-bar {
-  background:#1f1f1f;
-  color:#fff;
-  margin:0.3rem 1rem;
-  padding:0.6rem;
-  border-radius:.4rem;
-  cursor:pointer;
-  transition:.2s;
-  font-weight:600;
+input[type=text] {
+  padding:.5rem; width:90%; max-width:400px; border-radius:.3rem; border:none;
 }
-.match-bar:hover { background:#FF6700; }
+.match-list { max-width:1000px; margin:0 auto; }
+.match-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:.5rem 1rem; margin:.2rem 0; background:#1f1f1f; border-radius:.4rem;
+  cursor:pointer; transition:.2s;
+}
+.match-item:hover { background:#FF6700; }
+.team-names { display:flex; gap:.5rem; }
+.channel-count { font-size:.9rem; opacity:.8; }
 </style>
 </head>
 <body>
 
-<h2>Live Streams</h2>
+<h1>Live Streams</h1>
 
-<div class="sources">
-  <button id="source1" class="active">Source 1</button>
-  <button id="source2">Source 2</button>
+<div class="search-container">
+  <input type="text" id="search" placeholder="Search teams...">
 </div>
 
-<input type="text" id="search" placeholder="Search...">
-
-<div id="streamsContainer"></div>
+<div class="match-list" id="matchList"></div>
 
 <script>
-let currentSource = 1; // 1=Streamed.pk, 2=TopEmbed
-const streamsContainer = document.getElementById("streamsContainer");
+const matchList = document.getElementById("matchList");
 const searchInput = document.getElementById("search");
 
-document.getElementById("source1").onclick = ()=>{
-    currentSource = 1;
-    loadStreams();
-    setActiveSource(1);
-};
-document.getElementById("source2").onclick = ()=>{
-    currentSource = 2;
-    loadStreams();
-    setActiveSource(2);
-};
+// Fetch TopEmbed API
+async function loadMatches(){
+  try{
+    const res = await fetch("https://beta.adstrim.ru/api/events");
+    const data = await res.json();
+    const matches = data.data.filter(m=>m.channels && m.channels.length>0);
 
-function setActiveSource(n){
-    document.getElementById("source1").classList.toggle("active", n===1);
-    document.getElementById("source2").classList.toggle("active", n===2);
-}
-
-async function loadStreams(){
-    streamsContainer.innerHTML = "Loading...";
-    let data = [];
-
-    try {
-      if(currentSource===1){
-        const res = await fetch('https://beta.adstrim.ru/api/events'); // streamed.pk style API
-        const json = await res.json();
-        data = json.data.filter(e => e.sources && e.sources.length>0 && e.category==="football");
-      } else {
-        const res = await fetch('https://beta.adstrim.ru/api/events'); // topembed API
-        const json = await res.json();
-        data = json.data.filter(e => e.channels && e.channels.length>0);
-      }
-
-      streamsContainer.innerHTML = "";
-
-      // Shuffle to show variety
-      data.sort(()=>Math.random()-0.5);
-
-      const searchTerm = searchInput.value.toLowerCase();
-
-      data.forEach(item=>{
-          let title = item.title || `${item.teams?.home?.name || ''} vs ${item.teams?.away?.name || ''}`;
-          // Remove [country] if present
-          title = title.replace(/\[.*?\]/g,'').replace(/-/g,' - ').trim();
-          if(searchTerm && !title.toLowerCase().includes(searchTerm)) return;
-
-          const div = document.createElement("div");
-          div.className = "match-bar";
-          div.textContent = title;
-
-          div.onclick = ()=>{
-              let mirrorId, mirrorSource;
-              if(currentSource===1){ // Streamed.pk
-                mirrorId = item.sources[0].id;
-                mirrorSource = item.sources[0].source;
-              } else { // TopEmbed
-                mirrorId = item.channels[0].link;
-                mirrorSource = item.channels[0].name;
-              }
-              window.location.href = `viewer.html?type=football&source=${currentSource}&id=${mirrorId}&mirror=${mirrorSource}&title=${encodeURIComponent(title)}`;
-          };
-
-          streamsContainer.appendChild(div);
+    renderMatches(matches);
+    
+    searchInput.addEventListener("input", ()=>{
+      const filtered = matches.filter(m=>{
+        const title = m.title.toLowerCase();
+        const search = searchInput.value.toLowerCase();
+        return title.includes(search);
       });
+      renderMatches(filtered);
+    });
 
-    } catch(e){
-      console.error(e);
-      streamsContainer.innerHTML = "Error loading streams.";
-    }
+  } catch(e){ console.error(e); matchList.innerHTML="<p>Error loading matches.</p>"; }
 }
 
-// Search updates
-searchInput.addEventListener("input", loadStreams);
+function renderMatches(matches){
+  matchList.innerHTML="";
+  matches.forEach(m=>{
+    const div = document.createElement("div");
+    div.className="match-item";
+    
+    // Clean title (remove [Country] from first channel name)
+    const firstChannel = m.channels[0];
+    let titleClean = firstChannel.name.replace(/\[.*?\]/,"");
+    // Add spaces before capital letters in names
+    titleClean = titleClean.replace(/([a-z])([A-Z])/g,"$1 $2");
+    
+    div.innerHTML = `
+      <div class="team-names">${titleClean}</div>
+      <div class="channel-count">${m.channel_count || m.channels.length} channels</div>
+    `;
+    
+    div.onclick = ()=> {
+      const channelName = encodeURIComponent(firstChannel.name);
+      const title = encodeURIComponent(titleClean);
+      window.location.href = `viewer.html?type=livetv&channel=${channelName}&title=${title}`;
+    };
+    
+    matchList.appendChild(div);
+  });
+}
 
-// Initial load
-loadStreams();
+loadMatches();
 </script>
+
 </body>
 </html>

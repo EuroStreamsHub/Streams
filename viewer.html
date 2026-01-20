@@ -131,7 +131,7 @@ async function loadStream() {
     player.src = `https://vidfast.pro/movie/${imdb}?autoplay=1`;
 
   } else if(type === "livetv"){
-    player.src = `https://topembed.pw/channel/${encodeURIComponent(channel)}`;
+    player.src = `https://topembed.pw/channel/${(encodedchannel)}`;
   }
 
   player.onload = ()=>loader.style.display="none";

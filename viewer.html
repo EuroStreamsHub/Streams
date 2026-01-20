@@ -12,6 +12,7 @@ body {
   color:#fff;
   text-align:center;
 }
+
 .back-button {
   display:inline-block;
   margin:1rem;
@@ -21,7 +22,7 @@ body {
   border-radius:.5rem;
   text-decoration:none;
 }
-h2#title { margin-bottom:.5rem; }
+
 .stream-container {
   max-width:1000px;
   aspect-ratio:16/9;
@@ -31,11 +32,13 @@ h2#title { margin-bottom:.5rem; }
   border-radius:.5rem;
   overflow:hidden;
 }
+
 iframe {
   width:100%;
   height:100%;
   border:none;
 }
+
 .loader {
   position:absolute;
   top:50%;
@@ -49,29 +52,27 @@ iframe {
   animation:spin 1s linear infinite;
 }
 @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
-.mirrors {
-  display:flex;
-  justify-content:center;
-  gap:.5rem;
-  flex-wrap:wrap;
-  margin-bottom:1rem;
+
+.channel-list {
+  max-width:800px;
+  margin:1rem auto;
+  text-align:left;
 }
-button.mirror-btn {
+
+.channel-item {
   padding:.5rem 1rem;
-  border:none;
-  border-radius:.4rem;
+  margin-bottom:.3rem;
   background:#1f1f1f;
-  color:#fff;
-  font-weight:600;
+  border-radius:.4rem;
   cursor:pointer;
   transition:.2s;
 }
-button.mirror-btn:hover { background:#FF6700; }
+.channel-item:hover { background:#FF6700; }
 </style>
 </head>
 <body>
 
-<a class="back-button" href="#">⬅ Back</a>
+<a class="back-button" href="streams.html">⬅ Back</a>
 <h2 id="title">Stream</h2>
 
 <div class="stream-container">
@@ -79,75 +80,70 @@ button.mirror-btn:hover { background:#FF6700; }
   <iframe id="player" allowfullscreen></iframe>
 </div>
 
-<div class="mirrors" id="mirrors"></div>
+<div class="channel-list" id="channelList">
+  Loading channels...
+</div>
 
 <script>
 const params = new URLSearchParams(location.search);
-const type = params.get("type");        // "livetv" | "football" | "movies"
-const title = params.get("title");
-const channel = params.get("channel");  // TopEmbed channel
+const type = params.get("type");        // should be "livetv"
+const title = params.get("title");      // e.g., "Newcastle United vs Manchester City"
+const mirrorParam = params.get("mirror");// e.g., "ITV1[UK]"
 
 const player = document.getElementById("player");
 const loader = document.getElementById("loader");
-const mirrorsDiv = document.getElementById("mirrors");
+const channelList = document.getElementById("channelList");
 
 document.getElementById("title").textContent = title || "Stream";
 
-/* ---------- LOAD TOP EMBED ---------- */
-async function loadTopEmbed(channelName){
-  loader.style.display="block";
-  try{
-    const res = await fetch("https://beta.adstrim.ru/api/events");
+// Load TopEmbed channels
+async function loadChannels(){
+  loader.style.display = "block";
+  channelList.textContent = "Loading channels...";
+
+  try {
+    const res = await fetch('https://beta.adstrim.ru/api/events');
     const data = await res.json();
-    // find the first match with this channel
-    let match = data.data.find(m=>{
-      return m.channels.some(c=>c.name===channelName);
+
+    // Find the match by title
+    const match = data.data.find(m=>{
+      const home = m.home_team || (m.teams?.home?.name || "");
+      const away = m.away_team || (m.teams?.away?.name || "");
+      return `${home} vs ${away}` === title;
     });
-    if(!match){
-      player.src="about:blank";
-      alert("Channel not found in API");
-      loader.style.display="none";
+
+    if(!match || !match.channels || match.channels.length === 0){
+      channelList.textContent = "No channels available for this match.";
+      loader.style.display = "none";
       return;
     }
 
-    // get all channels for that match
-    const channels = match.channels.filter(c=>c.name===channelName);
-    // TopEmbed iframe URL
-    function embedUrl(chan){ return `https://topembed.pw/channel/${encodeURIComponent(chan.name)}`; }
-
-    // Set first channel
-    player.src = embedUrl(channels[0]);
-    loader.style.display="none";
-
-    // Populate mirrors buttons
-    mirrorsDiv.innerHTML="";
-    channels.forEach((chan,i)=>{
-      const btn = document.createElement("button");
-      btn.className="mirror-btn";
-      btn.textContent = i===0 ? "Main" : `Mirror ${i}`;
-      btn.onclick = ()=>{
-        loader.style.display="block";
-        player.src = embedUrl(chan);
+    // Show list of channels
+    channelList.innerHTML = '';
+    match.channels.forEach(channel=>{
+      const item = document.createElement('div');
+      item.className = 'channel-item';
+      item.textContent = channel.name;
+      item.onclick = () => {
+        const encoded = encodeURIComponent(channel.name);
+        player.src = `https://topembed.pw/channel/${encoded}`;
+        loader.style.display = "block";
       };
-      mirrorsDiv.appendChild(btn);
+      channelList.appendChild(item);
     });
 
+    // Load the initial channel (mirrorParam if exists)
+    let initialChannel = mirrorParam || match.channels[0].name;
+    player.src = `https://topembed.pw/channel/${encodeURIComponent(initialChannel)}`;
   } catch(e){
     console.error(e);
-    loader.style.display="none";
-    alert("Error loading TopEmbed stream");
+    channelList.textContent = "Error loading channels.";
   }
+
+  player.onload = ()=>loader.style.display="none";
 }
 
-/* ---------- BACK BUTTON ---------- */
-document.querySelector(".back-button").onclick = ()=>{
-  if(type==="livetv") window.location.href="streams.html";
-  else window.history.back();
-};
-
-if(type==="livetv" && channel){
-  loadTopEmbed(channel);
-}
+loadChannels();
 </script>
 </body>
 </html>

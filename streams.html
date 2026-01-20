@@ -114,7 +114,6 @@ body {
 }
 .match-teams { font-weight:bold; font-size:.95rem; margin-bottom:.2rem; }
 .match-time { font-size:.85rem; color:#ccc; }
-
 </style>
 </head>
 <body>
@@ -147,10 +146,15 @@ let currentSport = 'football';
 
 /* Fetch sports categories */
 async function fetchSports() {
-  const res = await fetch('https://streamed.pk/api/sports');
-  sportsList = await res.json();
-  sportSelect.innerHTML = sportsList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  sportSelect.value = currentSport;
+  try {
+    const res = await fetch('https://streamed.pk/api/sports');
+    sportsList = await res.json();
+    sportSelect.innerHTML = sportsList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    sportSelect.value = currentSport;
+  } catch(e){
+    console.error("Failed to fetch sports:", e);
+    sportSelect.innerHTML = `<option value="football">Football</option>`;
+  }
 }
 
 /* Fetch matches based on current sport + filters */
@@ -160,9 +164,14 @@ async function fetchMatches() {
   if(liveMode) urls.push(`https://streamed.pk/api/matches/live`);
   if(!urls.length) urls.push(`https://streamed.pk/api/matches/${currentSport}`);
 
-  const dataArrays = await Promise.all(urls.map(u => fetch(u).then(r=>r.json())));
-  allMatches = dataArrays.flat().filter(m=>m.category===currentSport);
-  render();
+  try {
+    const dataArrays = await Promise.all(urls.map(u=>fetch(u).then(r=>r.json())));
+    allMatches = dataArrays.flat().filter(m=>m.category===currentSport);
+    render();
+  } catch(err){
+    console.error("Failed to fetch matches:", err);
+    matchesDiv.innerHTML = "<p style='text-align:center;color:red;'>Failed to load matches</p>";
+  }
 }
 
 /* Render matches grid */
@@ -181,7 +190,7 @@ function render() {
     const card = document.createElement('a');
     card.className='match-card';
     const s = m.sources[0];
-    card.href=`viewer.html?type=football&source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
+    card.href=`viewer.html?type=${currentSport}&source=${s.source}&id=${s.id}&title=${encodeURIComponent(m.title)}`;
 
     const posterDiv = document.createElement('div');
     posterDiv.className='match-poster';
@@ -223,6 +232,10 @@ function render() {
 
     matchesDiv.appendChild(card);
   });
+
+  if(list.length===0){
+    matchesDiv.innerHTML = "<p style='text-align:center;opacity:.6;'>No matches found</p>";
+  }
 }
 
 /* Event listeners */

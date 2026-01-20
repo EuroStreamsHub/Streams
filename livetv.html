@@ -4,52 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live TV</title>
-
 <style>
 body {
   margin:0;
   font-family:'Segoe UI',Roboto,sans-serif;
-  background:radial-gradient(circle at top,#1e1e1e,#0b0b0b);
+  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
   color:#fff;
 }
-
-/* Header */
 .header {
-  padding:1rem;
   text-align:center;
+  padding:1rem;
 }
-
-/* Controls */
 .controls {
   display:flex;
   justify-content:center;
+  gap:1rem;
   margin-bottom:1rem;
 }
-
 .controls input {
-  width:260px;
-  max-width:90%;
   padding:.6rem 1rem;
-  border:none;
   border-radius:.4rem;
+  border:none;
+  width:220px;
 }
-
-/* Grid */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:1rem;
   padding:1rem;
 }
-
-@media(min-width:900px){
-  .grid { grid-template-columns:repeat(3,1fr); }
-}
-@media(min-width:1200px){
-  .grid { grid-template-columns:repeat(4,1fr); }
-}
-
-/* Card */
+@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
+@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
 .card {
   background:#121212;
   border-radius:.7rem;
@@ -60,38 +45,27 @@ body {
   aspect-ratio:9/16;
   transition:.2s;
 }
-.card:hover { transform:scale(1.04); }
-
-/* Logo area (top half) */
-.logo-box {
+.card:hover{ transform:scale(1.04); }
+.logo {
   flex:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#000;
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-color:#000;
 }
-
-.logo-box img {
-  max-width:90%;
-  max-height:60%;
-  object-fit:contain;
-}
-
-/* Info (bottom half) */
 .info {
-  flex:1;
-  background:#181818;
+  flex:.3;
+  text-align:center;
   display:flex;
   align-items:center;
   justify-content:center;
-  text-align:center;
-  padding:.6rem;
+  padding:.4rem;
   font-weight:600;
   font-size:.95rem;
+  background:#181818;
 }
 </style>
 </head>
-
 <body>
 
 <div class="header">
@@ -108,88 +82,76 @@ const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 
 let channels = [];
-let hashtagMap = {};
+let hashtags = {};
 
-/* Load hashtag.json */
-async function loadHashtags(){
-  const res = await fetch("hashtag.json");
-  hashtagMap = await res.json();
+/* ---------- FETCH HASHTAGS JSON ---------- */
+async function loadHashtags() {
+  const res = await fetch("https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/hashtag.json");
+  hashtags = await res.json();
 }
 
-/* Fetch channels */
-async function loadChannels(){
+/* ---------- FETCH CHANNELS ---------- */
+async function loadChannels() {
   const res = await fetch("https://beta.adstrim.ru/api/channels");
   const data = await res.json();
-  channels = data.channels.filter(c => c.show_on_livetv && !c.hide);
+  channels = data.channels.filter(c=>c.show_on_livetv);
   render();
 }
 
-/* Build logo URL */
-function getLogoUrl(name){
-  // Extract country code inside [ ]
-  const match = name.match(/\[(.*?)\]/);
-  if(!match) return null;
-
-  const code = match[1];
-  const countryFolder = hashtagMap[code];
-  if(!countryFolder) return null;
-
-  // Slugify channel name
-  const slug = name
-    .replace(/\[.*?\]/g,"")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g,"-");
-
-  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${slug}-${code.toLowerCase()}.png`;
-}
-
-/* Render grid */
-function render(){
-  grid.innerHTML = "";
+/* ---------- RENDER GRID ---------- */
+function render() {
   const q = searchInput.value.toLowerCase();
+  grid.innerHTML = "";
 
   channels
     .filter(c => c.name.toLowerCase().includes(q))
-    .forEach(c=>{
+    .forEach(c => {
       const card = document.createElement("div");
-      card.className = "card";
+      card.className="card";
 
-      const logoBox = document.createElement("div");
-      logoBox.className = "logo-box";
+      /* Build logo URL from hashtag.json */
+      let country = c.name.match(/\[(.*?)\]/);
+      country = country ? country[1] : "international";
+      const countryData = hashtags[country] || hashtags["International"] || {folder:"international", code:"int"};
 
-      const img = document.createElement("img");
-      const logo = getLogoUrl(c.name);
+      // Format name for GitHub file
+      let fileName = c.name.replace(/\[.*?\]/,"") // remove [UK]
+                        .replace(/\s+/g,"-")
+                        .replace(/[^a-zA-Z0-9\-]/g,"")
+                        .toLowerCase();
+      const logoUrl = `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryData.folder}/${fileName}-${countryData.code}.png`;
 
-      if(logo){
-        img.src = logo;
-        img.onerror = ()=>img.remove();
-        logoBox.appendChild(img);
-      }
+      const logoDiv = document.createElement("div");
+      logoDiv.className="logo";
+      logoDiv.style.backgroundImage=`url(${logoUrl})`;
 
-      const info = document.createElement("div");
-      info.className = "info";
-      info.textContent = c.name.replace(/\[.*?\]/,"").trim();
+      const infoDiv = document.createElement("div");
+      infoDiv.className="info";
+      infoDiv.textContent = c.name.replace(/\[.*?\]/,"");
 
-      card.appendChild(logoBox);
-      card.appendChild(info);
+      card.appendChild(logoDiv);
+      card.appendChild(infoDiv);
 
-      card.onclick = ()=>{
-        location.href =
-          `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}`;
+      /* Click to viewer */
+      card.onclick = () => {
+        const encoded = encodeURIComponent(c.name);
+        window.location.href = `viewer.html?type=livetv&channel=${encoded}&title=${encodeURIComponent(c.name)}`;
       };
 
       grid.appendChild(card);
     });
 }
 
+/* ---------- EVENTS ---------- */
 searchInput.oninput = render;
 
-/* Init */
-(async()=>{
+/* ---------- INIT ---------- */
+async function init() {
   await loadHashtags();
   await loadChannels();
-})();
+}
+
+init();
 </script>
 
 </body>

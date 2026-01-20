@@ -13,14 +13,16 @@ body {
   text-align:center;
 }
 
-/* Header + controls */
+/* ---------- HEADER ---------- */
 .header {
   padding:1rem;
+  text-align:center;
 }
+
+/* ---------- CONTROLS ---------- */
 .controls {
   display:flex;
   justify-content:center;
-  align-items:center;
   gap:.5rem;
   flex-wrap:wrap;
   margin-bottom:1rem;
@@ -29,59 +31,64 @@ body {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
-  width:200px;
+  width:220px;
+  max-width:90%;
 }
 
-/* Grid layout */
+/* ---------- GRID ---------- */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:1rem;
   padding:1rem;
 }
-@media(min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
-@media(min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
+@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
+@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
 
-/* Card 9:16 */
+/* ---------- CARD ---------- */
 .card {
   background:#121212;
   border-radius:.7rem;
   overflow:hidden;
   cursor:pointer;
+  transition:.2s;
   display:flex;
   flex-direction:column;
   aspect-ratio:9/16;
-  transition:.2s;
 }
 .card:hover { transform:scale(1.03); }
 
-/* Top logo half */
+/* ---------- POSTER TOP HALF ---------- */
 .poster {
   flex:1;
-  background:#1e1e1e;
   background-size:contain;
   background-repeat:no-repeat;
   background-position:center;
+  position:relative;
+  border-bottom:1px solid #333;
 }
 
-/* Bottom info */
+/* ---------- INFO BOTTOM HALF ---------- */
 .info {
-  flex:1;
-  background:#181818;
+  flex:.3;
+  padding:.5rem;
   display:flex;
-  align-items:center;
+  flex-direction:column;
   justify-content:center;
   text-align:center;
+  background:#181818;
+}
+.channel-name {
   font-weight:600;
   font-size:.95rem;
-  padding:.5rem;
+  line-height:1.2;
 }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h2>Live TV</h2>
+  <h2>Live TV Channels</h2>
   <div class="controls">
     <input id="search" placeholder="Search channels…">
   </div>
@@ -90,73 +97,92 @@ body {
 <div id="grid" class="grid"></div>
 
 <script>
+// ---------- DOM ----------
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 
-// Load hashtags.json for country folder mapping
-let hashtags = {};
-fetch('https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/hashtag.json')
-  .then(r => r.json())
-  .then(data => hashtags = data)
-  .then(init);
+// ---------- Data ----------
+let channels = [];
+let countryMap = {};
 
-// Format API channel name to GitHub logo style
-function formatChannelName(name) {
-  name = name.replace(/\[.*?\]/,'');       // remove [COUNTRY]
-  name = name.replace(/([a-z])([A-Z0-9])/g,'$1-$2'); // insert hyphen
-  name = name.replace(/\s+/g,'-');         // spaces to hyphen
-  return name.toLowerCase();
+// ---------- Fetch country map ----------
+async function loadCountryMap(){
+  const res = await fetch("https://raw.githubusercontent.com/EuroStreamsHub/Streams/refs/heads/main/hashtag.json");
+  countryMap = await res.json();
 }
 
-// Fetch API channels and render
-async function init() {
-  const res = await fetch('https://beta.adstrim.ru/api/channels');
+// ---------- Fetch channels ----------
+async function fetchChannels(){
+  const res = await fetch("https://beta.adstrim.ru/api/channels");
   const data = await res.json();
-  const channels = data.channels.filter(c => c.show_on_livetv);
-
-  function render() {
-    const q = searchInput.value.toLowerCase();
-    grid.innerHTML = '';
-
-    channels.forEach(c => {
-      const countryMatch = c.name.match(/\[(.*?)\]/);
-      let countryKey = countryMatch ? countryMatch[1] : '';
-      let countryFolder = hashtags[countryKey] || countryKey.toLowerCase();
-
-      const formattedName = formatChannelName(c.name);
-      const countryCode = countryKey.toLowerCase();
-      const logoUrl = `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${formattedName}-${countryCode}.png`;
-
-      // Filter by search
-      if(!c.name.toLowerCase().includes(q)) return;
-
-      const card = document.createElement('div');
-      card.className = 'card';
-
-      const poster = document.createElement('div');
-      poster.className = 'poster';
-      poster.style.backgroundImage = `url(${logoUrl})`;
-
-      const info = document.createElement('div');
-      info.className = 'info';
-      info.textContent = c.onsatname || c.name;
-
-      card.appendChild(poster);
-      card.appendChild(info);
-
-      // Click to viewer
-      card.onclick = () => {
-        const url = `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(c.onsatname||c.name)}`;
-        window.location.href = url;
-      };
-
-      grid.appendChild(card);
-    });
-  }
-
-  searchInput.oninput = render;
+  channels = data.channels.filter(c=>c.show_on_livetv);
   render();
 }
+
+// ---------- Convert API name to GitHub URL ----------
+function getChannelLogoUrl(name){
+  // Extract channel base and country
+  const match = name.match(/^(.*?)\[(.*?)\]$/);
+  if(!match) return "";
+
+  let base = match[1].trim();       // e.g., TNTSports1
+  let country = match[2].trim();    // e.g., UK
+
+  // Map country to GitHub folder code
+  const folder = countryMap[country] || country.toLowerCase();
+
+  // Convert CamelCase & spaces to hyphens
+  const formattedBase = base
+    .replace(/([a-z])([A-Z])/g,'$1-$2')  // TNTSports -> TNT-Sports
+    .replace(/\s+/g,'-')
+    .toLowerCase();
+
+  const code = folder.toLowerCase(); // country code
+
+  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${folder.toLowerCase()}/${formattedBase}-${code}.png`;
+}
+
+// ---------- Render ----------
+function render(){
+  grid.innerHTML = "";
+  const q = searchInput.value.toLowerCase();
+
+  channels.filter(c=>c.name.toLowerCase().includes(q)).forEach(c=>{
+    const card = document.createElement("div");
+    card.className = "card";
+
+    // Poster
+    const poster = document.createElement("div");
+    poster.className = "poster";
+    poster.style.backgroundImage = `url(${getChannelLogoUrl(c.name)})`;
+
+    // Info
+    const info = document.createElement("div");
+    info.className = "info";
+    const channelName = document.createElement("div");
+    channelName.className = "channel-name";
+    channelName.textContent = c.name.replace(/\[.*?\]/,''); // remove [UK]
+    info.appendChild(channelName);
+
+    card.appendChild(poster);
+    card.appendChild(info);
+
+    // Click to viewer
+    card.onclick = ()=>location.href=`viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(channelName.textContent)}`;
+
+    grid.appendChild(card);
+  });
+}
+
+// ---------- Events ----------
+searchInput.oninput = render;
+
+// ---------- Init ----------
+async function init(){
+  await loadCountryMap();
+  await fetchChannels();
+}
+init();
 </script>
 </body>
 </html>

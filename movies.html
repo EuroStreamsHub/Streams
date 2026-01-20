@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movies</title>
+
+<style>
+body {
+  margin:0;
+  font-family:'Segoe UI',Roboto,sans-serif;
+  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
+  color:#fff;
+}
+
+.header {
+  padding:1rem;
+  text-align:center;
+}
+
+.controls {
+  display:flex;
+  justify-content:center;
+  gap:.5rem;
+  flex-wrap:wrap;
+}
+
+input {
+  padding:.6rem 1rem;
+  border-radius:.4rem;
+  border:none;
+  width:240px;
+}
+
+button {
+  padding:.6rem 1.2rem;
+  border:none;
+  border-radius:.4rem;
+  background:#ff6700;
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:1rem;
+  padding:1rem;
+}
+
+.card {
+  cursor:pointer;
+  transition:.2s;
+}
+.card:hover { transform:scale(1.04); }
+
+.poster {
+  width:100%;
+  aspect-ratio:2/3;
+  border-radius:.5rem;
+  background-size:cover;
+  background-position:center;
+}
+
+.title {
+  margin-top:.4rem;
+  font-size:.9rem;
+  text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>Movies</h2>
+  <div class="controls">
+    <input id="search" placeholder="Search movies…">
+    <button onclick="searchMovies()">Search</button>
+    <button onclick="loadPopular()">Popular</button>
+  </div>
+</div>
+
+<div id="grid" class="grid"></div>
+
+<script>
+const API_KEY = "12955008668c12c07496b04132f9ce44";
+const IMG = "https://image.tmdb.org/t/p/w500";
+const grid = document.getElementById("grid");
+
+async function loadPopular() {
+  const res = await fetch(
+    `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`
+  );
+  const data = await res.json();
+  render(data.results);
+}
+
+async function searchMovies() {
+  const q = document.getElementById("search").value.trim();
+  if (!q) return;
+  const res = await fetch(
+    `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(q)}`
+  );
+  const data = await res.json();
+  render(data.results);
+}
+
+async function getImdbId(tmdbId) {
+  const res = await fetch(
+    `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${API_KEY}`
+  );
+  const data = await res.json();
+  return data.imdb_id;
+}
+
+function render(list) {
+  grid.innerHTML = "";
+  list.forEach(movie => {
+    if (!movie.poster_path) return;
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const poster = document.createElement("div");
+    poster.className = "poster";
+    poster.style.backgroundImage = `url(${IMG}${movie.poster_path})`;
+
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = movie.title;
+
+    card.appendChild(poster);
+    card.appendChild(title);
+
+    card.onclick = async () => {
+      const imdb = await getImdbId(movie.id);
+      if (!imdb) return alert("No IMDb ID");
+      location.href =
+        `viewer.html?type=movie&imdb=${imdb}&title=${encodeURIComponent(movie.title)}`;
+    };
+
+    grid.appendChild(card);
+  });
+}
+
+loadPopular();
+</script>
+</body>
+</html>

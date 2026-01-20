@@ -18,7 +18,7 @@ body {
   text-align:center;
 }
 
-/* SOURCE BUTTONS */
+/* SOURCES */
 .source-row {
   display:flex;
   justify-content:center;
@@ -26,30 +26,6 @@ body {
   margin-bottom:1rem;
 }
 .source-row button {
-  width:40px;
-  height:40px;
-  border:none;
-  border-radius:50%;
-  background:#ff6700;
-  cursor:pointer;
-  transition:.2s;
-}
-.source-row button.active { background:#fff; }
-
-/* SEARCH + FILTER */
-.controls {
-  display:flex;
-  justify-content:center;
-  gap:1rem;
-  margin-bottom:1rem;
-}
-.controls input {
-  padding:.6rem 1rem;
-  border-radius:.4rem;
-  border:none;
-  width:200px;
-}
-.controls button {
   padding:.5rem 1rem;
   border:none;
   border-radius:.4rem;
@@ -59,47 +35,73 @@ body {
   cursor:pointer;
   transition:.2s;
 }
-.controls button.active { background:#fff; }
+.source-row button.active {
+  background:#fff;
+  color:#000;
+}
+
+/* SEARCH */
+.controls {
+  display:flex;
+  justify-content:center;
+  margin-bottom:0.5rem;
+}
+.controls input {
+  padding:.6rem 1rem;
+  border-radius:.4rem;
+  border:none;
+  width:240px;
+  max-width:90%;
+  margin-bottom:0.5rem;
+}
+
+/* FILTER BUTTONS */
+.filter-row {
+  display:flex;
+  justify-content:center;
+  gap:.5rem;
+  margin-bottom:1rem;
+}
+.filter-row button {
+  padding:.5rem 1rem;
+  border:none;
+  border-radius:.4rem;
+  background:#ff6700;
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+.filter-row button.active {
+  background:#fff;
+  color:#000;
+}
 
 /* GRID */
 .grid {
   display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:1rem;
-  padding:1rem;
+  grid-template-columns:1fr;
+  gap:0.5rem;
+  padding:0 1rem 1rem 1rem;
 }
-@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
-@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
+@media (min-width:700px){ .grid { grid-template-columns:1fr 1fr; } }
 
-/* CARD */
+/* CARD (horizontal bar) */
 .card {
   background:#121212;
-  border-radius:.7rem;
+  border-radius:.5rem;
+  padding:.6rem 1rem;
   cursor:pointer;
   display:flex;
-  flex-direction:column;
-  aspect-ratio:9/16;
-  overflow:hidden;
+  justify-content:space-between;
+  align-items:center;
   transition:.2s;
 }
-.card:hover{ transform:scale(1.03); }
+.card:hover { background:#1f1f1f; }
 
-.poster {
-  flex:1;
-  background:#333; /* placeholder */
-}
-.info {
-  flex:.8;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  background:#181818;
-  padding:.5rem;
-}
-.teams { font-weight:600; font-size:.95rem; }
-.time { margin-top:.3rem; font-size:.85rem; opacity:.75; }
+/* TEAM TEXT */
+.teams { font-weight:600; }
+.time { opacity:.75; font-size:.85rem; }
 </style>
 </head>
 <body>
@@ -107,15 +109,19 @@ body {
 <div class="header">
   <h2>Football Streams</h2>
 
-  <!-- SOURCE BUTTONS -->
+  <!-- Sources -->
   <div class="source-row">
-    <button id="source1Btn" class="active"></button>
-    <button id="source2Btn"></button>
+    <button id="source1" class="active">Source 1</button>
+    <button id="source2">Source 2</button>
   </div>
 
-  <!-- SEARCH + FILTER -->
+  <!-- Search -->
   <div class="controls">
     <input id="search" placeholder="Search matches…">
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
     <button id="liveBtn">Live</button>
     <button id="soonBtn">Starting Soon</button>
   </div>
@@ -128,91 +134,80 @@ const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 const liveBtn = document.getElementById("liveBtn");
 const soonBtn = document.getElementById("soonBtn");
-const source1Btn = document.getElementById("source1Btn");
-const source2Btn = document.getElementById("source2Btn");
+const source1Btn = document.getElementById("source1");
+const source2Btn = document.getElementById("source2");
 
-let activeSource = 1; // 1=streamed.pk, 2=topembed
 let allMatches = [];
 let liveMode = false, soonMode = false;
-
-/* SWITCH SOURCES */
-source1Btn.onclick = () => { activeSource=1; source1Btn.classList.add("active"); source2Btn.classList.remove("active"); fetchMatches(); };
-source2Btn.onclick = () => { activeSource=2; source2Btn.classList.add("active"); source1Btn.classList.remove("active"); fetchMatches(); };
+let source = 1; // default source 1
 
 /* FETCH MATCHES */
 async function fetchMatches() {
-  grid.innerHTML = "Loading…";
-  try {
-    let url = activeSource===1
-      ? "https://streamed.pk/api/matches/football"
-      : "https://beta.adstrim.ru/api/events";
-
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if(activeSource===1){
-      allMatches = data.filter(m=>m.category==="football");
-    } else {
-      allMatches = data.data.filter(m=>m.sport==="Football");
-    }
-
-    render();
-  } catch(e){
-    grid.innerHTML="Failed to load matches";
-    console.error(e);
+  let url;
+  if(source === 1){
+    url = "https://streamed.pk/api/matches/football";
+  } else {
+    url = "https://beta.adstrim.ru/api/events";
   }
+
+  const res = await fetch(url);
+  let data = await res.json();
+
+  if(source === 1){
+    allMatches = data.filter(m => m.category==="football");
+  } else {
+    allMatches = data.data.map(m => ({
+      id: m.id,
+      home_team: m.home_team,
+      away_team: m.away_team,
+      date: m.timestamp * 1000,
+      channels: m.channels
+    }));
+  }
+
+  render();
 }
 
 /* RENDER GRID */
-function render(){
-  grid.innerHTML="";
+function render() {
+  grid.innerHTML = "";
   const now = Date.now();
   const q = searchInput.value.toLowerCase();
 
-  let list = allMatches.filter(m=>{
-    if(activeSource===1) return m.title.toLowerCase().includes(q);
-    return (m.home_team+" vs "+m.away_team).toLowerCase().includes(q);
+  let list = allMatches.filter(m => {
+    const teams = source===1 ? m.title : `${m.home_team} vs ${m.away_team}`;
+    return teams.toLowerCase().includes(q);
   });
 
-  if(soonMode) list = list.filter(m=>{
-    if(activeSource===1) return m.date>now && m.date-now<=3600000;
-    return m.timestamp*1000>now && m.timestamp*1000-now<=3600000;
-  });
+  if(soonBtn.classList.contains("active")){
+    list = list.filter(m => m.date > now && m.date - now <= 3600000);
+  }
+  if(liveBtn.classList.contains("active")){
+    list = list.filter(m => m.date <= now && m.date + 2*60*60*1000 >= now);
+  }
 
   list.forEach(m=>{
-    const card=document.createElement("div");
-    card.className="card";
+    const card = document.createElement("div");
+    card.className = "card";
 
-    const poster=document.createElement("div");
-    poster.className="poster";
-    card.appendChild(poster);
+    let teams = source===1 ? m.title : `${m.home_team} vs ${m.away_team}`;
+    let diff = m.date - now;
+    let timeText = diff>0 ? `${Math.floor(diff/60000)}m until kick-off` : "LIVE";
 
-    const info=document.createElement("div");
-    info.className="info";
-    const teamsDiv=document.createElement("div");
+    const teamsDiv = document.createElement("div");
     teamsDiv.className="teams";
-    teamsDiv.textContent = activeSource===1 ? m.title : `${m.home_team} vs ${m.away_team}`;
-    const timeDiv=document.createElement("div");
+    teamsDiv.textContent = teams;
+
+    const timeDiv = document.createElement("div");
     timeDiv.className="time";
-    if(activeSource===1){
-      const diff = m.date-now;
-      timeDiv.textContent = diff>0 && diff<=3600000 ? `${Math.floor(diff/60000)}m until kick-off` : new Date(m.date).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-    } else {
-      const diff = m.timestamp*1000-now;
-      timeDiv.textContent = diff>0 && diff<=3600000 ? `${Math.floor(diff/60000)}m until kick-off` : new Date(m.timestamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-    }
+    timeDiv.textContent = timeText;
 
-    info.appendChild(teamsDiv);
-    info.appendChild(timeDiv);
-    card.appendChild(info);
+    card.appendChild(teamsDiv);
+    card.appendChild(timeDiv);
 
-    // Click → viewer
-    card.onclick=()=>{
-      let viewerUrl="viewer.html?type=football&title=";
-      viewerUrl+=encodeURIComponent(activeSource===1 ? m.title : `${m.home_team} vs ${m.away_team}`);
-      if(activeSource===1) viewerUrl+=`&source=streamedpk&id=${m.sources[0]?.id}`;
-      else viewerUrl+=`&channel=${m.channels[0]?.name}`;
-      location.href=viewerUrl;
+    card.onclick = ()=>{
+      let channel = source===1 ? m.sources?.[0]?.source : m.channels?.[0]?.link;
+      location.href=`viewer.html?type=football&source=${source}&id=${m.id}&channel=${channel}&title=${encodeURIComponent(teams)}`;
     };
 
     grid.appendChild(card);
@@ -220,10 +215,32 @@ function render(){
 }
 
 /* BUTTON HANDLERS */
-liveBtn.onclick=()=>{ liveMode=!liveMode; liveBtn.classList.toggle("active",liveMode); render(); };
-soonBtn.onclick=()=>{ soonMode=!soonMode; soonBtn.classList.toggle("active",soonMode); render(); };
-searchInput.oninput=render;
+liveBtn.onclick = ()=>{
+  liveMode = !liveMode;
+  liveBtn.classList.toggle("active", liveMode);
+  render();
+};
+soonBtn.onclick = ()=>{
+  soonMode = !soonMode;
+  soonBtn.classList.toggle("active", soonMode);
+  render();
+};
+searchInput.oninput = render;
 
+source1Btn.onclick = ()=>{
+  source = 1;
+  source1Btn.classList.add("active");
+  source2Btn.classList.remove("active");
+  fetchMatches();
+};
+source2Btn.onclick = ()=>{
+  source = 2;
+  source2Btn.classList.add("active");
+  source1Btn.classList.remove("active");
+  fetchMatches();
+};
+
+// Initial load
 fetchMatches();
 </script>
 </body>

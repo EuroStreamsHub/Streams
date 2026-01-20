@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Streams</title>
+<title>Live Streams</title>
 <style>
 body {
   margin:0;
@@ -11,84 +11,94 @@ body {
   background:#121212;
   color:#fff;
 }
-h1 { text-align:center; margin:1rem; }
-.search-container {
-  text-align:center; margin:1rem;
+
+h1 {
+  text-align:center;
+  padding:1rem;
 }
-input[type=text] {
-  padding:.5rem; width:90%; max-width:400px; border-radius:.3rem; border:none;
+
+.match-list {
+  max-width:800px;
+  margin:0 auto;
+  padding:1rem;
 }
-.match-list { max-width:1000px; margin:0 auto; }
-.match-item {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:.5rem 1rem; margin:.2rem 0; background:#1f1f1f; border-radius:.4rem;
-  cursor:pointer; transition:.2s;
+
+.match-bar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#1f1f1f;
+  margin-bottom:.5rem;
+  padding:.6rem 1rem;
+  border-radius:.5rem;
+  cursor:pointer;
+  transition:.2s;
 }
-.match-item:hover { background:#FF6700; }
-.team-names { display:flex; gap:.5rem; }
-.channel-count { font-size:.9rem; opacity:.8; }
+.match-bar:hover {
+  background:#FF6700;
+}
+
+.match-bar span {
+  font-weight:600;
+}
 </style>
 </head>
 <body>
 
-<h1>Live Streams</h1>
-
-<div class="search-container">
-  <input type="text" id="search" placeholder="Search teams...">
+<h1>Live Matches</h1>
+<div class="match-list" id="matchList">
+  Loading matches...
 </div>
 
-<div class="match-list" id="matchList"></div>
-
 <script>
-const matchList = document.getElementById("matchList");
-const searchInput = document.getElementById("search");
+const matchList = document.getElementById('matchList');
 
-// Fetch TopEmbed API
+// Fetch TopEmbed football matches
 async function loadMatches(){
-  try{
-    const res = await fetch("https://beta.adstrim.ru/api/events");
+  matchList.textContent = "Loading matches...";
+  try {
+    const res = await fetch('https://beta.adstrim.ru/api/events');
     const data = await res.json();
-    const matches = data.data.filter(m=>m.channels && m.channels.length>0);
 
-    renderMatches(matches);
-    
-    searchInput.addEventListener("input", ()=>{
-      const filtered = matches.filter(m=>{
-        const title = m.title.toLowerCase();
-        const search = searchInput.value.toLowerCase();
-        return title.includes(search);
-      });
-      renderMatches(filtered);
+    matchList.innerHTML = '';
+    data.data.forEach(match => {
+      if(match.sport !== "Football") return; // only football
+      const home = match.home_team || (match.teams?.home?.name || "Home");
+      const away = match.away_team || (match.teams?.away?.name || "Away");
+
+      // Count channels
+      const channels = match.channels || [];
+      const channelCount = channels.length;
+
+      // Create bar
+      const bar = document.createElement('div');
+      bar.className = 'match-bar';
+      bar.innerHTML = `<span>${home} vs ${away}</span><span>${channelCount} channel${channelCount !== 1 ? 's' : ''}</span>`;
+
+      // On click, open viewer with first TopEmbed channel
+      bar.onclick = () => {
+        if(channelCount === 0) {
+          alert("No channels available for this match.");
+          return;
+        }
+
+        // pick first channel
+        const firstChannel = channels[0];
+        const channelName = encodeURIComponent(firstChannel.name);
+
+        // Navigate to viewer
+        window.location.href = `viewer.html?type=livetv&mirror=${channelName}&title=${encodeURIComponent(home + ' vs ' + away)}`;
+      };
+
+      matchList.appendChild(bar);
     });
 
-  } catch(e){ console.error(e); matchList.innerHTML="<p>Error loading matches.</p>"; }
-}
+    if(matchList.innerHTML === '') matchList.textContent = 'No live football matches found.';
 
-function renderMatches(matches){
-  matchList.innerHTML="";
-  matches.forEach(m=>{
-    const div = document.createElement("div");
-    div.className="match-item";
-    
-    // Clean title (remove [Country] from first channel name)
-    const firstChannel = m.channels[0];
-    let titleClean = firstChannel.name.replace(/\[.*?\]/,"");
-    // Add spaces before capital letters in names
-    titleClean = titleClean.replace(/([a-z])([A-Z])/g,"$1 $2");
-    
-    div.innerHTML = `
-      <div class="team-names">${titleClean}</div>
-      <div class="channel-count">${m.channel_count || m.channels.length} channels</div>
-    `;
-    
-    div.onclick = ()=> {
-      const channelName = encodeURIComponent(firstChannel.name);
-      const title = encodeURIComponent(titleClean);
-      window.location.href = `viewer.html?type=livetv&channel=${channelName}&title=${title}`;
-    };
-    
-    matchList.appendChild(div);
-  });
+  } catch(e){
+    console.error(e);
+    matchList.textContent = "Error loading matches.";
+  }
 }
 
 loadMatches();

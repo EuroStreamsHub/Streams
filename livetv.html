@@ -107,17 +107,6 @@ body {
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 
-/* ---------- CHANNEL → COUNTRY MAPPING ---------- */
-const channelCountry = {
-  "SkySportsNews[UK]": "united-kingdom",
-  "TNT Sports 7 UK": "united-kingdom",
-  "ESPN": "united-states",
-  "BT Sport 1": "united-kingdom",
-  "BBC One": "united-kingdom",
-  "CNN": "united-states",
-  // add more mappings as needed
-};
-
 /* ---------- FETCH CHANNELS ---------- */
 let allChannels = [];
 
@@ -135,20 +124,23 @@ async function fetchChannels(){
   }
 }
 
-/* ---------- GET GITHUB LOGO URL ---------- */
+/* ---------- AUTO-GENERATE GITHUB LOGO URL ---------- */
 function getLogoUrl(channelName){
-  const country = channelCountry[channelName] || "united-kingdom";
-
-  // extract country code from brackets if exists
+  // Extract country code from brackets if exists
   let countryCodeSuffix = "";
   const match = channelName.match(/\[(.*?)\]/);
   if(match) countryCodeSuffix = "-" + match[1].toLowerCase();
 
-  // remove brackets content
+  // Remove brackets content
   let cleanName = channelName.replace(/\[.*?\]/g, "").trim().toLowerCase();
+
+  // Replace non-alphanumeric chars with hyphens
   cleanName = cleanName.replace(/[^a-z0-9]/g,"-");
 
-  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${country}/${cleanName}${countryCodeSuffix}.png`;
+  // Default country folder
+  const countryFolder = "united-kingdom";
+
+  return `https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/${countryFolder}/${cleanName}${countryCodeSuffix}.png`;
 }
 
 /* ---------- RENDER GRID ---------- */
@@ -170,7 +162,7 @@ function render(){
     img.style.maxWidth="90%";
     img.style.maxHeight="90%";
     img.onload = ()=> poster.appendChild(img);
-    img.onerror = ()=> poster.textContent = c.name; // fallback
+    img.onerror = ()=> poster.textContent = c.name; // fallback to text
 
     const info = document.createElement("div");
     info.className="info";
@@ -180,7 +172,6 @@ function render(){
     nameDiv.textContent = c.name;
 
     info.appendChild(nameDiv);
-
     card.appendChild(poster);
     card.appendChild(info);
 

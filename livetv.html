@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live TV</title>
+<style>
+body {
+  margin:0;
+  font-family:'Segoe UI',Roboto,sans-serif;
+  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
+  color:#fff;
+}
+
+.header {
+  padding:1rem;
+  text-align:center;
+}
+
+.controls {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:.6rem;
+  margin-bottom:1rem;
+}
+
+.controls input {
+  padding:.6rem 1rem;
+  border-radius:.4rem;
+  border:none;
+  width:240px;
+  max-width:90%;
+}
+
+/* Grid */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:1rem;
+  padding:1rem;
+}
+
+@media (min-width:900px){ .grid { grid-template-columns:repeat(3,1fr); } }
+@media (min-width:1200px){ .grid { grid-template-columns:repeat(4,1fr); } }
+
+/* Card */
+.card {
+  background:#121212;
+  border-radius:.7rem;
+  padding:1rem;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  transition:.2s;
+}
+.card:hover { transform:scale(1.03); }
+
+.card .name {
+  font-weight:600;
+  font-size:1rem;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>Live TV Channels</h2>
+  <div class="controls">
+    <input id="search" placeholder="Search channels…">
+  </div>
+</div>
+
+<div id="grid" class="grid"></div>
+
+<script>
+const grid = document.getElementById("grid");
+const searchInput = document.getElementById("search");
+let allChannels = [];
+
+/* Fetch API */
+async function fetchChannels() {
+  try {
+    const res = await fetch("https://beta.adstrim.ru/api/channels");
+    const data = await res.json();
+    allChannels = data.channels.filter(c => c.show_on_livetv);
+    render();
+  } catch(err) {
+    console.error("Failed to fetch channels:", err);
+    grid.innerHTML = "<p style='color:#f00;text-align:center'>Failed to load channels</p>";
+  }
+}
+
+/* Render Grid */
+function render() {
+  grid.innerHTML = "";
+  const q = searchInput.value.toLowerCase();
+
+  let list = allChannels.filter(c => c.name.toLowerCase().includes(q));
+
+  list.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "name";
+    nameDiv.textContent = c.name;
+
+    card.appendChild(nameDiv);
+
+    card.onclick = () => {
+      window.location.href = `viewer.html?type=livetv&name=${encodeURIComponent(c.name)}`;
+    };
+
+    grid.appendChild(card);
+  });
+
+  if(list.length === 0){
+    grid.innerHTML = "<p style='text-align:center;opacity:.6'>No channels found</p>";
+  }
+}
+
+searchInput.addEventListener("input", render);
+
+/* Initial load */
+fetchChannels();
+</script>
+
+</body>
+</html>

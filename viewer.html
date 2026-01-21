@@ -1,162 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Viewer</title>
-<style>
-body {
-  margin:0;
-  font-family:'Segoe UI',Roboto,sans-serif;
-  background:#121212;
-  color:#fff;
-  text-align:center;
-}
+  <meta charset="UTF-8" />
+  <title>Stream Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-.back-button {
-  display:inline-block;
-  margin:1rem;
-  background:#1f1f1f;
-  color:#fff;
-  padding:.6rem 1rem;
-  border-radius:.5rem;
-  text-decoration:none;
-}
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-h2#title {
-  margin-bottom:.5rem;
-}
+    body {
+      background: #000;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-/* Container */
-.stream-container {
-  max-width:1000px;
-  aspect-ratio:16/9;
-  margin:1rem auto;
-  background:#000;
-  position:relative;
-  border-radius:.5rem;
-  overflow:hidden;
-}
+    header {
+      padding: 10px 15px;
+      background: #111;
+      border-bottom: 1px solid #222;
+      text-align: center;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-/* iframe */
-iframe {
-  width:100%;
-  height:100%;
-  border:none;
-}
+    #player-container {
+      position: relative;
+      flex: 1;
+      background: #000;
+    }
 
-/* Loader */
-.loader {
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:50px;
-  height:50px;
-  border:6px solid rgba(255,255,255,.2);
-  border-top:6px solid #FF6700;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  animation:spin 1s linear infinite;
-}
-@keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #000;
+    }
 
-/* Controls below iframe */
-.controls {
-  display:flex;
-  justify-content:center;
-  gap:.5rem;
-  flex-wrap:wrap;
-  margin-bottom:1rem;
-}
+    #loader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.85);
+      z-index: 10;
+    }
 
-button {
-  padding:.5rem 1rem;
-  border:none;
-  border-radius:.4rem;
-  background:#1f1f1f;
-  color:#fff;
-  font-weight:600;
-  cursor:pointer;
-  transition:.2s;
-}
-button:hover { background:#FF6700; }
-</style>
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #333;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
+
 <body>
 
-<a class="back-button" href="#">⬅ Back</a>
-<h2 id="title">Stream</h2>
+<header id="title">Loading…</header>
 
-<div class="stream-container">
-  <div class="loader" id="loader"></div>
-  <iframe id="player" allowfullscreen></iframe>
-</div>
+<div id="player-container">
+  <div id="loader">
+    <div class="spinner"></div>
+  </div>
 
-<div class="controls">
-  <button onclick="refreshStream()">Refresh</button>
-  <button onclick="toggleFullScreen()">Fullscreen</button>
+  <iframe id="player" allowfullscreen allow="autoplay; fullscreen"></iframe>
 </div>
 
 <script>
-const params = new URLSearchParams(location.search);
-const type = params.get("type");        // "football" | "movie" | "livetv"
-const title = params.get("title");
-const source = params.get("source");    // for football
-const id = params.get("id");            // for football
-const mirror = params.get("mirror");    // for live TV
-const imdb = params.get("imdb");        // for movies
+  const params = new URLSearchParams(window.location.search);
 
-const player = document.getElementById("player");
-const loader = document.getElementById("loader");
-document.getElementById("title").textContent = title || "Stream";
+  const type    = params.get("type");
+  const title   = params.get("title") || "";
+  const imdb    = params.get("imdb");
+  const mirror  = params.get("mirror");
+  const channel = params.get("channel");
 
-/* ---------- LOAD STREAM ---------- */
-async function loadStream() {
-  loader.style.display = "block";
+  const player  = document.getElementById("player");
+  const loader  = document.getElementById("loader");
+  const titleEl = document.getElementById("title");
 
-  try {
-    if(type === "football"){
-      if(!source || !id){ alert("Source or ID not provided"); loader.style.display="none"; return; }
-      // Top Embed Football
-      player.src = `https://embedsports.top/embed/${source}/${id}/1`;
+  titleEl.textContent = decodeURIComponent(title || "Stream Viewer");
 
-    } else if(type === "movie"){
-      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
-      const cleanId = imdb.replace(/^tt/, ''); // remove 'tt' prefix
+  loader.style.display = "flex";
+
+  /* =========================
+     MOVIES
+  ========================= */
+  if (type === "movie") {
+    if (!imdb) {
+      alert("Movie ID not provided");
+      loader.style.display = "none";
+    } else {
+      const cleanId = imdb.replace(/^tt/, "");
       player.src = `https://vidfast.pro/movie/${cleanId}`;
-
-    } else if(type === "livetv"){
-      if(!mirror){ alert("Channel not provided"); loader.style.display="none"; return; }
-      const encodedChannel = encodeURIComponent(mirror);
-      player.src = `https://topembed.pw/channel/${encodedChannel}`;
     }
-  } catch(e){
-    console.error(e);
-    alert("Error loading stream");
   }
 
-  player.onload = ()=>loader.style.display="none";
-}
+  /* =========================
+     LIVE TV (TopEmbed)
+  ========================= */
+  else if (type === "livetv") {
+    const liveChannel = mirror || channel;
 
-/* ---------- CONTROLS ---------- */
-function refreshStream(){
-  if(player.src){ loader.style.display="block"; player.src = player.src; }
-}
+    if (!liveChannel) {
+      alert("Channel not provided");
+      loader.style.display = "none";
+    } else {
+      const encoded = encodeURIComponent(liveChannel);
+      player.src = `https://topembed.pw/channel/${encoded}`;
+    }
+  }
 
-function toggleFullScreen(){
-  if(!document.fullscreenElement){ player.requestFullscreen?.(); }
-  else { document.exitFullscreen?.(); }
-}
+  /* =========================
+     INVALID TYPE
+  ========================= */
+  else {
+    alert("Invalid stream type");
+    loader.style.display = "none";
+  }
 
-/* ---------- BACK BUTTON ---------- */
-document.querySelector(".back-button").onclick = ()=>{
-  if(type==="football") window.location.href="streams.html";
-  else if(type==="movie") window.location.href="movies.html";
-  else if(type==="livetv") window.location.href="livetv.html";
-};
-
-/* ---------- INITIAL LOAD ---------- */
-loadStream();
+  /* =========================
+     LOADER HANDLING
+  ========================= */
+  player.onload = () => {
+    loader.style.display = "none";
+  };
 </script>
 
 </body>

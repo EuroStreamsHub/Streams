@@ -1,146 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Stream Viewer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<title>Stream Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, Helvetica, sans-serif;
-    }
+<style>
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-    body {
-      background: #000;
-      color: #fff;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+header {
+  padding: 10px;
+  background: #111;
+  border-bottom: 1px solid #222;
+  font-size: 14px;
+  text-align: center;
+}
 
-    header {
-      padding: 10px 15px;
-      background: #111;
-      border-bottom: 1px solid #222;
-      text-align: center;
-      font-size: 14px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+#mirrors {
+  display: none;
+  background: #111;
+  border-bottom: 1px solid #222;
+  padding: 6px;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
 
-    #player-container {
-      position: relative;
-      flex: 1;
-      background: #000;
-    }
+#mirrors button {
+  background: #222;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 6px 10px;
+  cursor: pointer;
+}
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #000;
-    }
+#mirrors button:hover {
+  background: #444;
+}
 
-    #loader {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.85);
-      z-index: 10;
-    }
+#player {
+  flex: 1;
+  border: none;
+  width: 100%;
+}
 
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #333;
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
+#loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+}
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #333;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
 </head>
 
 <body>
 
 <header id="title">Loading…</header>
 
-<div id="player-container">
-  <div id="loader">
-    <div class="spinner"></div>
-  </div>
+<div id="mirrors"></div>
 
-  <iframe id="player" allowfullscreen allow="autoplay; fullscreen"></iframe>
+<div id="loader">
+  <div class="spinner"></div>
 </div>
 
+<iframe id="player" allowfullscreen allow="autoplay; fullscreen"></iframe>
+
 <script>
-  const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(location.search);
 
-  const type    = params.get("type");
-  const title   = params.get("title") || "";
-  const imdb    = params.get("imdb");
-  const mirror  = params.get("mirror");
-  const channel = params.get("channel");
+const type    = params.get("type");
+const title   = decodeURIComponent(params.get("title") || "");
+const imdb    = params.get("imdb");
+const mirror  = params.get("mirror");
+const channel = params.get("channel");
 
-  const player  = document.getElementById("player");
-  const loader  = document.getElementById("loader");
-  const titleEl = document.getElementById("title");
+const player  = document.getElementById("player");
+const loader  = document.getElementById("loader");
+const mirrorsBox = document.getElementById("mirrors");
+const titleEl = document.getElementById("title");
 
-  titleEl.textContent = decodeURIComponent(title || "Stream Viewer");
+titleEl.textContent = title || "Stream Viewer";
 
+function hideLoader() {
+  loader.style.display = "none";
+}
+
+/* =========================
+   MOVIES
+========================= */
+if (type === "movie") {
+  if (!imdb) {
+    alert("Movie ID missing");
+    hideLoader();
+  } else {
+    const clean = imdb.replace(/^tt/, "");
+    player.src = `https://vidfast.pro/movie/${clean}`;
+  }
+}
+
+/* =========================
+   LIVE TV / MATCHES
+========================= */
+else if (type === "livetv") {
+  const selectedChannel = mirror || channel;
+
+  if (!selectedChannel) {
+    alert("Channel not provided");
+    hideLoader();
+  } else {
+    loadChannel(selectedChannel);
+
+    // 🔍 MATCH DETECTION
+    if (/\bvs\b/i.test(title)) {
+      loadMirrors();
+    }
+  }
+}
+
+/* =========================
+   FUNCTIONS
+========================= */
+function loadChannel(name) {
   loader.style.display = "flex";
+  player.src = `https://topembed.pw/channel/${encodeURIComponent(name)}`;
+}
 
-  /* =========================
-     MOVIES
-  ========================= */
-  if (type === "movie") {
-    if (!imdb) {
-      alert("Movie ID not provided");
-      loader.style.display = "none";
-    } else {
-      const cleanId = imdb.replace(/^tt/, "");
-      player.src = `https://vidfast.pro/movie/${cleanId}`;
-    }
+async function loadMirrors() {
+  try {
+    const res = await fetch("https://topembed.pw/api/live");
+    const json = await res.json();
+
+    const match = json.data.find(e =>
+      title.toLowerCase().includes(e.home_team.toLowerCase()) &&
+      title.toLowerCase().includes(e.away_team.toLowerCase())
+    );
+
+    if (!match || !match.channels) return;
+
+    mirrorsBox.innerHTML = "";
+    mirrorsBox.style.display = "flex";
+
+    match.channels.forEach(ch => {
+      const btn = document.createElement("button");
+      btn.textContent = ch.name;
+      btn.onclick = () => loadChannel(ch.name);
+      mirrorsBox.appendChild(btn);
+    });
+
+  } catch (e) {
+    console.warn("Mirror fetch failed");
   }
+}
 
-  /* =========================
-     LIVE TV (TopEmbed)
-  ========================= */
-  else if (type === "livetv") {
-    const liveChannel = mirror || channel;
-
-    if (!liveChannel) {
-      alert("Channel not provided");
-      loader.style.display = "none";
-    } else {
-      const encoded = encodeURIComponent(liveChannel);
-      player.src = `https://topembed.pw/channel/${encoded}`;
-    }
-  }
-
-  /* =========================
-     INVALID TYPE
-  ========================= */
-  else {
-    alert("Invalid stream type");
-    loader.style.display = "none";
-  }
-
-  /* =========================
-     LOADER HANDLING
-  ========================= */
-  player.onload = () => {
-    loader.style.display = "none";
-  };
+player.onload = hideLoader;
 </script>
 
 </body>

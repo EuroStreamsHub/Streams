@@ -168,10 +168,14 @@ async function loadStream(channelName) {
       player.src = src;
 
     } else if(type === "movie"){
-      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
-      // remove tt from imdb
-      const movieId = imdb.replace(/^tt/, '');
-      player.src = `https://vidfast.pro/movie/${movieId}`;
+  if(!imdb){ 
+    alert("IMDb ID not provided"); 
+    loader.style.display="none"; 
+    return; 
+  }
+  // Strip 'tt' if present
+  const movieId = imdb.startsWith("tt") ? imdb.slice(2) : imdb;
+  player.src = `https://vidfast.pro/movie/${movieId}`;
     }
 
   } catch(e){

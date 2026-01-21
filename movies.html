@@ -45,11 +45,11 @@ input {
   padding:.6rem 1rem;
   border-radius:.4rem;
   border:none;
-  width:240px;
+  width:200px;
 }
 
-button {
-  padding:.6rem 1.2rem;
+button.category-btn {
+  padding:.6rem 1rem;
   border:none;
   border-radius:.4rem;
   background:#ff6700;
@@ -58,17 +58,26 @@ button {
   cursor:pointer;
   transition:.2s;
 }
-button:hover { background:#ff8c33; }
+button.category-btn:hover { background:#ff8c33; }
 
-.grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+.grid-container {
+  overflow-x:auto;
+  display:flex;
   gap:1rem;
   padding:1rem;
+  scroll-behavior:smooth;
+}
+.grid-container::-webkit-scrollbar {
+  height:8px;
+}
+.grid-container::-webkit-scrollbar-thumb {
+  background:#ff6700;
+  border-radius:4px;
 }
 
 .card {
   cursor:pointer;
+  flex:0 0 160px;
   transition:.2s;
 }
 .card:hover { transform:scale(1.04); }
@@ -96,16 +105,18 @@ button:hover { background:#ff8c33; }
     <button class="back-home" onclick="goHome()">⬅ Home</button>
     <input id="search" placeholder="Search movies…">
     <button onclick="searchMovies()">Search</button>
-    <button onclick="loadPopular()">Popular</button>
+    <button class="category-btn" onclick="loadPopular()">Popular</button>
+    <button class="category-btn" onclick="loadTrending()">Trending</button>
+    <button class="category-btn" onclick="loadRecent()">Recent</button>
   </div>
 </div>
 
-<div id="grid" class="grid"></div>
+<div id="movieGrid" class="grid-container"></div>
 
 <script>
 const API_KEY = "12955008668c12c07496b04132f9ce44";
 const IMG = "https://image.tmdb.org/t/p/w500";
-const grid = document.getElementById("grid");
+const grid = document.getElementById("movieGrid");
 const searchInput = document.getElementById("search");
 
 // Back button
@@ -113,14 +124,34 @@ function goHome() {
   window.location.href = "index.html";
 }
 
+// Fetch popular movies
 async function loadPopular() {
   const res = await fetch(
-    `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`
+    `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=1`
   );
   const data = await res.json();
   render(data.results);
 }
 
+// Fetch trending movies (day)
+async function loadTrending() {
+  const res = await fetch(
+    `https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}`
+  );
+  const data = await res.json();
+  render(data.results);
+}
+
+// Fetch recent / now playing movies
+async function loadRecent() {
+  const res = await fetch(
+    `https://api.themoviedb.org/3/movie/now_playing?api_key=${API_KEY}&language=en-US&page=1`
+  );
+  const data = await res.json();
+  render(data.results);
+}
+
+// Search movies
 async function searchMovies() {
   const q = searchInput.value.trim();
   if (!q) return;
@@ -131,6 +162,7 @@ async function searchMovies() {
   render(data.results);
 }
 
+// Get IMDb ID
 async function getImdbId(tmdbId) {
   const res = await fetch(
     `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${API_KEY}`
@@ -139,6 +171,7 @@ async function getImdbId(tmdbId) {
   return data.imdb_id;
 }
 
+// Render movie cards
 function render(list) {
   grid.innerHTML = "";
   list.forEach(movie => {

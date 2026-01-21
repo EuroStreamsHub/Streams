@@ -116,8 +116,9 @@ button:hover { background:#FF6700; }
 const params = new URLSearchParams(location.search);
 const type = params.get("type");        // "football" | "movie" | "livetv"
 const title = params.get("title");
-const mirrorParam = params.get("mirror"); // For football/live TV
-const imdb = params.get("imdb");
+const mirrorParam = params.get("mirror"); // for football
+const channelParam = params.get("channel"); // for Live TV
+const imdb = params.get("imdb");          // for movies
 
 const player = document.getElementById("player");
 const loader = document.getElementById("loader");
@@ -126,20 +127,18 @@ const mirrorsDiv = document.getElementById("mirrors");
 document.getElementById("title").textContent = title || "Stream";
 
 /* ---------- LOAD STREAM ---------- */
-async function loadStream(channelName) {
+async function loadStream(channelOrMirror) {
   loader.style.display = "block";
+  let src = "";
 
   try {
     if(type === "football"){
-      if(!channelName) {
-        alert("No channel selected.");
-        loader.style.display = "none";
-        return;
-      }
-      const encodedChannel = encodeURIComponent(channelName);
-      player.src = `https://topembed.pw/channel/${encodedChannel}`;
+      if(!channelOrMirror){ alert("No mirror selected."); loader.style.display="none"; return; }
+      const encodedChannel = encodeURIComponent(channelOrMirror);
+      src = `https://topembed.pw/channel/${encodedChannel}`;
+      player.src = src;
 
-      // Fetch all football matches to show mirrors
+      // fetch TopEmbed football matches to show mirrors
       const res = await fetch('https://beta.adstrim.ru/api/events');
       const data = await res.json();
       const match = data.data.find(m=>{
@@ -148,7 +147,6 @@ async function loadStream(channelName) {
         return `${home} vs ${away}` === title;
       });
 
-      // Show all mirrors below
       mirrorsDiv.innerHTML = '';
       if(match && match.channels){
         match.channels.forEach(ch=>{
@@ -161,25 +159,19 @@ async function loadStream(channelName) {
       }
 
     } else if(type === "livetv"){
-      if(!mirrorParam) { 
-        alert("Channel not provided"); 
-        loader.style.display="none"; 
-        return; 
-      }
-      const encodedChannel = encodeURIComponent(mirrorParam);
-      player.src = `https://topembed.pw/channel/${encodedChannel}`;
+      if(!channelParam){ alert("Channel not provided"); loader.style.display="none"; return; }
+      const encodedChannel = encodeURIComponent(channelParam);
+      src = `https://topembed.pw/channel/${encodedChannel}`;
+      player.src = src;
 
-      // No mirrors for live TV
+      // Live TV has no mirrors
       mirrorsDiv.innerHTML = '';
 
     } else if(type === "movie"){
-      if(!imdb){ 
-        alert("IMDb ID not provided"); 
-        loader.style.display="none"; 
-        return; 
-      }
-      // Use full IMDb ID with "tt"
-      player.src = `https://vidfast.pro/movie/${imdb}`;
+      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
+      // keep tt in the IMDb ID
+      src = `https://vidfast.pro/movie/${imdb}`;
+      player.src = src;
 
       mirrorsDiv.innerHTML = '';
     }
@@ -210,7 +202,8 @@ document.querySelector(".back-button").onclick = ()=>{
 };
 
 /* ---------- INITIAL LOAD ---------- */
-if(type === "football" || type === "livetv") loadStream(mirrorParam);
+if(type === "football") loadStream(mirrorParam);
+else if(type === "livetv") loadStream(channelParam);
 else if(type === "movie") loadStream();
 </script>
 

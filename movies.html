@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movies</title>
-
 <style>
 body {
   margin:0;
@@ -23,7 +22,24 @@ body {
   justify-content:center;
   gap:.5rem;
   flex-wrap:wrap;
+  position:sticky;
+  top:0;
+  background:#121212;
+  padding:.5rem 1rem;
+  z-index:10;
 }
+
+button.back-home {
+  background:#1f1f1f;
+  color:#fff;
+  padding:.5rem 1rem;
+  border:none;
+  border-radius:.4rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+button.back-home:hover { background:#ff6700; color:#000; }
 
 input {
   padding:.6rem 1rem;
@@ -40,7 +56,9 @@ button {
   color:#000;
   font-weight:600;
   cursor:pointer;
+  transition:.2s;
 }
+button:hover { background:#ff8c33; }
 
 .grid {
   display:grid;
@@ -70,12 +88,12 @@ button {
 }
 </style>
 </head>
-
 <body>
 
 <div class="header">
   <h2>Movies</h2>
   <div class="controls">
+    <button class="back-home" onclick="goHome()">⬅ Home</button>
     <input id="search" placeholder="Search movies…">
     <button onclick="searchMovies()">Search</button>
     <button onclick="loadPopular()">Popular</button>
@@ -88,6 +106,12 @@ button {
 const API_KEY = "12955008668c12c07496b04132f9ce44";
 const IMG = "https://image.tmdb.org/t/p/w500";
 const grid = document.getElementById("grid");
+const searchInput = document.getElementById("search");
+
+// Back button
+function goHome() {
+  window.location.href = "index.html";
+}
 
 async function loadPopular() {
   const res = await fetch(
@@ -98,7 +122,7 @@ async function loadPopular() {
 }
 
 async function searchMovies() {
-  const q = document.getElementById("search").value.trim();
+  const q = searchInput.value.trim();
   if (!q) return;
   const res = await fetch(
     `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(q)}`
@@ -145,7 +169,14 @@ function render(list) {
   });
 }
 
+// Press Enter key to search
+searchInput.addEventListener("keypress", e => {
+  if(e.key === "Enter") searchMovies();
+});
+
+// Initial load
 loadPopular();
 </script>
+
 </body>
 </html>

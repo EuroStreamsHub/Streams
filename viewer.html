@@ -8,17 +8,13 @@
 body { margin:0; font-family:'Segoe UI',Roboto,sans-serif; background:#121212; color:#fff; text-align:center; }
 .back-button { display:inline-block; margin:1rem; background:#1f1f1f; color:#fff; padding:.6rem 1rem; border-radius:.5rem; text-decoration:none; }
 h2#title { margin-bottom:.5rem; }
-
 .stream-container { max-width:1000px; aspect-ratio:16/9; margin:1rem auto; background:#000; position:relative; border-radius:.5rem; overflow:hidden; }
 iframe { width:100%; height:100%; border:none; }
-
 .loader { position:absolute; top:50%; left:50%; width:50px; height:50px; border:6px solid rgba(255,255,255,.2); border-top:6px solid #FF6700; border-radius:50%; transform:translate(-50%,-50%); animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
-
 .controls { display:flex; justify-content:center; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem; }
 button { padding:.5rem 1rem; border:none; border-radius:.4rem; background:#1f1f1f; color:#fff; font-weight:600; cursor:pointer; transition:.2s; }
 button:hover { background:#FF6700; }
-
 .mirrors { display:flex; flex-wrap:wrap; justify-content:center; gap:.3rem; margin-top:1rem; }
 .mirrors button { font-size:.9rem; padding:.3rem .6rem; }
 </style>
@@ -44,7 +40,7 @@ button:hover { background:#FF6700; }
 const params = new URLSearchParams(location.search);
 const type = params.get("type");        // "football" | "livetv" | "movie"
 const title = params.get("title");
-const mirrorParam = params.get("mirror"); // TopEmbed mirror
+const mirrorParam = params.get("mirror"); // TopEmbed channel
 const sourceParam = params.get("source"); // streamed.pk source
 const channelParam = params.get("channel"); 
 const imdb = params.get("imdb"); 
@@ -62,55 +58,59 @@ async function loadStream(selected){
 
   try{
     if(type==="football"){
-      if(!selected){ alert("No source selected."); loader.style.display="none"; return; }
+      if(!selected){ alert("No source available."); loader.style.display="none"; return; }
 
-      // Decide if TopEmbed or streamed.pk
+      // Decide which type
       if(selected.startsWith("topembed:")){
         const mirror = encodeURIComponent(selected.replace("topembed:",""));
         src = `https://topembed.pw/channel/${mirror}`;
-        player.src = src;
       } else if(selected.startsWith("spk:")){
         const spkSource = encodeURIComponent(selected.replace("spk:",""));
-        src = `https://streamedpk.com/embed/${spkSource}`; // adjust to actual streamed.pk embed URL
-        player.src = src;
+        src = `https://streamedpk.com/embed/${spkSource}`; // adjust if different embed URL
       }
 
-      // Populate mirrors dynamically
+      player.src = src;
+
+      // Populate mirrors row
       mirrorsDiv.innerHTML = '';
 
       // --- TopEmbed mirrors ---
-      const resTop = await fetch('https://beta.adstrim.ru/api/events');
-      const dataTop = await resTop.json();
-      const matchTop = dataTop.data.find(m=>{
-        const home = m.home_team || m.teams?.home?.name;
-        const away = m.away_team || m.teams?.away?.name;
-        return `${home} vs ${away}` === title;
-      });
-      if(matchTop?.channels){
-        matchTop.channels.forEach(ch=>{
-          const btn = document.createElement('button');
-          btn.textContent = ch.name + " (TopEmbed)";
-          btn.onclick = ()=>loadStream("topembed:"+ch.name);
-          mirrorsDiv.appendChild(btn);
+      try{
+        const resTop = await fetch('https://beta.adstrim.ru/api/events');
+        const dataTop = await resTop.json();
+        const matchTop = dataTop.data.find(m=>{
+          const home = m.home_team || m.teams?.home?.name;
+          const away = m.away_team || m.teams?.away?.name;
+          return `${home} vs ${away}` === title;
         });
-      }
+        if(matchTop?.channels){
+          matchTop.channels.forEach(ch=>{
+            const btn = document.createElement('button');
+            btn.textContent = ch.name + " (TopEmbed)";
+            btn.onclick = ()=>loadStream("topembed:"+ch.name);
+            mirrorsDiv.appendChild(btn);
+          });
+        }
+      }catch(e){ console.warn("TopEmbed fetch failed",e); }
 
-      // --- streamed.pk sources ---
-      const resSPK = await fetch('https://streamed.pk/api/matches/football');
-      const dataSPK = await resSPK.json();
-      const matchSPK = dataSPK.find(m=>{
-        const home = m.teams?.home?.name || m.title.split(' vs ')[0];
-        const away = m.teams?.away?.name || m.title.split(' vs ')[1] || '';
-        return `${home} vs ${away}` === title;
-      });
-      if(matchSPK?.sources){
-        matchSPK.sources.forEach(s=>{
-          const btn = document.createElement('button');
-          btn.textContent = s.source + " (SPK)";
-          btn.onclick = ()=>loadStream("spk:"+s.source);
-          mirrorsDiv.appendChild(btn);
+      // --- streamed.pk mirrors ---
+      try{
+        const resSPK = await fetch('https://streamed.pk/api/matches/football');
+        const dataSPK = await resSPK.json();
+        const matchSPK = dataSPK.find(m=>{
+          const home = m.teams?.home?.name || m.title.split(' vs ')[0];
+          const away = m.teams?.away?.name || m.title.split(' vs ')[1] || '';
+          return `${home} vs ${away}` === title;
         });
-      }
+        if(matchSPK?.sources){
+          matchSPK.sources.forEach(s=>{
+            const btn = document.createElement('button');
+            btn.textContent = s.source + " (SPK)";
+            btn.onclick = ()=>loadStream("spk:"+s.source);
+            mirrorsDiv.appendChild(btn);
+          });
+        }
+      }catch(e){ console.warn("SPK fetch failed",e); }
 
     } else if(type==="livetv"){
       if(!channelParam){ alert("Channel not provided"); loader.style.display="none"; return; }
@@ -134,14 +134,8 @@ async function loadStream(selected){
 }
 
 /* ---------- CONTROLS ---------- */
-function refreshStream(){
-  if(player.src){ loader.style.display="block"; player.src = player.src; }
-}
-
-function toggleFullScreen(){
-  if(!document.fullscreenElement){ player.requestFullscreen?.(); }
-  else { document.exitFullscreen?.(); }
-}
+function refreshStream(){ if(player.src){ loader.style.display="block"; player.src = player.src; } }
+function toggleFullScreen(){ if(!document.fullscreenElement){ player.requestFullscreen?.(); } else { document.exitFullscreen?.(); } }
 
 /* ---------- BACK BUTTON ---------- */
 document.querySelector(".back-button").onclick = ()=>{
@@ -151,8 +145,11 @@ document.querySelector(".back-button").onclick = ()=>{
 };
 
 /* ---------- INITIAL LOAD ---------- */
-if(type==="football") loadStream(mirrorParam || sourceParam);
-else if(type==="livetv") loadStream(channelParam);
+// Auto play first available source: TopEmbed first, fallback SPK
+if(type==="football"){
+  if(mirrorParam) loadStream("topembed:"+mirrorParam);
+  else if(sourceParam) loadStream("spk:"+sourceParam);
+} else if(type==="livetv") loadStream(channelParam);
 else if(type==="movie") loadStream();
 </script>
 

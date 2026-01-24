@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF‑8">
-<meta name="viewport" content="width=device‑width, initial‑scale=1.0">
-<title>Football Matches</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Matches</title>
 
 <style>
 body {
@@ -13,10 +13,22 @@ body {
   color:#fff;
 }
 
-h1 { text-align:center; padding:1rem; }
+h1 {
+  text-align:center;
+  padding:1rem;
+}
 
-.top-bar { max-width:800px; margin:0 auto; padding:0 1rem 1rem; }
-.top-row { display:flex; gap:.5rem; align-items:center; }
+.top-bar {
+  max-width:800px;
+  margin:0 auto;
+  padding:0 1rem 1rem;
+}
+
+.top-row {
+  display:flex;
+  gap:.5rem;
+  align-items:center;
+}
 
 button {
   background:#1f1f1f;
@@ -29,7 +41,9 @@ button {
   transition:.2s;
 }
 
-button:hover { background:#FF6700; }
+button:hover {
+  background:#FF6700;
+}
 
 input#search {
   flex:1;
@@ -40,7 +54,12 @@ input#search {
   color:#fff;
 }
 
-.filter-row { display:flex; gap:.5rem; margin-top:.5rem; }
+.filter-row {
+  display:flex;
+  gap:.5rem;
+  margin-top:.5rem;
+  flex-wrap:wrap;
+}
 
 .match-list {
   max-width:800px;
@@ -60,10 +79,18 @@ input#search {
   transition:.2s;
 }
 
-.match-bar:hover { background:#FF6700; }
+.match-bar:hover {
+  background:#FF6700;
+}
 
-.match-info div:first-child { font-weight:600; }
-.match-info div:last-child { font-size:.85rem; opacity:.85; }
+.match-info div:first-child {
+  font-weight:600;
+}
+
+.match-info div:last-child {
+  font-size:.85rem;
+  opacity:.85;
+}
 
 /* LIVE pulse */
 .live {
@@ -73,6 +100,7 @@ input#search {
   align-items:center;
   gap:6px;
 }
+
 .live::before {
   content:'';
   width:8px;
@@ -81,6 +109,7 @@ input#search {
   border-radius:50%;
   animation:pulse 1.4s infinite;
 }
+
 @keyframes pulse {
   0% { transform:scale(1); opacity:1; }
   70% { transform:scale(1.6); opacity:0; }
@@ -91,7 +120,7 @@ input#search {
 
 <body>
 
-<h1>Football Matches</h1>
+<h1>Live Matches</h1>
 
 <div class="top-bar">
   <div class="top-row">
@@ -100,6 +129,8 @@ input#search {
   </div>
 
   <div class="filter-row">
+    <button id="btnTopEmbed">Source 1 (TopEmbed)</button>
+    <button id="btnSPK">Source 2 (streamed.pk)</button>
     <button id="btnNormal">All (12h)</button>
     <button id="btnSoon">Starting Soon</button>
     <button id="btnLive">Live</button>
@@ -114,12 +145,12 @@ const searchInput = document.getElementById('search');
 const btnNormal = document.getElementById('btnNormal');
 const btnSoon   = document.getElementById('btnSoon');
 const btnLive   = document.getElementById('btnLive');
+const btnTopEmbed = document.getElementById('btnTopEmbed');
+const btnSPK = document.getElementById('btnSPK');
 
 let allMatches = [];
 let activeMode = 'normal';
-
-// API endpoint specifically for football
-const API_URL = 'https://streamed.pk/api/matches/football';
+let currentSource = 'topembed'; // default
 
 /* ---- TIME HELPERS ---- */
 const NOW = () => Math.floor(Date.now() / 1000);
@@ -153,20 +184,36 @@ function sortLiveFirst(list){
   });
 }
 
-/* ---- FETCH FOOTBALL MATCHES ---- */
-async function loadMatches(){
+/* ---- FETCH MATCHES ---- */
+async function loadMatches(source='topembed'){
   matchList.textContent = 'Loading matches...';
-  try{
-    const res = await fetch(API_URL);
-    const data = await res.json();
+  currentSource = source;
 
-    allMatches = data.map(m => ({
-      ...m,
-      timestamp: Math.floor(m.date / 1000),
-      home: m.teams?.home?.name || m.title.split(' vs ')[0],
-      away: m.teams?.away?.name || m.title.split(' vs ')[1] || ''
-    }))
-    .filter(m => isWithinNextHours(m,12) || isLive(m));
+  try{
+    let data = [];
+    if(source === 'topembed'){
+      const res = await fetch('https://beta.adstrim.ru/api/events');
+      const json = await res.json();
+      data = json.data.filter(m => m.sport === 'Football');
+      allMatches = data.map(m => ({
+        ...m,
+        timestamp: Math.floor((m.timestamp || (Date.now()/1000)) ), // ensure timestamp
+        home: m.home_team || m.teams?.home?.name || m.title?.split(' vs ')[0],
+        away: m.away_team || m.teams?.away?.name || m.title?.split(' vs ')[1] || '',
+        channels: m.channels || []
+      })).filter(m => isWithinNextHours(m,12) || isLive(m));
+
+    } else if(source === 'spk'){
+      const res = await fetch('https://streamed.pk/api/matches/football');
+      const json = await res.json();
+      allMatches = json.map(m => ({
+        ...m,
+        timestamp: Math.floor(m.date/1000),
+        home: m.teams?.home?.name || m.title?.split(' vs ')[0],
+        away: m.teams?.away?.name || m.title?.split(' vs ')[1] || '',
+        channels: m.sources || []
+      })).filter(m => isWithinNextHours(m,12) || isLive(m));
+    }
 
     renderMatches(sortLiveFirst(allMatches));
 
@@ -176,31 +223,35 @@ async function loadMatches(){
   }
 }
 
-/* ---- RENDER ---- */
+/* ---- RENDER MATCHES ---- */
 function renderMatches(matches){
   matchList.innerHTML = '';
-  if(!matches.length){ matchList.textContent='No matches found.'; return; }
+  if(!matches.length){ matchList.textContent = 'No matches found.'; return; }
 
   matches.forEach(m=>{
     const timeLabel = isLive(m) ? '<span class="live">LIVE</span>' : `KO ${formatKO(m.timestamp)}`;
-    const sources = m.sources || [];
-    const count = sources.length;
+    const count = m.channels.length;
 
     const bar = document.createElement('div');
-    bar.className='match-bar';
-    bar.innerHTML=`
+    bar.className = 'match-bar';
+    bar.innerHTML = `
       <div class="match-info">
         <div>${m.home} vs ${m.away}</div>
         <div>${timeLabel}</div>
       </div>
-      <span>${count} source${count!==1?'s':''}</span>
+      <span>${count} source${count !== 1 ? 's' : ''}</span>
     `;
 
     bar.onclick = ()=>{
       if(!count){ alert('No sources available.'); return; }
-      const mirror = encodeURIComponent(sources[0].source);
-      window.location.href = 
-        `viewer.html?type=football&mirror=${mirror}&title=${encodeURIComponent(m.home+' vs '+m.away)}`;
+
+      if(currentSource==='topembed'){
+        const mirror = encodeURIComponent(m.channels[0].name);
+        window.location.href = `viewer.html?type=football&mirror=${mirror}&title=${encodeURIComponent(m.home+' vs '+m.away)}`;
+      } else {
+        const spkSource = encodeURIComponent(m.channels[0].source);
+        window.location.href = `viewer.html?type=football&source=${spkSource}&title=${encodeURIComponent(m.home+' vs '+m.away)}`;
+      }
     };
 
     matchList.appendChild(bar);
@@ -209,31 +260,29 @@ function renderMatches(matches){
 
 /* ---- FILTER BUTTONS ---- */
 function setMode(mode){
-  if(activeMode===mode) mode='normal';
-  activeMode=mode;
+  if(activeMode === mode) mode = 'normal';
+  activeMode = mode;
 
   let filtered;
-  if(mode==='soon') filtered=allMatches.filter(isStartingSoon);
-  else if(mode==='live') filtered=allMatches.filter(isLive);
-  else filtered=allMatches.filter(m=>isWithinNextHours(m,12) || isLive(m));
+  if(mode === 'soon') filtered = allMatches.filter(isStartingSoon);
+  else if(mode === 'live') filtered = allMatches.filter(isLive);
+  else filtered = allMatches.filter(m => isWithinNextHours(m,12) || isLive(m));
 
   renderMatches(sortLiveFirst(filtered));
 }
 
-btnNormal.onclick = ()=>setMode('normal');
-btnSoon.onclick   = ()=>setMode('soon');
-btnLive.onclick   = ()=>setMode('live');
-
 /* ---- SEARCH ---- */
 searchInput.addEventListener('input', ()=>{
-  const term=searchInput.value.toLowerCase();
+  const term = searchInput.value.toLowerCase();
+
   let base;
-  if(activeMode==='soon') base=allMatches.filter(isStartingSoon);
-  else if(activeMode==='live') base=allMatches.filter(isLive);
-  else base=allMatches.filter(m=>isWithinNextHours(m,12) || isLive(m));
+  if(activeMode === 'soon') base = allMatches.filter(isStartingSoon);
+  else if(activeMode === 'live') base = allMatches.filter(isLive);
+  else base = allMatches.filter(m => isWithinNextHours(m,12) || isLive(m));
 
   const filtered = base.filter(m=>{
-    const h=m.home.toLowerCase(), a=m.away.toLowerCase();
+    const h = m.home.toLowerCase();
+    const a = m.away.toLowerCase();
     return h.includes(term) || a.includes(term);
   });
 
@@ -241,13 +290,20 @@ searchInput.addEventListener('input', ()=>{
 });
 
 /* ---- NAV ---- */
-function goHome(){ window.location.href='index.html'; }
+function goHome(){ window.location.href = 'index.html'; }
 
 window.history.pushState(null,document.title,window.location.href);
 window.addEventListener('popstate',()=>{ window.location.href='index.html'; });
 
+/* ---- BUTTON EVENTS ---- */
+btnNormal.onclick = () => setMode('normal');
+btnSoon.onclick   = () => setMode('soon');
+btnLive.onclick   = () => setMode('live');
+btnTopEmbed.onclick = () => loadMatches('topembed');
+btnSPK.onclick = () => loadMatches('spk');
+
 /* ---- INIT ---- */
-loadMatches();
+loadMatches('topembed');
 </script>
 
 </body>

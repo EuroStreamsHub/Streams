@@ -5,94 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stream Viewer</title>
 <style>
-body {
-  margin:0;
-  font-family:'Segoe UI',Roboto,sans-serif;
-  background:#121212;
-  color:#fff;
-  text-align:center;
-}
+body { margin:0; font-family:'Segoe UI',Roboto,sans-serif; background:#121212; color:#fff; text-align:center; }
+.back-button { display:inline-block; margin:1rem; background:#1f1f1f; color:#fff; padding:.6rem 1rem; border-radius:.5rem; text-decoration:none; }
+h2#title { margin-bottom:.5rem; }
 
-.back-button {
-  display:inline-block;
-  margin:1rem;
-  background:#1f1f1f;
-  color:#fff;
-  padding:.6rem 1rem;
-  border-radius:.5rem;
-  text-decoration:none;
-}
+.stream-container { max-width:1000px; aspect-ratio:16/9; margin:1rem auto; background:#000; position:relative; border-radius:.5rem; overflow:hidden; }
+iframe { width:100%; height:100%; border:none; }
 
-h2#title {
-  margin-bottom:.5rem;
-}
-
-/* Container */
-.stream-container {
-  max-width:1000px;
-  aspect-ratio:16/9;
-  margin:1rem auto;
-  background:#000;
-  position:relative;
-  border-radius:.5rem;
-  overflow:hidden;
-}
-
-/* iframe */
-iframe {
-  width:100%;
-  height:100%;
-  border:none;
-}
-
-/* Loader */
-.loader {
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:50px;
-  height:50px;
-  border:6px solid rgba(255,255,255,.2);
-  border-top:6px solid #FF6700;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  animation:spin 1s linear infinite;
-}
+.loader { position:absolute; top:50%; left:50%; width:50px; height:50px; border:6px solid rgba(255,255,255,.2); border-top:6px solid #FF6700; border-radius:50%; transform:translate(-50%,-50%); animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
 
-/* Controls below iframe */
-.controls {
-  display:flex;
-  justify-content:center;
-  gap:.5rem;
-  flex-wrap:wrap;
-  margin-bottom:1rem;
-}
-
-button {
-  padding:.5rem 1rem;
-  border:none;
-  border-radius:.4rem;
-  background:#1f1f1f;
-  color:#fff;
-  font-weight:600;
-  cursor:pointer;
-  transition:.2s;
-}
+.controls { display:flex; justify-content:center; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+button { padding:.5rem 1rem; border:none; border-radius:.4rem; background:#1f1f1f; color:#fff; font-weight:600; cursor:pointer; transition:.2s; }
 button:hover { background:#FF6700; }
 
-/* Mirrors row */
-.mirrors {
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:.3rem;
-  margin-top:1rem;
-}
-.mirrors button {
-  font-size:.9rem;
-  padding:.3rem .6rem;
-}
+.mirrors { display:flex; flex-wrap:wrap; justify-content:center; gap:.3rem; margin-top:1rem; }
+.mirrors button { font-size:.9rem; padding:.3rem .6rem; }
 </style>
 </head>
 <body>
@@ -114,11 +42,12 @@ button:hover { background:#FF6700; }
 
 <script>
 const params = new URLSearchParams(location.search);
-const type = params.get("type");        // "football" | "movie" | "livetv"
+const type = params.get("type");        // "football" | "livetv" | "movie"
 const title = params.get("title");
-const mirrorParam = params.get("mirror"); // for football
-const channelParam = params.get("channel"); // for Live TV
-const imdb = params.get("imdb");          // for movies
+const mirrorParam = params.get("mirror"); // TopEmbed mirror
+const sourceParam = params.get("source"); // streamed.pk source
+const channelParam = params.get("channel"); 
+const imdb = params.get("imdb"); 
 
 const player = document.getElementById("player");
 const loader = document.getElementById("loader");
@@ -127,56 +56,76 @@ const mirrorsDiv = document.getElementById("mirrors");
 document.getElementById("title").textContent = title || "Stream";
 
 /* ---------- LOAD STREAM ---------- */
-async function loadStream(channelOrMirror) {
-  loader.style.display = "block";
-  let src = "";
+async function loadStream(selected){
+  loader.style.display="block";
+  let src="";
 
-  try {
-    if(type === "football"){
-      if(!channelOrMirror){ alert("No mirror selected."); loader.style.display="none"; return; }
-      const encodedChannel = encodeURIComponent(channelOrMirror);
-      src = `https://topembed.pw/channel/${encodedChannel}`;
-      player.src = src;
+  try{
+    if(type==="football"){
+      if(!selected){ alert("No source selected."); loader.style.display="none"; return; }
 
-      // fetch TopEmbed football matches to show mirrors
-      const res = await fetch('https://beta.adstrim.ru/api/events');
-      const data = await res.json();
-      const match = data.data.find(m=>{
+      // Decide if TopEmbed or streamed.pk
+      if(selected.startsWith("topembed:")){
+        const mirror = encodeURIComponent(selected.replace("topembed:",""));
+        src = `https://topembed.pw/channel/${mirror}`;
+        player.src = src;
+      } else if(selected.startsWith("spk:")){
+        const spkSource = encodeURIComponent(selected.replace("spk:",""));
+        src = `https://streamedpk.com/embed/${spkSource}`; // adjust to actual streamed.pk embed URL
+        player.src = src;
+      }
+
+      // Populate mirrors dynamically
+      mirrorsDiv.innerHTML = '';
+
+      // --- TopEmbed mirrors ---
+      const resTop = await fetch('https://beta.adstrim.ru/api/events');
+      const dataTop = await resTop.json();
+      const matchTop = dataTop.data.find(m=>{
         const home = m.home_team || m.teams?.home?.name;
         const away = m.away_team || m.teams?.away?.name;
         return `${home} vs ${away}` === title;
       });
-
-      mirrorsDiv.innerHTML = '';
-      if(match && match.channels){
-        match.channels.forEach(ch=>{
-          const chName = ch.name;
+      if(matchTop?.channels){
+        matchTop.channels.forEach(ch=>{
           const btn = document.createElement('button');
-          btn.textContent = chName;
-          btn.onclick = () => loadStream(chName);
+          btn.textContent = ch.name + " (TopEmbed)";
+          btn.onclick = ()=>loadStream("topembed:"+ch.name);
           mirrorsDiv.appendChild(btn);
         });
       }
 
-    } else if(type === "livetv"){
-      if(!channelParam){ alert("Channel not provided"); loader.style.display="none"; return; }
-      const encodedChannel = encodeURIComponent(channelParam);
-      src = `https://topembed.pw/channel/${encodedChannel}`;
-      player.src = src;
+      // --- streamed.pk sources ---
+      const resSPK = await fetch('https://streamed.pk/api/matches/football');
+      const dataSPK = await resSPK.json();
+      const matchSPK = dataSPK.find(m=>{
+        const home = m.teams?.home?.name || m.title.split(' vs ')[0];
+        const away = m.teams?.away?.name || m.title.split(' vs ')[1] || '';
+        return `${home} vs ${away}` === title;
+      });
+      if(matchSPK?.sources){
+        matchSPK.sources.forEach(s=>{
+          const btn = document.createElement('button');
+          btn.textContent = s.source + " (SPK)";
+          btn.onclick = ()=>loadStream("spk:"+s.source);
+          mirrorsDiv.appendChild(btn);
+        });
+      }
 
-      // Live TV has no mirrors
+    } else if(type==="livetv"){
+      if(!channelParam){ alert("Channel not provided"); loader.style.display="none"; return; }
+      src = `https://topembed.pw/channel/${encodeURIComponent(channelParam)}`;
+      player.src = src;
       mirrorsDiv.innerHTML = '';
 
-    } else if(type === "movie"){
+    } else if(type==="movie"){
       if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }
-      // keep tt in the IMDb ID
       src = `https://vidfast.pro/movie/${imdb}`;
       player.src = src;
-
       mirrorsDiv.innerHTML = '';
     }
 
-  } catch(e){
+  }catch(e){
     console.error(e);
     alert("Error loading stream");
   }
@@ -202,9 +151,9 @@ document.querySelector(".back-button").onclick = ()=>{
 };
 
 /* ---------- INITIAL LOAD ---------- */
-if(type === "football") loadStream(mirrorParam);
-else if(type === "livetv") loadStream(channelParam);
-else if(type === "movie") loadStream();
+if(type==="football") loadStream(mirrorParam || sourceParam);
+else if(type==="livetv") loadStream(channelParam);
+else if(type==="movie") loadStream();
 </script>
 
 </body>

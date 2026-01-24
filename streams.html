@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Streams</title>
+<title>Live Matches</title>
 
 <style>
 body {
@@ -88,7 +88,31 @@ input#search {
 
 .match-info div:last-child {
   font-size:.85rem;
-  opacity:.8;
+  opacity:.85;
+}
+
+/* LIVE PULSE */
+.live {
+  color:#ff3b3b;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+
+.live::before {
+  content:'';
+  width:8px;
+  height:8px;
+  background:#ff3b3b;
+  border-radius:50%;
+  animation:pulse 1.4s infinite;
+}
+
+@keyframes pulse {
+  0%   { transform:scale(1); opacity:1; }
+  70%  { transform:scale(1.6); opacity:0; }
+  100% { transform:scale(1); opacity:0; }
 }
 </style>
 </head>
@@ -110,9 +134,7 @@ input#search {
   </div>
 </div>
 
-<div class="match-list" id="matchList">
-  Loading matches...
-</div>
+<div class="match-list" id="matchList">Loading matches...</div>
 
 <script>
 const matchList = document.getElementById('matchList');
@@ -125,71 +147,77 @@ const btnLive   = document.getElementById('btnLive');
 let allMatches = [];
 let activeMode = 'normal';
 
-// ---- TIME HELPERS ----
+/* -------- TIME HELPERS -------- */
 const NOW = () => Math.floor(Date.now() / 1000);
 
 function formatKO(ts){
   const d = new Date(ts * 1000);
   return d.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
+    hour:'2-digit',
+    minute:'2-digit',
+    hour12:false
   });
+}
+
+function isLive(match){
+  return NOW() >= match.timestamp - 300 &&
+         NOW() <= match.timestamp + 7200;
+}
+
+function isStartingSoon(match){
+  return match.timestamp > NOW() + 300 &&
+         match.timestamp <= NOW() + 3600;
 }
 
 function isWithinNextHours(match, hours){
   return match.timestamp >= NOW() &&
-         match.timestamp <= NOW() + (hours * 3600);
+         match.timestamp <= NOW() + hours * 3600;
 }
 
-function isStartingSoon(match){
-  return match.timestamp >= NOW() &&
-         match.timestamp <= NOW() + 3600;
+function sortLiveFirst(matches){
+  return matches.sort((a,b)=>{
+    const aLive = isLive(a);
+    const bLive = isLive(b);
+    if(aLive && !bLive) return -1;
+    if(!aLive && bLive) return 1;
+    return a.timestamp - b.timestamp;
+  });
 }
 
-function isLive(match){
-  return match.timestamp >= NOW() - 300 &&
-         match.timestamp <= NOW() + 7200;
-}
-
-// ---- LOAD MATCHES ----
+/* -------- LOAD MATCHES -------- */
 async function loadMatches(){
-  matchList.textContent = "Loading matches...";
-  try {
+  matchList.textContent = 'Loading matches...';
+  try{
     const res = await fetch('https://beta.adstrim.ru/api/events');
     const data = await res.json();
 
     allMatches = data.data
-      .filter(m => m.sport === "Football")
-      .filter(m => isWithinNextHours(m, 12))
-      .sort((a,b) => a.timestamp - b.timestamp);
+      .filter(m => m.sport === 'Football')
+      .filter(m => isWithinNextHours(m,12));
 
-    renderMatches(allMatches);
-
-  } catch(e){
+    renderMatches(sortLiveFirst(allMatches));
+  }catch(e){
     console.error(e);
-    matchList.textContent = "Error loading matches.";
+    matchList.textContent = 'Error loading matches.';
   }
 }
 
-// ---- RENDER ----
+/* -------- RENDER -------- */
 function renderMatches(matches){
   matchList.innerHTML = '';
-
-  if(matches.length === 0){
+  if(!matches.length){
     matchList.textContent = 'No matches found.';
     return;
   }
 
-  matches.forEach(match => {
-    const home = match.home_team || match.teams?.home?.name || "Home";
-    const away = match.away_team || match.teams?.away?.name || "Away";
-
+  matches.forEach(match=>{
+    const home = match.home_team || match.teams?.home?.name || 'Home';
+    const away = match.away_team || match.teams?.away?.name || 'Away';
     const channels = match.channels || [];
     const channelCount = channels.length;
 
     const timeLabel = isLive(match)
-      ? 'LIVE'
+      ? '<span class="live">LIVE</span>'
       : `KO ${formatKO(match.timestamp)}`;
 
     const bar = document.createElement('div');
@@ -204,73 +232,65 @@ function renderMatches(matches){
     `;
 
     bar.onclick = () => {
-      if(channelCount === 0){
-        alert("No channels available.");
+      if(!channelCount){
+        alert('No channels available.');
         return;
       }
-      const channelName = encodeURIComponent(channels[0].name);
+      const mirror = encodeURIComponent(channels[0].name);
       window.location.href =
-        `viewer.html?type=football&mirror=${channelName}&title=${encodeURIComponent(home + ' vs ' + away)}`;
+        `viewer.html?type=football&mirror=${mirror}&title=${encodeURIComponent(home+' vs '+away)}`;
     };
 
     matchList.appendChild(bar);
   });
 }
 
-// ---- FILTER BUTTONS ----
+/* -------- FILTER BUTTONS -------- */
 function setMode(mode){
-  if(activeMode === mode){
-    mode = 'normal';
-  }
-
+  if(activeMode === mode) mode = 'normal';
   activeMode = mode;
 
-  let filtered = [];
+  let filtered;
+  if(mode === 'soon') filtered = allMatches.filter(isStartingSoon);
+  else if(mode === 'live') filtered = allMatches.filter(isLive);
+  else filtered = allMatches.filter(m => isWithinNextHours(m,12));
 
-  if(mode === 'soon'){
-    filtered = allMatches.filter(isStartingSoon);
-  } else if(mode === 'live'){
-    filtered = allMatches.filter(isLive);
-  } else {
-    filtered = allMatches.filter(m => isWithinNextHours(m, 12));
-  }
-
-  renderMatches(filtered);
+  renderMatches(sortLiveFirst(filtered));
 }
 
 btnNormal.onclick = () => setMode('normal');
 btnSoon.onclick   = () => setMode('soon');
 btnLive.onclick   = () => setMode('live');
 
-// ---- SEARCH ----
-searchInput.addEventListener('input', () => {
+/* -------- SEARCH -------- */
+searchInput.addEventListener('input', ()=>{
   const term = searchInput.value.toLowerCase();
 
-  const base =
-    activeMode === 'soon' ? allMatches.filter(isStartingSoon) :
-    activeMode === 'live' ? allMatches.filter(isLive) :
-    allMatches.filter(m => isWithinNextHours(m, 12));
+  let base;
+  if(activeMode === 'soon') base = allMatches.filter(isStartingSoon);
+  else if(activeMode === 'live') base = allMatches.filter(isLive);
+  else base = allMatches.filter(m => isWithinNextHours(m,12));
 
-  const filtered = base.filter(m => {
+  const filtered = base.filter(m=>{
     const h = m.home_team?.toLowerCase() || '';
     const a = m.away_team?.toLowerCase() || '';
     return h.includes(term) || a.includes(term);
   });
 
-  renderMatches(filtered);
+  renderMatches(sortLiveFirst(filtered));
 });
 
-// ---- NAV ----
+/* -------- NAV -------- */
 function goHome(){
-  window.location.href = "index.html";
+  window.location.href = 'index.html';
 }
 
 window.history.pushState(null, document.title, window.location.href);
 window.addEventListener('popstate', () => {
-  window.location.href = "index.html";
+  window.location.href = 'index.html';
 });
 
-// ---- INIT ----
+/* -------- INIT -------- */
 loadMatches();
 </script>
 

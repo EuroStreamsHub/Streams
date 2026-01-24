@@ -1,115 +1,198 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Viewer</title>
-<style>
-body { margin:0; font-family:'Segoe UI',Roboto,sans-serif; background:#121212; color:#fff; text-align:center; }
-.back-button { display:inline-block; margin:1rem; background:#1f1f1f; color:#fff; padding:.6rem 1rem; border-radius:.5rem; text-decoration:none; }
-h2#title { margin-bottom:.5rem; }
-.stream-container { max-width:1000px; aspect-ratio:16/9; margin:1rem auto; background:#000; position:relative; border-radius:.5rem; overflow:hidden; }
-iframe { width:100%; height:100%; border:none; }
-.loader { position:absolute; top:50%; left:50%; width:50px; height:50px; border:6px solid rgba(255,255,255,.2); border-top:6px solid #FF6700; border-radius:50%; transform:translate(-50%,-50%); animation:spin 1s linear infinite; }
-@keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
-.controls { display:flex; justify-content:center; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem; }
-button { padding:.5rem 1rem; border:none; border-radius:.4rem; background:#1f1f1f; color:#fff; font-weight:600; cursor:pointer; transition:.2s; }
-button:hover { background:#FF6700; }
-.mirrors { display:flex; flex-wrap:wrap; justify-content:center; gap:.3rem; margin-top:1rem; }
-.mirrors button { font-size:.9rem; padding:.3rem .6rem; }
-</style>
-</head>
-<body>
-
-<a class="back-button" href="#">⬅ Back</a>
-<h2 id="title">Stream</h2>
-
-<div class="stream-container">
-  <div class="loader" id="loader"></div>
-  <iframe id="player" allowfullscreen></iframe>
-</div>
-
-<div class="mirrors" id="mirrors"></div>
-
-<div class="controls">
-  <button onclick="refreshStream()">Refresh</button>
-  <button onclick="toggleFullScreen()">Fullscreen</button>
-</div>
-
-<script>
-const params = new URLSearchParams(location.search);
-const type = params.get("type");          // "football"
-const title = params.get("title");
-const mirrorParam = params.get("mirror"); // TopEmbed
-const sourceParam = params.get("source"); // Streamed.pk
-
-const player = document.getElementById("player");
-const loader = document.getElementById("loader");
-const mirrorsDiv = document.getElementById("mirrors");
-document.getElementById("title").textContent = title || "Stream";
-
-async function loadStream(param){
-  loader.style.display="block";
-  try{
-    let src="";
-    mirrorsDiv.innerHTML="";
-
-    if(type==="football"){
-      if(mirrorParam){ // TopEmbed
-        src = `https://topembed.pw/channel/${mirrorParam}`;
-        player.src = src;
-
-        // Load mirrors
-        const res = await fetch('https://beta.adstrim.ru/api/events');
-        const data = await res.json();
-        const match = data.data.find(m=>{
-          const home = m.home_team || m.teams?.home?.name;
-          const away = m.away_team || m.teams?.away?.name;
-          return `${home} vs ${away}` === title;
-        });
-        if(match?.channels){
-          match.channels.forEach(ch=>{
-            const btn=document.createElement('button');
-            btn.textContent=ch.name;
-            btn.onclick=()=>loadStream(encodeURIComponent(ch.name));
-            mirrorsDiv.appendChild(btn);
-          });
-        }
-
-      } else if(sourceParam){ // streamed.pk
-        const [srcName, srcId, idx] = decodeURIComponent(sourceParam).split('|');
-        src = `https://embedsports.top/embed/${srcName}/${srcId}/${idx || 1}`;
-        player.src = src;
-
-        // Load mirrors
-        const res = await fetch('https://streamed.pk/api/matches/football');
-        const data = await res.json();
-        const match = data.find(m=>m.title===title);
-        if(match?.sources){
-          match.sources.forEach((s,i)=>{
-            const btn=document.createElement('button');
-            btn.textContent=s.source;
-            btn.onclick=()=>loadStream(encodeURIComponent(`${s.source}|${s.id}|${i+1}`));
-            mirrorsDiv.appendChild(btn);
-          });
-        }
-      }
-    }
-  }catch(e){
-    console.error(e);
-    alert("Error loading stream");
-  }
-  player.onload = ()=>loader.style.display="none";
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>Stream Viewer</title>  
+<style>  
+body {  
+  margin:0;  
+  font-family:'Segoe UI',Roboto,sans-serif;  
+  background:#121212;  
+  color:#fff;  
+  text-align:center;  
+}  .back-button {
+display:inline-block;
+margin:1rem;
+background:#1f1f1f;
+color:#fff;
+padding:.6rem 1rem;
+border-radius:.5rem;
+text-decoration:none;
 }
 
-function refreshStream(){ if(player.src){ loader.style.display="block"; player.src=player.src; } }
-function toggleFullScreen(){ if(!document.fullscreenElement){ player.requestFullscreen?.(); } else { document.exitFullscreen?.(); } }
-document.querySelector(".back-button").onclick = ()=>{
-  if(type==="football") window.location.href="streams.html";
-};
+h2#title {
+margin-bottom:.5rem;
+}
 
-loadStream();
-</script>
+/* Container */
+.stream-container {
+max-width:1000px;
+aspect-ratio:16/9;
+margin:1rem auto;
+background:#000;
+position:relative;
+border-radius:.5rem;
+overflow:hidden;
+}
 
-</body>
+/* iframe */
+iframe {
+width:100%;
+height:100%;
+border:none;
+}
+
+/* Loader */
+.loader {
+position:absolute;
+top:50%;
+left:50%;
+width:50px;
+height:50px;
+border:6px solid rgba(255,255,255,.2);
+border-top:6px solid #FF6700;
+border-radius:50%;
+transform:translate(-50%,-50%);
+animation:spin 1s linear infinite;
+}
+@keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+
+/* Controls below iframe */
+.controls {
+display:flex;
+justify-content:center;
+gap:.5rem;
+flex-wrap:wrap;
+margin-bottom:1rem;
+}
+
+button {
+padding:.5rem 1rem;
+border:none;
+border-radius:.4rem;
+background:#1f1f1f;
+color:#fff;
+font-weight:600;
+cursor:pointer;
+transition:.2s;
+}
+button:hover { background:#FF6700; }
+
+/* Mirrors row */
+.mirrors {
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:.3rem;
+margin-top:1rem;
+}
+.mirrors button {
+font-size:.9rem;
+padding:.3rem .6rem;
+}
+</style>
+
+</head>  
+<body>  <a class="back-button" href="#">⬅ Back</a>
+
+<h2 id="title">Stream</h2>  <div class="stream-container">  
+  <div class="loader" id="loader"></div>  
+  <iframe id="player" allowfullscreen></iframe>  
+</div>  <div class="mirrors" id="mirrors"></div>  <div class="controls">  
+  <button onclick="refreshStream()">Refresh</button>  
+  <button onclick="toggleFullScreen()">Fullscreen</button>  
+</div>  <script>  
+const params = new URLSearchParams(location.search);  
+const type = params.get("type");        // "football" | "movie" | "livetv"  
+const title = params.get("title");  
+const mirrorParam = params.get("mirror"); // for football  
+const channelParam = params.get("channel"); // for Live TV  
+const imdb = params.get("imdb");          // for movies  
+  
+const player = document.getElementById("player");  
+const loader = document.getElementById("loader");  
+const mirrorsDiv = document.getElementById("mirrors");  
+  
+document.getElementById("title").textContent = title || "Stream";  
+  
+/* ---------- LOAD STREAM ---------- */  
+async function loadStream(channelOrMirror) {  
+  loader.style.display = "block";  
+  let src = "";  
+  
+  try {  
+    if(type === "football"){  
+      if(!channelOrMirror){ alert("No mirror selected."); loader.style.display="none"; return; }  
+      const encodedChannel = encodeURIComponent(channelOrMirror);  
+      src = `https://topembed.pw/channel/${encodedChannel}`;  
+      player.src = src;  
+  
+      // fetch TopEmbed football matches to show mirrors  
+      const res = await fetch('https://beta.adstrim.ru/api/events');  
+      const data = await res.json();  
+      const match = data.data.find(m=>{  
+        const home = m.home_team || m.teams?.home?.name;  
+        const away = m.away_team || m.teams?.away?.name;  
+        return `${home} vs ${away}` === title;  
+      });  
+  
+      mirrorsDiv.innerHTML = '';  
+      if(match && match.channels){  
+        match.channels.forEach(ch=>{  
+          const chName = ch.name;  
+          const btn = document.createElement('button');  
+          btn.textContent = chName;  
+          btn.onclick = () => loadStream(chName);  
+          mirrorsDiv.appendChild(btn);  
+        });  
+      }  
+  
+    } else if(type === "livetv"){  
+      if(!channelParam){ alert("Channel not provided"); loader.style.display="none"; return; }  
+      const encodedChannel = encodeURIComponent(channelParam);  
+      src = `https://topembed.pw/channel/${encodedChannel}`;  
+      player.src = src;  
+  
+      // Live TV has no mirrors  
+      mirrorsDiv.innerHTML = '';  
+  
+    } else if(type === "movie"){  
+      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }  
+      // keep tt in the IMDb ID  
+      src = `https://vidfast.pro/movie/${imdb}`;  
+      player.src = src;  
+  
+      mirrorsDiv.innerHTML = '';  
+    }  
+  
+  } catch(e){  
+    console.error(e);  
+    alert("Error loading stream");  
+  }  
+  
+  player.onload = ()=>loader.style.display="none";  
+}  
+  
+/* ---------- CONTROLS ---------- */  
+function refreshStream(){  
+  if(player.src){ loader.style.display="block"; player.src = player.src; }  
+}  
+  
+function toggleFullScreen(){  
+  if(!document.fullscreenElement){ player.requestFullscreen?.(); }  
+  else { document.exitFullscreen?.(); }  
+}  
+  
+/* ---------- BACK BUTTON ---------- */  
+document.querySelector(".back-button").onclick = ()=>{  
+  if(type==="football") window.location.href="streams.html";  
+  else if(type==="movie") window.location.href="movies.html";  
+  else if(type==="livetv") window.location.href="livetv.html";  
+};  
+  
+/* ---------- INITIAL LOAD ---------- */  
+if(type === "football") loadStream(mirrorParam);  
+else if(type === "livetv") loadStream(channelParam);  
+else if(type === "movie") loadStream();  
+</script>  </body>  
 </html>

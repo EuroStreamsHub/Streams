@@ -91,7 +91,7 @@ input#search {
   opacity:.85;
 }
 
-/* LIVE PULSE */
+/* LIVE pulse */
 .live {
   color:#ff3b3b;
   font-weight:700;
@@ -110,8 +110,8 @@ input#search {
 }
 
 @keyframes pulse {
-  0%   { transform:scale(1); opacity:1; }
-  70%  { transform:scale(1.6); opacity:0; }
+  0% { transform:scale(1); opacity:1; }
+  70% { transform:scale(1.6); opacity:0; }
   100% { transform:scale(1); opacity:0; }
 }
 </style>
@@ -147,7 +147,7 @@ const btnLive   = document.getElementById('btnLive');
 let allMatches = [];
 let activeMode = 'normal';
 
-/* -------- TIME HELPERS -------- */
+/* ---- TIME HELPERS ---- */
 const NOW = () => Math.floor(Date.now() / 1000);
 
 function formatKO(ts){
@@ -159,32 +159,32 @@ function formatKO(ts){
   });
 }
 
-function isLive(match){
-  return NOW() >= match.timestamp - 300 &&
-         NOW() <= match.timestamp + 7200;
+function isLive(m){
+  return NOW() >= m.timestamp - 300 &&
+         NOW() <= m.timestamp + 7200;
 }
 
-function isStartingSoon(match){
-  return match.timestamp > NOW() + 300 &&
-         match.timestamp <= NOW() + 3600;
+function isStartingSoon(m){
+  return m.timestamp > NOW() + 300 &&
+         m.timestamp <= NOW() + 3600;
 }
 
-function isWithinNextHours(match, hours){
-  return match.timestamp >= NOW() &&
-         match.timestamp <= NOW() + hours * 3600;
+function isWithinNextHours(m,h){
+  return m.timestamp >= NOW() &&
+         m.timestamp <= NOW() + h * 3600;
 }
 
-function sortLiveFirst(matches){
-  return matches.sort((a,b)=>{
-    const aLive = isLive(a);
-    const bLive = isLive(b);
-    if(aLive && !bLive) return -1;
-    if(!aLive && bLive) return 1;
+function sortLiveFirst(list){
+  return list.sort((a,b)=>{
+    const aL = isLive(a);
+    const bL = isLive(b);
+    if(aL && !bL) return -1;
+    if(!aL && bL) return 1;
     return a.timestamp - b.timestamp;
   });
 }
 
-/* -------- LOAD MATCHES -------- */
+/* ---- LOAD MATCHES (FIXED) ---- */
 async function loadMatches(){
   matchList.textContent = 'Loading matches...';
   try{
@@ -193,7 +193,9 @@ async function loadMatches(){
 
     allMatches = data.data
       .filter(m => m.sport === 'Football')
-      .filter(m => isWithinNextHours(m,12));
+      .filter(m =>
+        isWithinNextHours(m, 12) || isLive(m)
+      );
 
     renderMatches(sortLiveFirst(allMatches));
   }catch(e){
@@ -202,7 +204,7 @@ async function loadMatches(){
   }
 }
 
-/* -------- RENDER -------- */
+/* ---- RENDER ---- */
 function renderMatches(matches){
   matchList.innerHTML = '';
   if(!matches.length){
@@ -210,29 +212,28 @@ function renderMatches(matches){
     return;
   }
 
-  matches.forEach(match=>{
-    const home = match.home_team || match.teams?.home?.name || 'Home';
-    const away = match.away_team || match.teams?.away?.name || 'Away';
-    const channels = match.channels || [];
-    const channelCount = channels.length;
+  matches.forEach(m=>{
+    const home = m.home_team || m.teams?.home?.name || 'Home';
+    const away = m.away_team || m.teams?.away?.name || 'Away';
+    const channels = m.channels || [];
+    const count = channels.length;
 
-    const timeLabel = isLive(match)
+    const timeLabel = isLive(m)
       ? '<span class="live">LIVE</span>'
-      : `KO ${formatKO(match.timestamp)}`;
+      : `KO ${formatKO(m.timestamp)}`;
 
     const bar = document.createElement('div');
     bar.className = 'match-bar';
-
     bar.innerHTML = `
       <div class="match-info">
         <div>${home} vs ${away}</div>
         <div>${timeLabel}</div>
       </div>
-      <span>${channelCount} channel${channelCount !== 1 ? 's' : ''}</span>
+      <span>${count} channel${count !== 1 ? 's' : ''}</span>
     `;
 
-    bar.onclick = () => {
-      if(!channelCount){
+    bar.onclick = ()=>{
+      if(!count){
         alert('No channels available.');
         return;
       }
@@ -245,7 +246,7 @@ function renderMatches(matches){
   });
 }
 
-/* -------- FILTER BUTTONS -------- */
+/* ---- FILTER BUTTONS ---- */
 function setMode(mode){
   if(activeMode === mode) mode = 'normal';
   activeMode = mode;
@@ -253,7 +254,7 @@ function setMode(mode){
   let filtered;
   if(mode === 'soon') filtered = allMatches.filter(isStartingSoon);
   else if(mode === 'live') filtered = allMatches.filter(isLive);
-  else filtered = allMatches.filter(m => isWithinNextHours(m,12));
+  else filtered = allMatches.filter(m => isWithinNextHours(m,12) || isLive(m));
 
   renderMatches(sortLiveFirst(filtered));
 }
@@ -262,14 +263,14 @@ btnNormal.onclick = () => setMode('normal');
 btnSoon.onclick   = () => setMode('soon');
 btnLive.onclick   = () => setMode('live');
 
-/* -------- SEARCH -------- */
+/* ---- SEARCH ---- */
 searchInput.addEventListener('input', ()=>{
   const term = searchInput.value.toLowerCase();
 
   let base;
   if(activeMode === 'soon') base = allMatches.filter(isStartingSoon);
   else if(activeMode === 'live') base = allMatches.filter(isLive);
-  else base = allMatches.filter(m => isWithinNextHours(m,12));
+  else base = allMatches.filter(m => isWithinNextHours(m,12) || isLive(m));
 
   const filtered = base.filter(m=>{
     const h = m.home_team?.toLowerCase() || '';
@@ -280,17 +281,17 @@ searchInput.addEventListener('input', ()=>{
   renderMatches(sortLiveFirst(filtered));
 });
 
-/* -------- NAV -------- */
+/* ---- NAV ---- */
 function goHome(){
   window.location.href = 'index.html';
 }
 
 window.history.pushState(null, document.title, window.location.href);
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', ()=>{
   window.location.href = 'index.html';
 });
 
-/* -------- INIT -------- */
+/* ---- INIT ---- */
 loadMatches();
 </script>
 

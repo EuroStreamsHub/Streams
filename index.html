@@ -3,135 +3,224 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Streaming Portal</title>
+<title>Stream Portal | Welcome</title>
 <style>
-body {
-  margin:0;
-  font-family:'Segoe UI',Roboto,sans-serif;
-  background: linear-gradient(135deg,#1e1e1e,#0b0b0b);
-  color:#fff;
-}
+  :root {
+    --primary: #e50914; /* Netflix Red */
+    --bg: #050505;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --text: #ffffff;
+  }
 
-/* ---------- HEADER ---------- */
-header {
-  text-align:center;
-  padding:2rem 1rem 1rem;
-}
+  body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
+    /* Cinematic Background */
+    background-image: 
+      radial-gradient(circle at 50% -20%, rgba(229, 9, 20, 0.15), transparent),
+      linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
+      url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&q=80&w=2000');
+    background-size: cover;
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-header h1 {
-  margin-bottom:1rem;
-}
+  /* ---------- HEADER ---------- */
+  header {
+    text-align: center;
+    padding: 5rem 1rem 3rem;
+  }
 
-/* ---------- THEME TOGGLE ---------- */
-#themeToggle {
-  background:#ff6700;
-  color:#000;
-  border:none;
-  padding:.5rem 1rem;
-  border-radius:.4rem;
-  cursor:pointer;
-  font-weight:600;
-}
+  header h1 {
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 900;
+    letter-spacing: -2px;
+    margin: 0;
+    text-transform: uppercase;
+    background: linear-gradient(to bottom, #ffffff 30%, #999 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 
-/* ---------- GRID ---------- */
-.grid {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:1rem;
-  padding:1rem;
-}
+  header p {
+    color: #aaa;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    letter-spacing: 1px;
+  }
 
-@media(min-width:900px){ .grid{ grid-template-columns:repeat(3,1fr); } }
-@media(min-width:1200px){ .grid{ grid-template-columns:repeat(4,1fr); } }
+  /* ---------- GRID ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 0 5% 4rem;
+    width: 100%;
+    max-width: 1200px;
+    box-sizing: border-box;
+  }
 
-/* ---------- CARD ---------- */
-.card {
-  background:#121212;
-  border-radius:.7rem;
-  cursor:pointer;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  transition:.2s;
-  aspect-ratio:16/9; /* 9:16 portrait */
-}
+  /* ---------- CATEGORY CARDS ---------- */
+  .card {
+    position: relative;
+    background: var(--card-bg);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    aspect-ratio: 16/9;
+    display: flex;
+    flex-direction: column;
+  }
 
-.card:hover{ transform:scale(1.05); }
+  .card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: var(--primary);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(229, 9, 20, 0.2);
+  }
 
-/* Placeholder poster for now */
-.card .poster {
-  width:100%;
-  flex:1;
-  background:#222;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:2rem;
-  font-weight:600;
-}
+  .card-img {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: 0.5s;
+    filter: brightness(0.6) grayscale(20%);
+  }
 
-.card h2 {
-  margin:0.5rem 0;
-  text-align:center;
-  font-size:1.1rem;
-  padding:.2rem .5rem;
-}
+  .card:hover .card-img {
+    filter: brightness(0.8) grayscale(0%);
+    transform: scale(1.1);
+  }
+
+  .card-content {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 70%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.5rem;
+  }
+
+  .card h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .card .tag {
+    font-size: 0.75rem;
+    color: var(--primary);
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+  }
+
+  /* ---------- THEME TOGGLE ---------- */
+  #themeToggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    z-index: 100;
+    transition: 0.3s;
+  }
+  #themeToggle:hover { background: rgba(255,255,255,0.2); }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    margin-top: auto;
+    padding: 3rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  /* Light Theme Overrides */
+  body.light-mode {
+    background: #f4f4f4;
+    background-image: none;
+    color: #000;
+  }
+  body.light-mode header h1 { background: #000; -webkit-text-fill-color: #000; }
+  body.light-mode .card { background: #fff; border-color: #ddd; }
+  body.light-mode .card-content { background: linear-gradient(to top, rgba(255,255,255,0.9), transparent); }
+  body.light-mode .card h2 { color: #000; }
+  body.light-mode #themeToggle { color: #000; border-color: #ccc; }
+
 </style>
 </head>
 <body>
 
+<button id="themeToggle">Light Mode</button>
+
 <header>
-  <h1>Streaming Portal</h1>
-  <button id="themeToggle">Dark Mode</button>
+  <h1>Stream Portal</h1>
+  <p>Live Sports • Movies • Television</p>
 </header>
-<center><script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="sufclive" data-color="#FFDD00" data-emoji="🍺"  data-font="Cookie" data-text="Buy me a beer" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script></center>  
+
+<div class="grid">
   <div class="card" onclick="location.href='streams.html'">
-    <div class="poster">🏟️</div>
-    <h2>Sports Streams</h2>
+    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=800');"></div>
+    <div class="card-content">
+      <div class="tag">Live Now</div>
+      <h2>Sports Streams</h2>
+    </div>
   </div>
+
   <div class="card" onclick="location.href='movies.html'">
-    <div class="poster">🎬</div>
-    <h2>Movies</h2>
+    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800');"></div>
+    <div class="card-content">
+      <div class="tag">Cinema</div>
+      <h2>Latest Movies</h2>
+    </div>
   </div>
+
   <div class="card" onclick="location.href='livetv.html'">
-    <div class="poster">📺</div>
-    <h2>Live TV</h2>
+    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?q=80&w=800');"></div>
+    <div class="card-content">
+      <div class="tag">Broadcast</div>
+      <h2>Live TV</h2>
+    </div>
   </div>
 </div>
 
+<footer>
+  <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="sufclive" data-color="#FFDD00" data-emoji="🍺"  data-font="Cookie" data-text="Buy me a beer" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+</footer>
+
 <script>
-// Theme toggle
-const btn = document.getElementById("themeToggle");
-if(localStorage.getItem("theme")==="light") document.body.classList.add("light");
+  const btn = document.getElementById("themeToggle");
+  
+  // Theme Toggle Logic
+  btn.onclick = () => {
+    document.body.classList.toggle("light-mode");
+    const isLight = document.body.classList.contains("light-mode");
+    btn.textContent = isLight ? "Dark Mode" : "Light Mode";
+    localStorage.setItem("theme", isLight ? "light" : "dark");
+  };
 
-btn.onclick = () => {
-  document.body.classList.toggle("light");
-  if(document.body.classList.contains("light")){
-    btn.textContent="Light Mode";
-    localStorage.setItem("theme","light");
-  } else {
-    btn.textContent="Dark Mode";
-    localStorage.setItem("theme","dark");
+  // Check preference
+  if(localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light-mode");
+    btn.textContent = "Dark Mode";
   }
-};
-
-// Light theme styles
-const style = document.createElement("style");
-style.textContent=`
-body.light{
-  background: linear-gradient(135deg,#f2f2f2,#d9d9d9);
-  color:#000;
-}
-body.light .card{
-  background:#fff;
-  color:#000;
-}
-body.light #themeToggle{
-  color:#fff;
-}
-`;
-document.head.appendChild(style);
 </script>
 
 </body>

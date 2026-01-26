@@ -1,198 +1,269 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>Stream Viewer</title>  
-<style>  
-body {  
-  margin:0;  
-  font-family:'Segoe UI',Roboto,sans-serif;  
-  background:#121212;  
-  color:#fff;  
-  text-align:center;  
-}  .back-button {
-display:inline-block;
-margin:1rem;
-background:#1f1f1f;
-color:#fff;
-padding:.6rem 1rem;
-border-radius:.5rem;
-text-decoration:none;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stream Viewer - Cinema Mode</title>
+<style>
+  :root {
+    --primary: #e50914;
+    --bg: #0a0a0a;
+    --surface: #1a1a1a;
+    --text: #ffffff;
+  }
 
-h2#title {
-margin-bottom:.5rem;
-}
+  body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
 
-/* Container */
-.stream-container {
-max-width:1000px;
-aspect-ratio:16/9;
-margin:1rem auto;
-background:#000;
-position:relative;
-border-radius:.5rem;
-overflow:hidden;
-}
+  /* Header / Back Navigation */
+  .top-nav {
+    width: 100%;
+    padding: 1.5rem 4%;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+  }
 
-/* iframe */
-iframe {
-width:100%;
-height:100%;
-border:none;
-}
+  .back-button {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: 0.3s;
+  }
+  .back-button:hover { background: rgba(255,255,255,0.2); }
 
-/* Loader */
-.loader {
-position:absolute;
-top:50%;
-left:50%;
-width:50px;
-height:50px;
-border:6px solid rgba(255,255,255,.2);
-border-top:6px solid #FF6700;
-border-radius:50%;
-transform:translate(-50%,-50%);
-animation:spin 1s linear infinite;
-}
-@keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+  h2#title {
+    margin: 1rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
 
-/* Controls below iframe */
-.controls {
-display:flex;
-justify-content:center;
-gap:.5rem;
-flex-wrap:wrap;
-margin-bottom:1rem;
-}
+  /* Main Cinema Container */
+  .cinema-wrapper {
+    width: 95%;
+    max-width: 1200px;
+    position: relative;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+  }
 
-button {
-padding:.5rem 1rem;
-border:none;
-border-radius:.4rem;
-background:#1f1f1f;
-color:#fff;
-font-weight:600;
-cursor:pointer;
-transition:.2s;
-}
-button:hover { background:#FF6700; }
+  .stream-container {
+    width: 100%;
+    aspect-ratio: 16/9;
+    position: relative;
+  }
 
-/* Mirrors row */
-.mirrors {
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:.3rem;
-margin-top:1rem;
-}
-.mirrors button {
-font-size:.9rem;
-padding:.3rem .6rem;
-}
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    z-index: 2;
+  }
+
+  /* Enhanced Loader */
+  .loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(229, 9, 20, 0.1);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: spin 0.8s linear infinite;
+    z-index: 1;
+  }
+  @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+  /* Control Bar */
+  .control-bar {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4%;
+    box-sizing: border-box;
+  }
+
+  .btn-group { display: flex; gap: 10px; }
+
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background: var(--surface);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  button:hover { background: #333; }
+  button.primary-btn { background: var(--primary); }
+  button.primary-btn:hover { background: #ff1e1e; }
+
+  /* Mirror Section */
+  .mirrors-section {
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 2rem;
+    padding: 0 4%;
+    box-sizing: border-box;
+    text-align: left;
+  }
+  .mirrors-label { color: #888; font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase; }
+  
+  .mirrors-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .mirror-btn {
+    background: #222;
+    font-size: 0.85rem;
+    border: 1px solid #333;
+  }
+  .mirror-btn.active { border-color: var(--primary); color: var(--primary); }
 </style>
+</head>
+<body>
 
-</head>  
-<body>  <a class="back-button" href="#">⬅ Back</a>
+<div class="top-nav">
+  <a class="back-button" href="javascript:history.back()">⬅ Back to Browse</a>
+</div>
 
-<h2 id="title">Stream</h2>  <div class="stream-container">  
-  <div class="loader" id="loader"></div>  
-  <iframe id="player" allowfullscreen></iframe>  
-</div>  <div class="mirrors" id="mirrors"></div>  <div class="controls">  
-  <button onclick="refreshStream()">Refresh</button>  
-  <button onclick="toggleFullScreen()">Fullscreen</button>  
-</div>  <script>  
-const params = new URLSearchParams(location.search);  
-const type = params.get("type");        // "football" | "movie" | "livetv"  
-const title = params.get("title");  
-const mirrorParam = params.get("mirror"); // for football  
-const channelParam = params.get("channel"); // for Live TV  
-const imdb = params.get("imdb");          // for movies  
-  
-const player = document.getElementById("player");  
-const loader = document.getElementById("loader");  
-const mirrorsDiv = document.getElementById("mirrors");  
-  
-document.getElementById("title").textContent = title || "Stream";  
-  
-/* ---------- LOAD STREAM ---------- */  
-async function loadStream(channelOrMirror) {  
-  loader.style.display = "block";  
-  let src = "";  
-  
-  try {  
-    if(type === "football"){  
-      if(!channelOrMirror){ alert("No mirror selected."); loader.style.display="none"; return; }  
-      const encodedChannel = encodeURIComponent(channelOrMirror);  
-      src = `https://topembed.pw/channel/${encodedChannel}`;  
-      player.src = src;  
-  
-      // fetch TopEmbed football matches to show mirrors  
-      const res = await fetch('https://beta.adstrim.ru/api/events');  
-      const data = await res.json();  
-      const match = data.data.find(m=>{  
-        const home = m.home_team || m.teams?.home?.name;  
-        const away = m.away_team || m.teams?.away?.name;  
-        return `${home} vs ${away}` === title;  
-      });  
-  
-      mirrorsDiv.innerHTML = '';  
-      if(match && match.channels){  
-        match.channels.forEach(ch=>{  
-          const chName = ch.name;  
-          const btn = document.createElement('button');  
-          btn.textContent = chName;  
-          btn.onclick = () => loadStream(chName);  
-          mirrorsDiv.appendChild(btn);  
-        });  
-      }  
-  
-    } else if(type === "livetv"){  
-      if(!channelParam){ alert("Channel not provided"); loader.style.display="none"; return; }  
-      const encodedChannel = encodeURIComponent(channelParam);  
-      src = `https://topembed.pw/channel/${encodedChannel}`;  
-      player.src = src;  
-  
-      // Live TV has no mirrors  
-      mirrorsDiv.innerHTML = '';  
-  
-    } else if(type === "movie"){  
-      if(!imdb){ alert("IMDb ID not provided"); loader.style.display="none"; return; }  
-      // keep tt in the IMDb ID  
-      src = `https://vidfast.pro/movie/${imdb}`;  
-      player.src = src;  
-  
-      mirrorsDiv.innerHTML = '';  
-    }  
-  
-  } catch(e){  
-    console.error(e);  
-    alert("Error loading stream");  
-  }  
-  
-  player.onload = ()=>loader.style.display="none";  
-}  
-  
-/* ---------- CONTROLS ---------- */  
-function refreshStream(){  
-  if(player.src){ loader.style.display="block"; player.src = player.src; }  
-}  
-  
-function toggleFullScreen(){  
-  if(!document.fullscreenElement){ player.requestFullscreen?.(); }  
-  else { document.exitFullscreen?.(); }  
-}  
-  
-/* ---------- BACK BUTTON ---------- */  
-document.querySelector(".back-button").onclick = ()=>{  
-  if(type==="football") window.location.href="streams.html";  
-  else if(type==="movie") window.location.href="movies.html";  
-  else if(type==="livetv") window.location.href="livetv.html";  
-};  
-  
-/* ---------- INITIAL LOAD ---------- */  
-if(type === "football") loadStream(mirrorParam);  
-else if(type === "livetv") loadStream(channelParam);  
-else if(type === "movie") loadStream();  
-</script>  </body>  
+<h2 id="title">Loading Title...</h2>
+
+<div class="cinema-wrapper">
+  <div class="stream-container">
+    <div class="loader" id="loader"></div>
+    <iframe id="player" allowfullscreen sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>
+  </div>
+</div>
+
+<div class="control-bar">
+  <div class="btn-group">
+    <button onclick="refreshStream()">↻ Refresh Player</button>
+  </div>
+  <div class="btn-group">
+    <button class="primary-btn" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+  </div>
+</div>
+
+<div class="mirrors-section" id="mirrorSection" style="display:none;">
+  <div class="mirrors-label">Available Mirrors</div>
+  <div class="mirrors-grid" id="mirrors"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const type = params.get("type");
+const title = params.get("title");
+const mirrorParam = params.get("mirror");
+const channelParam = params.get("channel");
+const imdb = params.get("imdb");
+
+const player = document.getElementById("player");
+const loader = document.getElementById("loader");
+const mirrorsDiv = document.getElementById("mirrors");
+const mirrorSection = document.getElementById("mirrorSection");
+
+document.getElementById("title").textContent = title || "Now Playing";
+
+async function loadStream(channelOrMirror) {
+  loader.style.display = "block";
+  let src = "";
+
+  try {
+    if(type === "football"){
+      mirrorSection.style.display = "block";
+      const channel = channelOrMirror || mirrorParam;
+      src = `https://topembed.pw/channel/${encodeURIComponent(channel)}`;
+      
+      // Fetch dynamic mirrors for football
+      const res = await fetch('https://beta.adstrim.ru/api/events');
+      const data = await res.json();
+      const match = data.data.find(m => {
+        const home = m.home_team || m.teams?.home?.name;
+        const away = m.away_team || m.teams?.away?.name;
+        return `${home} vs ${away}` === title;
+      });
+
+      mirrorsDiv.innerHTML = '';
+      if(match && match.channels){
+        match.channels.forEach(ch => {
+          const btn = document.createElement('button');
+          btn.className = 'mirror-btn';
+          btn.textContent = ch.name;
+          if(ch.name === channel) btn.classList.add('active');
+          btn.onclick = () => loadStream(ch.name);
+          mirrorsDiv.appendChild(btn);
+        });
+      }
+    } 
+    else if(type === "livetv"){
+      src = `https://topembed.pw/channel/${encodeURIComponent(channelParam)}`;
+    } 
+    else if(type === "movie"){
+      src = `https://vidfast.pro/movie/${imdb}`;
+    }
+
+    if(src) player.src = src;
+
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+player.onload = () => {
+  loader.style.display = "none";
+};
+
+function refreshStream(){
+  const currentSrc = player.src;
+  player.src = "";
+  loader.style.display = "block";
+  setTimeout(() => { player.src = currentSrc; }, 100);
+}
+
+function toggleFullScreen(){
+  if (player.requestFullscreen) {
+    player.requestFullscreen();
+  } else if (player.webkitRequestFullscreen) { /* Safari */
+    player.webkitRequestFullscreen();
+  } else if (player.msRequestFullscreen) { /* IE11 */
+    player.msRequestFullscreen();
+  }
+}
+
+// Initial Load
+if(type === "football") loadStream(mirrorParam);
+else if(type === "livetv") loadStream(channelParam);
+else if(type === "movie") loadStream();
+</script>
+
+</body>
 </html>

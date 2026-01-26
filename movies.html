@@ -3,242 +3,328 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movies</title>
+<title>Streaming Hub</title>
 <style>
-body {
-  margin:0;
-  font-family:'Segoe UI',Roboto,sans-serif;
-  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
-  color:#fff;
-}
+  :root {
+    --primary: #e50914; /* Netflix Red */
+    --bg: #141414;
+    --surface: #1f1f1f;
+    --text: #ffffff;
+    --gray: #b3b3b3;
+  }
 
-.header {
-  padding:1rem;
-  text-align:center;
-}
+  body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
 
-.controls {
-  display:flex;
-  justify-content:center;
-  gap:.5rem;
-  flex-wrap:wrap;
-  position:sticky;
-  top:0;
-  background:#121212;
-  padding:.5rem 1rem;
-  z-index:10;
-}
+  /* Navigation & Header */
+  header {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 1rem 4%;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    transition: background 0.3s;
+  }
 
-button.back-home {
-  background:#1f1f1f;
-  color:#fff;
-  padding:.5rem 1rem;
-  border:none;
-  border-radius:.4rem;
-  font-weight:600;
-  cursor:pointer;
-  transition:.2s;
-}
-button.back-home:hover { background:#ff6700; color:#000; }
+  .logo {
+    color: var(--primary);
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-right: 2rem;
+    cursor: pointer;
+  }
 
-input {
-  padding:.6rem 1rem;
-  border-radius:.4rem;
-  border:none;
-  width:200px;
-}
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+    flex-grow: 1;
+  }
 
-button.category-btn {
-  padding:.6rem 1rem;
-  border:none;
-  border-radius:.4rem;
-  background:#ff6700;
-  color:#000;
-  font-weight:600;
-  cursor:pointer;
-  transition:.2s;
-}
-button.category-btn:hover { background:#ff8c33; }
+  .nav-links span {
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+  }
 
-.section {
-  margin:1rem 0;
-}
+  .nav-links span:hover { color: var(--gray); }
 
-.section h3 {
-  margin-left:1rem;
-  margin-bottom:.5rem;
-}
+  .search-box {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #fff;
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+  }
 
-.carousel {
-  display:flex;
-  overflow-x:auto;
-  gap:1rem;
-  padding-left:1rem;
-  scroll-behavior:smooth;
-}
-.carousel::-webkit-scrollbar {
-  height:8px;
-}
-.carousel::-webkit-scrollbar-thumb {
-  background:#ff6700;
-  border-radius:4px;
-}
+  .search-box input {
+    background: transparent;
+    border: none;
+    color: white;
+    outline: none;
+    padding-left: 5px;
+  }
 
-.card {
-  cursor:pointer;
-  flex:0 0 160px;
-  transition:.2s;
-}
-.card:hover { transform:scale(1.04); }
+  /* Hero Section */
+  .hero {
+    height: 70vh;
+    background-size: cover;
+    background-position: center top;
+    display: flex;
+    align-items: center;
+    padding: 0 4%;
+    position: relative;
+    margin-bottom: -50px;
+  }
 
-.poster {
-  width:100%;
-  aspect-ratio:2/3;
-  border-radius:.5rem;
-  background-size:cover;
-  background-position:center;
-}
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; width: 100%; height: 150px;
+    background: linear-gradient(to top, var(--bg), transparent);
+  }
 
-.title {
-  margin-top:.4rem;
-  font-size:.9rem;
-  text-align:center;
-}
+  .hero-content {
+    max-width: 600px;
+    z-index: 2;
+  }
+
+  .hero-title { font-size: 3.5rem; margin: 0; font-weight: bold; }
+  .hero-desc { font-size: 1.2rem; margin: 1rem 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+
+  .btn-play {
+    background: white;
+    color: black;
+    padding: 0.6rem 1.8rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+
+  /* Genre Filter */
+  .genre-bar {
+    padding: 100px 4% 0;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .genre-bar::-webkit-scrollbar { display: none; }
+
+  .genre-tag {
+    background: var(--surface);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: 0.3s;
+  }
+
+  .genre-tag:hover, .genre-tag.active {
+    border-color: white;
+    background: #333;
+  }
+
+  /* Carousel Section */
+  .section {
+    margin: 3rem 0;
+    padding: 0 4%;
+  }
+
+  .section h3 {
+    font-size: 1.4rem;
+    margin-bottom: 0.8rem;
+    font-weight: 500;
+  }
+
+  .carousel {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 10px 0;
+    scrollbar-width: none;
+  }
+
+  .carousel::-webkit-scrollbar { display: none; }
+
+  .card {
+    flex: 0 0 200px;
+    position: relative;
+    transition: transform 0.4s ease;
+    cursor: pointer;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .card:hover {
+    transform: scale(1.1);
+    z-index: 10;
+  }
+
+  .poster {
+    width: 100%;
+    aspect-ratio: 16/9; /* Netflix style wide cards for lists */
+    background-size: cover;
+    background-position: center;
+    border-radius: 4px;
+  }
+
+  .card-info {
+    padding: 8px;
+    font-size: 0.8rem;
+    background: var(--surface);
+  }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h2>Movies</h2>
-  <div class="controls">
-    <button class="back-home" onclick="goHome()">⬅ Home</button>
-    <input id="search" placeholder="Search movies…">
-    <button onclick="searchMovies()">Search</button>
+<header id="mainNav">
+  <div class="logo" onclick="location.reload()">STREAM</div>
+  <div class="nav-links">
+    <span onclick="loadSection('popular')">Home</span>
+    <span onclick="loadSection('trending')">Movies</span>
+    <span onclick="loadRecent()">New & Popular</span>
+  </div>
+  <div class="search-box">
+    <input id="search" placeholder="Titles, people, genres..." onkeypress="handleSearch(event)">
+  </div>
+</header>
+
+<div id="hero" class="hero">
+  <div class="hero-content">
+    <h1 id="heroTitle" class="hero-title">Featured Movie</h1>
+    <p id="heroDesc" class="hero-desc">Discover your next favorite story.</p>
+    <button class="btn-play">▶ Play</button>
+    <button class="btn-play" style="background: rgba(109, 109, 110, 0.7); color: white;">ⓘ More Info</button>
   </div>
 </div>
 
-<!-- Popular Section -->
+<div class="genre-bar" id="genreBar">
+  <div class="genre-tag active" onclick="filterByGenre(null, this)">All</div>
+  </div>
+
 <div class="section">
-  <h3>Popular</h3>
-  <div id="popular" class="carousel"></div>
+  <h3 id="rowTitle">Popular on Stream</h3>
+  <div id="mainGrid" class="carousel"></div>
 </div>
 
-<!-- Trending Section -->
 <div class="section">
-  <h3>Trending</h3>
+  <h3>Trending Now</h3>
   <div id="trending" class="carousel"></div>
-</div>
-
-<!-- Recent Section -->
-<div class="section">
-  <h3>Recent</h3>
-  <div id="recent" class="carousel"></div>
 </div>
 
 <script>
 const API_KEY = "12955008668c12c07496b04132f9ce44";
-const IMG = "https://image.tmdb.org/t/p/w500";
+const IMG = "https://image.tmdb.org/t/p/w1280"; // Higher res for Hero
+const POSTER = "https://image.tmdb.org/t/p/w500";
 
-const popularDiv = document.getElementById("popular");
-const trendingDiv = document.getElementById("trending");
-const recentDiv = document.getElementById("recent");
-const searchInput = document.getElementById("search");
-
-// Back button
-function goHome() {
-  window.location.href = "index.html";
-}
-
-// Get IMDb ID
-async function getImdbId(tmdbId) {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${API_KEY}`
-  );
+// Fetch Genres
+async function loadGenres() {
+  const res = await fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${API_KEY}`);
   const data = await res.json();
-  return data.imdb_id;
+  const bar = document.getElementById('genreBar');
+  data.genres.forEach(g => {
+    const tag = document.createElement('div');
+    tag.className = 'genre-tag';
+    tag.innerText = g.name;
+    tag.onclick = () => filterByGenre(g.id, tag);
+    bar.appendChild(tag);
+  });
 }
 
-// Render a section
-function renderSection(list, container) {
+// Netflix-style row rendering
+function renderRow(list, containerId) {
+  const container = document.getElementById(containerId);
   container.innerHTML = "";
   list.forEach(movie => {
-    if (!movie.poster_path) return;
+    if (!movie.backdrop_path) return;
 
     const card = document.createElement("div");
     card.className = "card";
-
-    const poster = document.createElement("div");
-    poster.className = "poster";
-    poster.style.backgroundImage = `url(${IMG}${movie.poster_path})`;
-
-    const title = document.createElement("div");
-    title.className = "title";
-    title.textContent = movie.title;
-
-    card.appendChild(poster);
-    card.appendChild(title);
+    card.innerHTML = `
+      <div class="poster" style="background-image: url(${POSTER}${movie.backdrop_path})"></div>
+      <div class="card-info">
+        <strong>${movie.title}</strong>
+        <div style="color: #46d369; margin-top: 4px;">${Math.round(movie.vote_average * 10)}% Match</div>
+      </div>
+    `;
 
     card.onclick = async () => {
-      const imdb = await getImdbId(movie.id);
-      if (!imdb) return alert("No IMDb ID");
-      location.href =
-        `viewer.html?type=movie&imdb=${imdb}&title=${encodeURIComponent(movie.title)}`;
+      const res = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${API_KEY}`);
+      const data = await res.json();
+      location.href = `viewer.html?type=movie&imdb=${data.imdb_id}&title=${encodeURIComponent(movie.title)}`;
     };
 
     container.appendChild(card);
   });
 }
 
-// Load Popular
-async function loadPopular() {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=1`
-  );
+// Update Hero Section
+async function setHero() {
+  const res = await fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${API_KEY}`);
   const data = await res.json();
-  renderSection(data.results, popularDiv);
+  const movie = data.results[0];
+  document.getElementById('hero').style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.8), transparent), url(${IMG}${movie.backdrop_path})`;
+  document.getElementById('heroTitle').innerText = movie.title;
+  document.getElementById('heroDesc').innerText = movie.overview.slice(0, 150) + "...";
 }
 
-// Load Trending
-async function loadTrending() {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}`
-  );
+async function filterByGenre(id, el) {
+  document.querySelectorAll('.genre-tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  
+  const url = id 
+    ? `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=${id}`
+    : `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`;
+    
+  const res = await fetch(url);
   const data = await res.json();
-  renderSection(data.results, trendingDiv);
+  document.getElementById('rowTitle').innerText = id ? `Top ${el.innerText} Movies` : "Popular on Stream";
+  renderRow(data.results, 'mainGrid');
 }
 
-// Load Recent / Now Playing
-async function loadRecent() {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/movie/now_playing?api_key=${API_KEY}&language=en-US&page=1`
-  );
-  const data = await res.json();
-  renderSection(data.results, recentDiv);
+function handleSearch(e) {
+  if (e.key === 'Enter') {
+    const q = e.target.value;
+    fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${q}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('rowTitle').innerText = `Results for: ${q}`;
+        renderRow(data.results, 'mainGrid');
+        window.scrollTo({top: 400, behavior: 'smooth'});
+      });
+  }
 }
 
-// Search
-async function searchMovies() {
-  const q = searchInput.value.trim();
-  if (!q) return;
-  const res = await fetch(
-    `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(q)}`
-  );
-  const data = await res.json();
-  // Replace all sections with search results
-  renderSection(data.results, popularDiv);
-  trendingDiv.innerHTML = "";
-  recentDiv.innerHTML = "";
-}
+// Initializing
+setHero();
+loadGenres();
+filterByGenre(null, document.querySelector('.genre-tag'));
 
-// Press Enter to search
-searchInput.addEventListener("keypress", e => {
-  if(e.key === "Enter") searchMovies();
-});
+// Second row for variety
+fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}`)
+  .then(res => res.json())
+  .then(data => renderRow(data.results, 'trending'));
 
-// Initial load
-loadPopular();
-loadTrending();
-loadRecent();
+// Navbar transparency effect
+window.onscroll = () => {
+  const nav = document.getElementById('mainNav');
+  if (window.scrollY > 50) nav.style.background = "#141414";
+  else nav.style.background = "linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)";
+};
 </script>
 
 </body>

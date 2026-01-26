@@ -16,7 +16,6 @@
     margin: 0;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-color: var(--bg);
-    /* Cinema background with dark overlay */
     background: 
       radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.15), transparent),
       linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
@@ -44,7 +43,7 @@
     z-index: 1001;
   }
 
-  /* Ticker Style Variants (Set by JS) */
+  /* Style Variants */
   .style-1 { background: linear-gradient(90deg, #e50914, #000); }
   .style-2 { background: linear-gradient(90deg, #00d2ff, #000); }
   .style-3 { background: linear-gradient(90deg, #f2994a, #000); }
@@ -54,7 +53,7 @@
   .ticker {
     display: inline-block;
     white-space: nowrap;
-    animation: ticker-anim 40s linear infinite;
+    animation: ticker-anim 35s linear infinite;
     padding-left: 100%;
   }
 
@@ -83,7 +82,7 @@
   /* ---------- HEADER ---------- */
   header {
     text-align: center;
-    padding: 4rem 1rem 2rem;
+    padding: 5rem 1rem 2rem;
   }
 
   header h1 {
@@ -107,9 +106,9 @@
   /* ---------- GRID ---------- */
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
-    padding: 2rem 8%;
+    padding: 2rem 8% 5rem;
     max-width: 1400px;
     margin: 0 auto;
     width: 100%;
@@ -120,7 +119,6 @@
     position: relative;
     background: var(--surface);
     backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 1.5rem;
     cursor: pointer;
@@ -130,7 +128,7 @@
   }
 
   .card:hover {
-    transform: scale(1.05) translateY(-10px);
+    transform: scale(1.03) translateY(-8px);
     border-color: var(--primary);
     box-shadow: 0 20px 40px rgba(0,0,0,0.6);
   }
@@ -140,13 +138,11 @@
     height: 100%;
     background-size: cover;
     background-position: center;
-    filter: brightness(0.5);
+    filter: brightness(0.4);
     transition: 0.5s;
   }
 
-  .card:hover .card-img {
-    filter: brightness(0.8) scale(1.1);
-  }
+  .card:hover .card-img { filter: brightness(0.7); }
 
   .card-content {
     position: absolute;
@@ -155,67 +151,50 @@
     flex-direction: column;
     justify-content: flex-end;
     padding: 2rem;
-    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
   }
 
-  .card h2 {
-    margin: 0;
-    font-size: 1.8rem;
-    font-weight: 800;
-  }
+  .card h2 { margin: 0; font-size: 1.8rem; font-weight: 800; }
+  .card .tag { color: var(--primary); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
 
-  .card .tag {
-    color: var(--primary);
-    font-weight: 900;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 5px;
-  }
-
-  /* ---------- FOOTER ---------- */
-  footer {
-    margin-top: auto;
-    padding: 3rem;
-    text-align: center;
-  }
+  footer { padding: 3rem; text-align: center; width: 100%; }
 </style>
 </head>
 <body>
 
 <div class="ticker-wrap" id="tickerWrapper">
   <div class="ticker" id="tickerBody">
-    <div class="ticker-item"><span>SYSTEM</span> Initializing Stream Portal Data...</div>
+    <div class="ticker-item"><span>SYSTEM</span> Synchronizing Live Events...</div>
   </div>
 </div>
 
 <header>
   <h1>STREAM HUB</h1>
-  <p>SPORTS • MOVIES • SERIES • LIVE TV</p>
+  <p>LIVE FOOTBALL • CINEMA • TELEVISION</p>
 </header>
 
 <div class="grid">
   <div class="card" onclick="location.href='streams.html'">
-    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=800');"></div>
+    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=800');"></div>
     <div class="card-content">
       <div class="tag">Live Sports</div>
-      <h2>Football & More</h2>
+      <h2>Football Streams</h2>
     </div>
   </div>
 
   <div class="card" onclick="location.href='movies.html'">
-    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800');"></div>
+    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800');"></div>
     <div class="card-content">
-      <div class="tag">On Demand</div>
+      <div class="tag">VOD Hub</div>
       <h2>Movies & Series</h2>
     </div>
   </div>
 
   <div class="card" onclick="location.href='livetv.html'">
-    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1593784991095-a205069470b6?q=80&w=800');"></div>
+    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=800');"></div>
     <div class="card-content">
-      <div class="tag">Digital Guide</div>
-      <h2>Live TV Channels</h2>
+      <div class="tag">Broadcast</div>
+      <h2>Live TV Guide</h2>
     </div>
   </div>
 </div>
@@ -226,52 +205,51 @@
 
 <script>
   const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
-  const SPORTS_API = "https://beta.adstrim.ru/api/channels";
+  const EVENTS_API = "https://beta.adstrim.ru/api/events";
 
   async function initTicker() {
     const tickerBody = document.getElementById('tickerBody');
     const tickerWrapper = document.getElementById('tickerWrapper');
 
-    // 1. Set Random Style
+    // Randomize style
     const styles = ['style-1', 'style-2', 'style-3', 'style-4', 'style-5'];
     tickerWrapper.className = 'ticker-wrap ' + styles[Math.floor(Math.random() * styles.length)];
 
     try {
-      // 2. Fetch Data from your Sports API and TMDB
-      const [sportsRes, movieRes, tvRes] = await Promise.all([
-        fetch(SPORTS_API),
+      const [eventsRes, movieRes, tvRes] = await Promise.all([
+        fetch(EVENTS_API),
         fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}`),
         fetch(`https://api.themoviedb.org/3/trending/tv/day?api_key=${TMDB_KEY}`)
       ]);
 
-      const sports = await sportsRes.json();
+      const eventsData = await eventsRes.json();
       const movies = await movieRes.json();
       const tv = await tvRes.json();
 
-      // 3. Pick random highlights
-      const liveSports = sports.channels.filter(c => c.name.toLowerCase().includes('sky') || c.name.toLowerCase().includes('tnt'));
-      const randomSport = liveSports.length > 0 ? liveSports[Math.floor(Math.random() * liveSports.length)].name.replace(/\[.*?\]/g, '').trim() : "Sky Sports Main Event";
-      
-      const randomMovie = movies.results[0].title;
-      const randomSeries = tv.results[0].name;
+      // Get random football event
+      let footballMsg = "Major Matches Streaming Soon";
+      if (eventsData.events && eventsData.events.length > 0) {
+        const match = eventsData.events[Math.floor(Math.random() * eventsData.events.length)];
+        footballMsg = match.name || "Live Football Action";
+      }
 
-      // 4. Create Ticker Content
-      const tickerHtml = `
-        <div class="ticker-item"><span>LIVE FOOTBALL</span> ${randomSport}</div>
-        <div class="ticker-item"><span>NEW MOVIE</span> ${randomMovie}</div>
-        <div class="ticker-item"><span>TRENDING SERIES</span> ${randomSeries}</div>
-        <div class="ticker-item"><span>PORTAL STATUS</span> ALL SYSTEMS ACTIVE</div>
+      const movieMsg = movies.results[0].title;
+      const tvMsg = tv.results[0].name;
+
+      const tickerContent = `
+        <div class="ticker-item"><span>LIVE FOOTBALL</span> ${footballMsg}</div>
+        <div class="ticker-item"><span>NEW MOVIE</span> ${movieMsg}</div>
+        <div class="ticker-item"><span>TRENDING SERIES</span> ${tvMsg}</div>
+        <div class="ticker-item"><span>STATUS</span> ALL SERVERS OPERATIONAL</div>
       `;
 
-      // Double the content for a seamless loop
-      tickerBody.innerHTML = tickerHtml + tickerHtml;
+      tickerBody.innerHTML = tickerContent + tickerContent; // Duplicate for loop
 
     } catch (e) {
-      tickerBody.innerHTML = '<div class="ticker-item"><span>WELCOME</span> Enjoy your premium streaming experience</div>';
+      tickerBody.innerHTML = '<div class="ticker-item"><span>WELCOME</span> Ready for Kick-off? Select a category above.</div>';
     }
   }
 
-  // Load Ticker
   initTicker();
 </script>
 

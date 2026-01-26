@@ -23,126 +23,104 @@
 
   /* Navigation Bar */
   header {
-    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+    background: rgba(0,0,0,0.9);
     position: fixed;
     top: 0; width: 100%; z-index: 1000;
-    padding: 1.2rem 4%;
+    padding: 1rem 4%;
     display: flex;
     align-items: center;
     box-sizing: border-box;
-    gap: 30px;
-    backdrop-filter: blur(5px);
+    gap: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
   }
 
   .logo {
     color: var(--primary);
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: 900;
-    text-transform: uppercase;
     text-decoration: none;
     letter-spacing: -1px;
   }
 
-  /* Filter Switch */
+  /* Mode Switch */
   .mode-switch {
     display: flex;
     background: rgba(255,255,255,0.1);
-    padding: 4px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
+    padding: 3px;
+    border-radius: 8px;
   }
 
   .mode-btn {
-    padding: 6px 20px;
-    border-radius: 16px;
+    padding: 6px 15px;
+    border-radius: 6px;
     border: none;
     background: transparent;
     color: white;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     transition: 0.3s;
   }
 
-  .mode-btn.active { background: white; color: black; }
+  .mode-btn.active { background: var(--primary); }
 
-  .search-box {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 8px 15px;
-    display: flex;
-    align-items: center;
-    border-radius: 6px;
-    margin-left: auto;
+  /* Dynamic Search Area */
+  .search-container {
+    padding: 100px 4% 20px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
 
-  .search-box input {
-    background: transparent;
-    border: none;
-    color: white;
-    outline: none;
-    width: 180px;
-    font-size: 0.9rem;
-  }
-
-  /* Hero Banner */
-  .hero {
-    height: 80vh;
-    background-size: cover;
-    background-position: center 20%;
-    display: flex;
-    align-items: center;
-    padding: 0 4%;
+  .search-bar-wrapper {
     position: relative;
-    transition: background-image 0.5s ease-in-out;
+    width: 100%;
+    margin-bottom: 2rem;
   }
 
-  .hero::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; width: 100%; height: 300px;
-    background: linear-gradient(to top, var(--bg), transparent);
-  }
-
-  .hero-content { max-width: 700px; z-index: 2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-  .hero-title { font-size: clamp(2.5rem, 6vw, 4rem); margin: 0; font-weight: 900; line-height: 1.1; }
-  .hero-desc { font-size: 1.1rem; margin: 1.5rem 0; line-height: 1.5; color: #ddd; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-
-  .btn-play {
-    background: white;
-    color: black;
-    padding: 12px 35px;
-    border: none;
-    border-radius: 4px;
-    font-weight: 900;
+  input#search {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid #333;
+    padding: 15px 20px;
+    border-radius: 10px;
+    color: white;
     font-size: 1.1rem;
-    cursor: pointer;
+    outline: none;
+    transition: 0.3s;
+  }
+
+  input#search:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(229, 9, 20, 0.2); }
+
+  /* Content Grid */
+  .content-section {
+    padding: 0 4% 4rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
-    gap: 10px;
-    transition: 0.2s;
-  }
-  .btn-play:hover { background: rgba(255,255,255,0.8); transform: scale(1.05); }
-
-  /* Content Rows */
-  .section { margin: 2rem 0; padding: 0 4%; }
-  .section h3 { font-size: 1.5rem; margin-bottom: 1rem; font-weight: 700; color: #fff; }
-
-  .carousel {
-    display: flex;
     gap: 15px;
-    overflow-x: auto;
-    padding: 10px 0;
-    scrollbar-width: none;
   }
-  .carousel::-webkit-scrollbar { display: none; }
+
+  .section-header span { color: var(--primary); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+  }
 
   .card {
-    flex: 0 0 280px;
     cursor: pointer;
-    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transition: transform 0.3s ease;
   }
-  .card:hover { transform: scale(1.05); z-index: 5; }
+
+  .card:hover { transform: scale(1.05); }
 
   .poster {
     width: 100%;
@@ -150,14 +128,21 @@
     background-size: cover;
     background-position: center;
     border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    background-color: #222;
     border: 1px solid rgba(255,255,255,0.05);
   }
 
-  .card-title { margin-top: 10px; font-size: 0.9rem; font-weight: 600; color: #ccc; }
+  .card-info {
+    margin-top: 10px;
+  }
 
-  /* Loading State */
-  .loader { padding: 20px; text-align: center; color: var(--gray); }
+  .card-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .card-meta { font-size: 0.8rem; color: var(--gray); }
+
+  /* Mobile Tweaks */
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  }
 </style>
 </head>
 <body>
@@ -168,117 +153,98 @@
     <button class="mode-btn active" id="btnMovie" onclick="switchType('movie')">Movies</button>
     <button class="mode-btn" id="btnTV" onclick="switchType('tv')">Series</button>
   </div>
-  <div class="search-box">
-    <input id="search" placeholder="Search title..." onkeypress="handleSearch(event)">
-  </div>
 </header>
 
-<div id="hero" class="hero">
-  <div class="hero-content">
-    <h1 id="heroTitle" class="hero-title">...</h1>
-    <p id="heroDesc" class="hero-desc">...</p>
-    <button id="heroPlayBtn" class="btn-play">▶ PLAY</button>
+<div class="search-container">
+  <div class="search-bar-wrapper">
+    <input id="search" placeholder="Search for a title..." oninput="handleDynamicSearch()">
   </div>
 </div>
 
-<div class="section">
-  <h3 id="rowTitle">Trending Now</h3>
-  <div id="mainGrid" class="carousel"></div>
-</div>
-
-<div class="section">
-  <h3>Top Rated</h3>
-  <div id="topRatedGrid" class="carousel"></div>
+<div class="content-section">
+  <h2 class="section-header" id="displayHeader">Trending <span>Movies</span></h2>
+  <div id="contentGrid" class="grid">
+    </div>
 </div>
 
 <script>
 const API_KEY = "12955008668c12c07496b04132f9ce44";
-const IMG_FULL = "https://image.tmdb.org/t/p/w1280";
 const IMG_THUMB = "https://image.tmdb.org/t/p/w500";
 
-let currentType = 'movie'; // Default
+let currentType = 'movie'; 
+let searchTimeout = null;
 
-// Navigate to the smart viewer
 async function playContent(id, title) {
   if (currentType === 'movie') {
-    // Movies need the IMDb ID for the vidfast player
     const res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`);
     const data = await res.json();
     location.href = `viewer.html?type=movie&imdb=${data.imdb_id}&title=${encodeURIComponent(title)}`;
   } else {
-    // Series use the TMDB ID directly in our smart viewer
     location.href = `viewer.html?type=tv&id=${id}&title=${encodeURIComponent(title)}`;
   }
 }
 
-async function switchType(type) {
+function switchType(type) {
   currentType = type;
   document.getElementById('btnMovie').classList.toggle('active', type === 'movie');
   document.getElementById('btnTV').classList.toggle('active', type === 'tv');
   
-  document.getElementById('rowTitle').innerText = `Trending ${type === 'movie' ? 'Movies' : 'Series'}`;
-  
-  initHero();
-  loadRows();
+  // Update Header Text
+  document.getElementById('displayHeader').innerHTML = `Trending <span>${type === 'movie' ? 'Movies' : 'Series'}</span>`;
+  document.getElementById('search').value = ""; // Clear search on switch
+  loadTrending();
 }
 
-async function initHero() {
-  const res = await fetch(`https://api.themoviedb.org/3/trending/${currentType}/day?api_key=${API_KEY}`);
+async function loadTrending() {
+  const res = await fetch(`https://api.themoviedb.org/3/trending/${currentType}/week?api_key=${API_KEY}`);
   const data = await res.json();
-  const item = data.results[0];
-  const title = item.title || item.name;
-
-  document.getElementById('hero').style.backgroundImage = `linear-gradient(to right, rgba(10,11,13,0.9) 10%, transparent 80%), url(${IMG_FULL}${item.backdrop_path})`;
-  document.getElementById('heroTitle').innerText = title;
-  document.getElementById('heroDesc').innerText = item.overview;
-  document.getElementById('heroPlayBtn').onclick = () => playContent(item.id, title);
+  renderGrid(data.results);
 }
 
-function renderCarousel(list, containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = "";
+function handleDynamicSearch() {
+  const query = document.getElementById('search').value;
+  
+  if (!query) {
+    document.getElementById('displayHeader').innerHTML = `Trending <span>${currentType === 'movie' ? 'Movies' : 'Series'}</span>`;
+    loadTrending();
+    return;
+  }
+
+  // Use a timeout to avoid hitting API on every single keystroke (Debounce)
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(async () => {
+    const res = await fetch(`https://api.themoviedb.org/3/search/${currentType}?api_key=${API_KEY}&query=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    document.getElementById('displayHeader').innerHTML = `Search Results <span>${currentType === 'movie' ? 'Movies' : 'Series'}</span>`;
+    renderGrid(data.results);
+  }, 300);
+}
+
+function renderGrid(list) {
+  const grid = document.getElementById('contentGrid');
+  grid.innerHTML = "";
+  
   list.forEach(item => {
     if (!item.backdrop_path) return;
     const title = item.title || item.name;
+    const date = (item.release_date || item.first_air_date || "").split("-")[0];
+    
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
       <div class="poster" style="background-image: url(${IMG_THUMB}${item.backdrop_path})"></div>
-      <div class="card-title">${title}</div>
+      <div class="card-info">
+        <div class="card-title">${title}</div>
+        <div class="card-meta">${date} • ${currentType.toUpperCase()}</div>
+      </div>
     `;
     card.onclick = () => playContent(item.id, title);
-    container.appendChild(card);
+    grid.appendChild(card);
   });
 }
 
-async function loadRows() {
-  // Row 1: Trending
-  const trendRes = await fetch(`https://api.themoviedb.org/3/trending/${currentType}/week?api_key=${API_KEY}`);
-  const trendData = await trendRes.json();
-  renderCarousel(trendData.results, 'mainGrid');
-
-  // Row 2: Top Rated
-  const topRes = await fetch(`https://api.themoviedb.org/3/${currentType}/top_rated?api_key=${API_KEY}`);
-  const topData = await topRes.json();
-  renderCarousel(topData.results, 'topRatedGrid');
-}
-
-function handleSearch(e) {
-  if (e.key === 'Enter') {
-    const q = e.target.value;
-    fetch(`https://api.themoviedb.org/3/search/${currentType}?api_key=${API_KEY}&query=${encodeURIComponent(q)}`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('rowTitle').innerText = "Search Results";
-        renderCarousel(data.results, 'mainGrid');
-        window.scrollTo({top: 400, behavior: 'smooth'});
-      });
-  }
-}
-
 // Initial Load
-initHero();
-loadRows();
+loadTrending();
 </script>
 
 </body>

@@ -3,296 +3,290 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Matches</title>
+<title>Live Sports Hub</title>
 
 <style>
-body {
-  margin:0;
-  font-family:'Segoe UI',Roboto,sans-serif;
-  background:#121212;
-  color:#fff;
-}
+  :root {
+    --primary: #0072db; /* Sky Sports Blue */
+    --live: #e50914;   /* Netflix/Live Red */
+    --bg: #0f1014;
+    --surface: #1a1c22;
+    --text: #ffffff;
+    --gray: #9ca3af;
+  }
 
-h1 {
-  text-align:center;
-  padding:1rem;
-}
+  body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    padding-top: 80px; /* Space for fixed header */
+  }
 
-.top-bar {
-  max-width:800px;
-  margin:0 auto;
-  padding:0 1rem 1rem;
-}
+  /* Header Section */
+  header {
+    background: rgba(15, 16, 20, 0.95);
+    backdrop-filter: blur(10px);
+    position: fixed;
+    top: 0; width: 100%;
+    z-index: 1000;
+    padding: 1rem 4%;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    border-bottom: 1px solid #2a2d35;
+  }
 
-.top-row {
-  display:flex;
-  gap:.5rem;
-  align-items:center;
-}
+  .logo {
+    color: var(--primary);
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-right: 2rem;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
 
-button {
-  background:#1f1f1f;
-  color:#fff;
-  padding:.5rem 1rem;
-  border:none;
-  border-radius:.4rem;
-  font-weight:600;
-  cursor:pointer;
-  transition:.2s;
-}
+  .search-container {
+    flex-grow: 1;
+    max-width: 500px;
+    position: relative;
+  }
 
-button:hover {
-  background:#FF6700;
-}
+  input#search {
+    width: 100%;
+    background: #252830;
+    border: 1px solid #3f434e;
+    padding: 10px 15px;
+    border-radius: 6px;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+  }
 
-input#search {
-  flex:1;
-  padding:.5rem 1rem;
-  border-radius:.4rem;
-  border:none;
-  background:#1f1f1f;
-  color:#fff;
-}
+  input#search:focus { border-color: var(--primary); background: #2a2e3a; }
 
-.filter-row {
-  display:flex;
-  gap:.5rem;
-  margin-top:.5rem;
-}
+  /* Filter Bar */
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    padding: 2rem 4% 1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
 
-.match-list {
-  max-width:800px;
-  margin:0 auto;
-  padding:0 1rem 1rem;
-}
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid #333;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.3s;
+  }
 
-.match-bar {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:#1f1f1f;
-  margin-bottom:.5rem;
-  padding:.6rem 1rem;
-  border-radius:.5rem;
-  cursor:pointer;
-  transition:.2s;
-}
+  .filter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
 
-.match-bar:hover {
-  background:#FF6700;
-}
+  /* Match Grid */
+  .match-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 4% 4rem;
+  }
 
-.match-info div:first-child {
-  font-weight:600;
-}
+  .match-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s, border-color 0.3s;
+    border: 1px solid #2a2d35;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+  }
 
-.match-info div:last-child {
-  font-size:.85rem;
-  opacity:.85;
-}
+  .match-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+  }
 
-/* LIVE pulse */
-.live {
-  color:#ff3b3b;
-  font-weight:700;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-}
+  .match-teams {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
 
-.live::before {
-  content:'';
-  width:8px;
-  height:8px;
-  background:#ff3b3b;
-  border-radius:50%;
-  animation:pulse 1.4s infinite;
-}
+  .match-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #2a2d35;
+    padding-top: 1rem;
+  }
 
-@keyframes pulse {
-  0% { transform:scale(1); opacity:1; }
-  70% { transform:scale(1.6); opacity:0; }
-  100% { transform:scale(1); opacity:0; }
-}
+  .time-badge {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .channel-pill {
+    background: #252830;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--primary);
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+
+  /* Status Styles */
+  .live-indicator {
+    color: var(--live);
+    animation: flash 1.5s infinite;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--live);
+    border-radius: 50%;
+  }
+
+  /* Loader */
+  .loader { text-align: center; padding: 3rem; color: var(--gray); font-weight: 600; }
 </style>
 </head>
 
 <body>
 
-<h1>Live Matches</h1>
-
-<div class="top-bar">
-  <div class="top-row">
-    <button onclick="goHome()">⬅ Home</button>
-    <input type="text" id="search" placeholder="Search teams...">
+<header>
+  <div class="logo" onclick="goHome()">SPORT HUB</div>
+  <div class="search-container">
+    <input type="text" id="search" placeholder="Search for teams or leagues...">
   </div>
+</header>
 
-  <div class="filter-row">
-    <button id="btnNormal">All (12h)</button>
-    <button id="btnSoon">Starting Soon</button>
-    <button id="btnLive">Live</button>
-  </div>
+<div class="filter-bar">
+  <button class="filter-btn active" id="btnNormal" onclick="setMode('normal', this)">Next 12 Hours</button>
+  <button class="filter-btn" id="btnSoon" onclick="setMode('soon', this)">Starting Soon</button>
+  <button class="filter-btn" id="btnLive" onclick="setMode('live', this)">Live Now</button>
 </div>
 
-<div class="match-list" id="matchList">Loading matches...</div>
+<div class="match-grid" id="matchList">
+  <div class="loader">Scanning airwaves for matches...</div>
+</div>
 
 <script>
 const matchList = document.getElementById('matchList');
 const searchInput = document.getElementById('search');
-
-const btnNormal = document.getElementById('btnNormal');
-const btnSoon   = document.getElementById('btnSoon');
-const btnLive   = document.getElementById('btnLive');
-
 let allMatches = [];
 let activeMode = 'normal';
 
-/* ---- TIME HELPERS ---- */
 const NOW = () => Math.floor(Date.now() / 1000);
 
 function formatKO(ts){
-  const d = new Date(ts * 1000);
-  return d.toLocaleTimeString([], {
-    hour:'2-digit',
-    minute:'2-digit',
-    hour12:false
-  });
+  return new Date(ts * 1000).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
 }
 
-function isLive(m){
-  return NOW() >= m.timestamp - 300 &&
-         NOW() <= m.timestamp + 7200;
-}
+const isLive = (m) => NOW() >= m.timestamp - 300 && NOW() <= m.timestamp + 7200;
+const isSoon = (m) => m.timestamp > NOW() + 300 && m.timestamp <= NOW() + 3600;
 
-function isStartingSoon(m){
-  return m.timestamp > NOW() + 300 &&
-         m.timestamp <= NOW() + 3600;
-}
-
-function isWithinNextHours(m,h){
-  return m.timestamp >= NOW() &&
-         m.timestamp <= NOW() + h * 3600;
-}
-
-function sortLiveFirst(list){
-  return list.sort((a,b)=>{
-    const aL = isLive(a);
-    const bL = isLive(b);
-    if(aL && !bL) return -1;
-    if(!aL && bL) return 1;
-    return a.timestamp - b.timestamp;
-  });
-}
-
-/* ---- LOAD MATCHES (FIXED) ---- */
 async function loadMatches(){
-  matchList.textContent = 'Loading matches...';
   try{
     const res = await fetch('https://beta.adstrim.ru/api/events');
     const data = await res.json();
-
-    allMatches = data.data
-      .filter(m => m.sport === 'Football')
-      .filter(m =>
-        isWithinNextHours(m, 12) || isLive(m)
-      );
-
-    renderMatches(sortLiveFirst(allMatches));
+    allMatches = data.data.filter(m => m.sport === 'Football');
+    renderMatches(filterData());
   }catch(e){
-    console.error(e);
-    matchList.textContent = 'Error loading matches.';
+    matchList.innerHTML = '<div class="loader">Failed to sync live events.</div>';
   }
 }
 
-/* ---- RENDER ---- */
 function renderMatches(matches){
   matchList.innerHTML = '';
   if(!matches.length){
-    matchList.textContent = 'No matches found.';
+    matchList.innerHTML = '<div class="loader">No matches currently scheduled.</div>';
     return;
   }
 
   matches.forEach(m=>{
-    const home = m.home_team || m.teams?.home?.name || 'Home';
-    const away = m.away_team || m.teams?.away?.name || 'Away';
+    const home = m.home_team || m.teams?.home?.name || 'TBA';
+    const away = m.away_team || m.teams?.away?.name || 'TBA';
     const channels = m.channels || [];
-    const count = channels.length;
+    
+    const statusHtml = isLive(m) 
+      ? `<span class="live-indicator"><span class="live-dot"></span> LIVE</span>` 
+      : `<span class="time-badge">KO ${formatKO(m.timestamp)}</span>`;
 
-    const timeLabel = isLive(m)
-      ? '<span class="live">LIVE</span>'
-      : `KO ${formatKO(m.timestamp)}`;
-
-    const bar = document.createElement('div');
-    bar.className = 'match-bar';
-    bar.innerHTML = `
-      <div class="match-info">
-        <div>${home} vs ${away}</div>
-        <div>${timeLabel}</div>
+    const card = document.createElement('div');
+    card.className = 'match-card';
+    card.innerHTML = `
+      <div class="match-teams">${home} <br>vs ${away}</div>
+      <div class="match-meta">
+        ${statusHtml}
+        <span class="channel-pill">${channels.length} SOURCES</span>
       </div>
-      <span>${count} channel${count !== 1 ? 's' : ''}</span>
     `;
 
-    bar.onclick = ()=>{
-      if(!count){
-        alert('No channels available.');
-        return;
-      }
+    card.onclick = () => {
+      if(!channels.length) return alert('No coverage available');
       const mirror = encodeURIComponent(channels[0].name);
-      window.location.href =
-        `viewer.html?type=football&mirror=${mirror}&title=${encodeURIComponent(home+' vs '+away)}`;
+      window.location.href = `viewer.html?type=football&mirror=${mirror}&title=${encodeURIComponent(home+' vs '+away)}`;
     };
 
-    matchList.appendChild(bar);
+    matchList.appendChild(card);
   });
 }
 
-/* ---- FILTER BUTTONS ---- */
-function setMode(mode){
-  if(activeMode === mode) mode = 'normal';
-  activeMode = mode;
+function filterData() {
+  let filtered = allMatches;
+  if(activeMode === 'soon') filtered = allMatches.filter(isSoon);
+  else if(activeMode === 'live') filtered = allMatches.filter(isLive);
+  else filtered = allMatches.filter(m => (m.timestamp >= NOW() && m.timestamp <= NOW() + 43200) || isLive(m));
 
-  let filtered;
-  if(mode === 'soon') filtered = allMatches.filter(isStartingSoon);
-  else if(mode === 'live') filtered = allMatches.filter(isLive);
-  else filtered = allMatches.filter(m => isWithinNextHours(m,12) || isLive(m));
-
-  renderMatches(sortLiveFirst(filtered));
-}
-
-btnNormal.onclick = () => setMode('normal');
-btnSoon.onclick   = () => setMode('soon');
-btnLive.onclick   = () => setMode('live');
-
-/* ---- SEARCH ---- */
-searchInput.addEventListener('input', ()=>{
   const term = searchInput.value.toLowerCase();
-
-  let base;
-  if(activeMode === 'soon') base = allMatches.filter(isStartingSoon);
-  else if(activeMode === 'live') base = allMatches.filter(isLive);
-  else base = allMatches.filter(m => isWithinNextHours(m,12) || isLive(m));
-
-  const filtered = base.filter(m=>{
-    const h = m.home_team?.toLowerCase() || '';
-    const a = m.away_team?.toLowerCase() || '';
+  return filtered.filter(m => {
+    const h = (m.home_team || m.teams?.home?.name || '').toLowerCase();
+    const a = (m.away_team || m.teams?.away?.name || '').toLowerCase();
     return h.includes(term) || a.includes(term);
-  });
-
-  renderMatches(sortLiveFirst(filtered));
-});
-
-/* ---- NAV ---- */
-function goHome(){
-  window.location.href = 'index.html';
+  }).sort((a,b) => isLive(a) ? -1 : a.timestamp - b.timestamp);
 }
 
-window.history.pushState(null, document.title, window.location.href);
-window.addEventListener('popstate', ()=>{
-  window.location.href = 'index.html';
-});
+function setMode(mode, el){
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeMode = mode;
+  renderMatches(filterData());
+}
 
-/* ---- INIT ---- */
+searchInput.addEventListener('input', () => renderMatches(filterData()));
+function goHome(){ window.location.href = 'index.html'; }
+
 loadMatches();
+// Auto-refresh every 2 minutes
+setInterval(loadMatches, 120000);
 </script>
 
 </body>

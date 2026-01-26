@@ -3,126 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Viewer | Cinema Mode</title>
+<title>Stream Viewer | Portal</title>
 <style>
-  :root {
-    --primary: #e50914;
-    --bg: #050505;
-    --surface: #141414;
-    --text: #ffffff;
-    --accent: #00d2ff;
-  }
-
-  body {
-    margin: 0;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* Navigation */
-  header {
-    width: 100%;
-    padding: 1.5rem 4%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-  }
-
-  .back-btn {
-    text-decoration: none;
-    color: #fff;
-    background: rgba(255,255,255,0.1);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    transition: 0.3s;
-  }
-  .back-btn:hover { background: rgba(255,255,255,0.2); }
-
-  /* Player Area */
-  .player-wrapper {
-    width: 95%;
-    max-width: 1100px;
-    aspect-ratio: 16/9;
-    background: #000;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-    position: relative;
-    border: 1px solid #222;
-  }
-
+  :root { --primary: #e50914; --bg: #050505; --surface: #141414; --text: #ffffff; --accent: #00d2ff; }
+  body { margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; }
+  header { width: 100%; padding: 1.5rem 4%; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+  .back-btn { text-decoration: none; color: #fff; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 6px; font-weight: 600; }
+  .player-wrapper { width: 95%; max-width: 1100px; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #222; }
   iframe { width: 100%; height: 100%; border: none; }
-
-  .info-bar {
-    width: 95%;
-    max-width: 1100px;
-    margin: 1.5rem 0;
-    text-align: left;
-    padding: 0 10px;
-  }
-
+  .info-bar { width: 95%; max-width: 1100px; margin: 1.5rem 0; text-align: left; }
   #mainTitle { font-size: 1.8rem; font-weight: 800; margin: 0; }
-  #subTitle { color: var(--accent); font-weight: 600; margin-top: 5px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
-
-  .live-dot {
-    height: 10px; width: 10px; background-color: #ff0000;
-    border-radius: 50%; display: inline-block;
-    box-shadow: 0 0 8px #ff0000;
-  }
-
-  /* Series Controls */
-  #seriesControls {
-    width: 95%;
-    max-width: 1100px;
-    margin-bottom: 5rem;
-    display: none;
-  }
-
-  .control-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid #222;
-    padding-bottom: 10px;
-  }
-
-  select#seasonSelect {
-    background: var(--surface);
-    color: white;
-    border: 1px solid #333;
-    padding: 10px 15px;
-    border-radius: 6px;
-    font-size: 1rem;
-    outline: none;
-  }
-
-  .episodes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-    gap: 10px;
-  }
-
-  .ep-card {
-    background: var(--surface);
-    border: 1px solid #333;
-    aspect-ratio: 1/1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-
-  .ep-card:hover { border-color: var(--primary); }
+  #subTitle { color: var(--accent); font-weight: 600; margin-top: 5px; display: flex; align-items: center; gap: 8px; }
+  .live-dot { height: 10px; width: 10px; background: #ff0000; border-radius: 50%; box-shadow: 0 0 8px #ff0000; }
+  #seriesControls { width: 95%; max-width: 1100px; margin-bottom: 5rem; display: none; }
+  .control-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #222; padding-bottom: 10px; }
+  select { background: var(--surface); color: white; border: 1px solid #333; padding: 10px; border-radius: 6px; }
+  .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; }
+  .ep-card { background: var(--surface); border: 1px solid #333; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; }
   .ep-card.active { background: var(--primary); border-color: var(--primary); }
 </style>
 </head>
@@ -130,7 +27,7 @@
 
 <header>
   <a href="javascript:history.back()" class="back-btn">⬅ BACK</a>
-  <div style="color: var(--primary); font-weight: 900;">PORTAL VIEWER</div>
+  <div style="color: var(--primary); font-weight: 900;">STREAMING NOW</div>
 </header>
 
 <div class="player-wrapper">
@@ -154,95 +51,79 @@
   const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
   const params = new URLSearchParams(window.location.search);
   
-  // Route Data
-  const type = params.get('type');       // 'movie', 'tv', or 'livetv'
-  const id = params.get('id');           // TMDB ID
-  const imdb = params.get('imdb');       // IMDB ID
-  const channel = params.get('channel'); // Channel Name (for Sports/Live)
+  const type = params.get('type');       // movie, tv, livetv, or sports
+  const id = params.get('id');           // TMDB ID or Event ID
+  const channel = params.get('channel'); // The 'link' property for Live TV
   const title = params.get('title');
 
   const player = document.getElementById('mainPlayer');
-  const seasonSelect = document.getElementById('seasonSelect');
-  const episodeGrid = document.getElementById('episodeGrid');
   const subTitle = document.getElementById('subTitle');
-
   document.getElementById('mainTitle').innerText = title || "Now Playing";
 
   async function init() {
-    // 1. LIVE TV & FOOTBALL LOGIC
-    if (type === 'livetv' || channel) {
-      subTitle.innerHTML = `<span class="live-dot"></span> LIVE BROADCAST`;
-      player.src = `https://beta.adstrim.ru/player/${encodeURIComponent(channel)}`;
+    // 1. FOOTBALL / SPORTS EVENTS
+    if (type === 'sports') {
+      subTitle.innerHTML = `<span class="live-dot"></span> LIVE EVENT`;
+      // Use event-single endpoint style or direct ID player
+      player.src = `https://beta.adstrim.ru/event/${id}`;
     } 
     
-    // 2. SERIES LOGIC
+    // 2. LIVE TV CHANNELS
+    else if (type === 'livetv') {
+      subTitle.innerHTML = `<span class="live-dot"></span> LIVE BROADCAST`;
+      // Use the 'link' property from your channels API
+      player.src = `https://beta.adstrim.ru/stream/${channel}`;
+    } 
+    
+    // 3. TV SERIES (TMDB)
     else if (type === 'tv') {
       document.getElementById('seriesControls').style.display = 'block';
       await loadSeasons();
     } 
     
-    // 3. MOVIE LOGIC
+    // 4. MOVIES (TMDB)
     else {
       subTitle.innerText = "Feature Film";
-      player.src = `https://vidfast.pro/movie/${imdb || id}`;
+      player.src = `https://vidfast.pro/movie/${id}`;
     }
   }
 
+  // SERIES LOGIC
   async function loadSeasons() {
-    try {
-      const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}`);
-      const data = await res.json();
-      
-      data.seasons.forEach(s => {
-        if(s.season_number === 0) return;
-        const opt = document.createElement('option');
-        opt.value = s.season_number;
-        opt.innerText = `Season ${s.season_number}`;
-        seasonSelect.appendChild(opt);
-      });
-      
-      fetchEpisodes();
-    } catch (e) {
-      console.error("Error loading series info");
-    }
+    const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}`);
+    const data = await res.json();
+    data.seasons.forEach(s => {
+      if(s.season_number === 0) return;
+      const opt = document.createElement('option');
+      opt.value = s.season_number;
+      opt.innerText = `Season ${s.season_number}`;
+      document.getElementById('seasonSelect').appendChild(opt);
+    });
+    fetchEpisodes();
   }
 
   async function fetchEpisodes() {
-    const sNum = seasonSelect.value;
-    episodeGrid.innerHTML = "";
-    
-    try {
-      const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${sNum}?api_key=${TMDB_KEY}`);
-      const data = await res.json();
-      
-      data.episodes.forEach(ep => {
-        const card = document.createElement('div');
-        card.className = 'ep-card';
-        card.innerText = ep.episode_number;
-        card.onclick = () => playEpisode(sNum, ep.episode_number, card);
-        episodeGrid.appendChild(card);
-      });
-
-      // Start with Ep 1
-      if(episodeGrid.firstChild) episodeGrid.firstChild.click();
-    } catch (e) {
-      console.error("Error loading episodes");
-    }
-  }
-
-  function playEpisode(s, e, element) {
-    document.querySelectorAll('.ep-card').forEach(el => el.classList.remove('active'));
-    element.classList.add('active');
-    subTitle.innerText = `Season ${s} • Episode ${e}`;
-    
-    const streamUrl = `https://vidfast.pro/tv/${id}/${s}/${e}`;
-    if(player.src !== streamUrl) {
-      player.src = streamUrl;
-    }
+    const sNum = document.getElementById('seasonSelect').value;
+    const grid = document.getElementById('episodeGrid');
+    grid.innerHTML = "";
+    const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${sNum}?api_key=${TMDB_KEY}`);
+    const data = await res.json();
+    data.episodes.forEach(ep => {
+      const card = document.createElement('div');
+      card.className = 'ep-card';
+      card.innerText = ep.episode_number;
+      card.onclick = () => {
+        document.querySelectorAll('.ep-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        subTitle.innerText = `Season ${sNum} • Episode ${ep.episode_number}`;
+        player.src = `https://vidfast.pro/tv/${id}/${sNum}/${ep.episode_number}`;
+      };
+      grid.appendChild(card);
+    });
+    if(grid.firstChild) grid.firstChild.click();
   }
 
   init();
 </script>
-
 </body>
 </html>

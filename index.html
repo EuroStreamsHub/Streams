@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Portal | Welcome</title>
+<title>Stream Portal | The Ultimate Hub</title>
 <style>
   :root {
-    --primary: #e50914; /* Netflix Red */
+    --primary: #e50914;
     --bg: #050505;
-    --card-bg: rgba(255, 255, 255, 0.05);
+    --surface: rgba(255, 255, 255, 0.05);
     --text: #ffffff;
   }
 
@@ -16,33 +16,83 @@
     margin: 0;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-color: var(--bg);
-    /* Cinematic Background */
-    background-image: 
-      radial-gradient(circle at 50% -20%, rgba(229, 9, 20, 0.15), transparent),
-      linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
-      url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&q=80&w=2000');
+    /* Cinema background with dark overlay */
+    background: 
+      radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.15), transparent),
+      linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
+      url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=2000');
     background-size: cover;
     background-attachment: fixed;
     color: var(--text);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* ---------- DYNAMIC TICKER ---------- */
+  .ticker-wrap {
+    width: 100%;
+    overflow: hidden;
+    height: 45px;
+    background: #000;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+  }
+
+  /* Ticker Style Variants (Set by JS) */
+  .style-1 { background: linear-gradient(90deg, #e50914, #000); }
+  .style-2 { background: linear-gradient(90deg, #00d2ff, #000); }
+  .style-3 { background: linear-gradient(90deg, #f2994a, #000); }
+  .style-4 { background: linear-gradient(90deg, #8e2de2, #000); }
+  .style-5 { background: linear-gradient(90deg, #27ae60, #000); }
+
+  .ticker {
+    display: inline-block;
+    white-space: nowrap;
+    animation: ticker-anim 40s linear infinite;
+    padding-left: 100%;
+  }
+
+  .ticker-item {
+    display: inline-block;
+    padding: 0 3rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .ticker-item span {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-right: 10px;
+    color: #fff;
+  }
+
+  @keyframes ticker-anim {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
   }
 
   /* ---------- HEADER ---------- */
   header {
     text-align: center;
-    padding: 5rem 1rem 3rem;
+    padding: 4rem 1rem 2rem;
   }
 
   header h1 {
-    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
     font-weight: 900;
-    letter-spacing: -2px;
+    letter-spacing: -3px;
     margin: 0;
     text-transform: uppercase;
-    background: linear-gradient(to bottom, #ffffff 30%, #999 100%);
+    background: linear-gradient(to bottom, #fff, #777);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -50,41 +100,39 @@
   header p {
     color: #aaa;
     font-size: 1.1rem;
+    letter-spacing: 2px;
     margin-top: 10px;
-    letter-spacing: 1px;
   }
 
   /* ---------- GRID ---------- */
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    padding: 0 5% 4rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    padding: 2rem 8%;
+    max-width: 1400px;
+    margin: 0 auto;
     width: 100%;
-    max-width: 1200px;
     box-sizing: border-box;
   }
 
-  /* ---------- CATEGORY CARDS ---------- */
   .card {
     position: relative;
-    background: var(--card-bg);
+    background: var(--surface);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
+    border-radius: 1.5rem;
     cursor: pointer;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    aspect-ratio: 16/9;
-    display: flex;
-    flex-direction: column;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    aspect-ratio: 16/10;
   }
 
   .card:hover {
-    transform: translateY(-10px) scale(1.02);
+    transform: scale(1.05) translateY(-10px);
     border-color: var(--primary);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(229, 9, 20, 0.2);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
   }
 
   .card-img {
@@ -92,111 +140,82 @@
     height: 100%;
     background-size: cover;
     background-position: center;
+    filter: brightness(0.5);
     transition: 0.5s;
-    filter: brightness(0.6) grayscale(20%);
   }
 
   .card:hover .card-img {
-    filter: brightness(0.8) grayscale(0%);
-    transform: scale(1.1);
+    filter: brightness(0.8) scale(1.1);
   }
 
   .card-content {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 70%);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 1.5rem;
+    padding: 2rem;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
   }
 
   .card h2 {
     margin: 0;
     font-size: 1.8rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
+    font-weight: 800;
   }
 
   .card .tag {
-    font-size: 0.75rem;
     color: var(--primary);
+    font-weight: 900;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    font-weight: 800;
     letter-spacing: 2px;
     margin-bottom: 5px;
   }
-
-  /* ---------- THEME TOGGLE ---------- */
-  #themeToggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    z-index: 100;
-    transition: 0.3s;
-  }
-  #themeToggle:hover { background: rgba(255,255,255,0.2); }
 
   /* ---------- FOOTER ---------- */
   footer {
     margin-top: auto;
     padding: 3rem;
     text-align: center;
-    width: 100%;
   }
-
-  /* Light Theme Overrides */
-  body.light-mode {
-    background: #f4f4f4;
-    background-image: none;
-    color: #000;
-  }
-  body.light-mode header h1 { background: #000; -webkit-text-fill-color: #000; }
-  body.light-mode .card { background: #fff; border-color: #ddd; }
-  body.light-mode .card-content { background: linear-gradient(to top, rgba(255,255,255,0.9), transparent); }
-  body.light-mode .card h2 { color: #000; }
-  body.light-mode #themeToggle { color: #000; border-color: #ccc; }
-
 </style>
 </head>
 <body>
 
-<button id="themeToggle">Light Mode</button>
+<div class="ticker-wrap" id="tickerWrapper">
+  <div class="ticker" id="tickerBody">
+    <div class="ticker-item"><span>SYSTEM</span> Initializing Stream Portal Data...</div>
+  </div>
+</div>
 
 <header>
-  <h1>Stream Portal</h1>
-  <p>Live Sports • Movies • Television</p>
+  <h1>STREAM HUB</h1>
+  <p>SPORTS • MOVIES • SERIES • LIVE TV</p>
 </header>
 
 <div class="grid">
   <div class="card" onclick="location.href='streams.html'">
     <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=800');"></div>
     <div class="card-content">
-      <div class="tag">Live Now</div>
-      <h2>Sports Streams</h2>
+      <div class="tag">Live Sports</div>
+      <h2>Football & More</h2>
     </div>
   </div>
 
   <div class="card" onclick="location.href='movies.html'">
     <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800');"></div>
     <div class="card-content">
-      <div class="tag">Cinema</div>
-      <h2>Latest Movies</h2>
+      <div class="tag">On Demand</div>
+      <h2>Movies & Series</h2>
     </div>
   </div>
 
   <div class="card" onclick="location.href='livetv.html'">
-    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?q=80&w=800');"></div>
+    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1593784991095-a205069470b6?q=80&w=800');"></div>
     <div class="card-content">
-      <div class="tag">Broadcast</div>
-      <h2>Live TV</h2>
+      <div class="tag">Digital Guide</div>
+      <h2>Live TV Channels</h2>
     </div>
   </div>
 </div>
@@ -206,21 +225,54 @@
 </footer>
 
 <script>
-  const btn = document.getElementById("themeToggle");
-  
-  // Theme Toggle Logic
-  btn.onclick = () => {
-    document.body.classList.toggle("light-mode");
-    const isLight = document.body.classList.contains("light-mode");
-    btn.textContent = isLight ? "Dark Mode" : "Light Mode";
-    localStorage.setItem("theme", isLight ? "light" : "dark");
-  };
+  const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
+  const SPORTS_API = "https://beta.adstrim.ru/api/channels";
 
-  // Check preference
-  if(localStorage.getItem("theme") === "light") {
-    document.body.classList.add("light-mode");
-    btn.textContent = "Dark Mode";
+  async function initTicker() {
+    const tickerBody = document.getElementById('tickerBody');
+    const tickerWrapper = document.getElementById('tickerWrapper');
+
+    // 1. Set Random Style
+    const styles = ['style-1', 'style-2', 'style-3', 'style-4', 'style-5'];
+    tickerWrapper.className = 'ticker-wrap ' + styles[Math.floor(Math.random() * styles.length)];
+
+    try {
+      // 2. Fetch Data from your Sports API and TMDB
+      const [sportsRes, movieRes, tvRes] = await Promise.all([
+        fetch(SPORTS_API),
+        fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}`),
+        fetch(`https://api.themoviedb.org/3/trending/tv/day?api_key=${TMDB_KEY}`)
+      ]);
+
+      const sports = await sportsRes.json();
+      const movies = await movieRes.json();
+      const tv = await tvRes.json();
+
+      // 3. Pick random highlights
+      const liveSports = sports.channels.filter(c => c.name.toLowerCase().includes('sky') || c.name.toLowerCase().includes('tnt'));
+      const randomSport = liveSports.length > 0 ? liveSports[Math.floor(Math.random() * liveSports.length)].name.replace(/\[.*?\]/g, '').trim() : "Sky Sports Main Event";
+      
+      const randomMovie = movies.results[0].title;
+      const randomSeries = tv.results[0].name;
+
+      // 4. Create Ticker Content
+      const tickerHtml = `
+        <div class="ticker-item"><span>LIVE FOOTBALL</span> ${randomSport}</div>
+        <div class="ticker-item"><span>NEW MOVIE</span> ${randomMovie}</div>
+        <div class="ticker-item"><span>TRENDING SERIES</span> ${randomSeries}</div>
+        <div class="ticker-item"><span>PORTAL STATUS</span> ALL SYSTEMS ACTIVE</div>
+      `;
+
+      // Double the content for a seamless loop
+      tickerBody.innerHTML = tickerHtml + tickerHtml;
+
+    } catch (e) {
+      tickerBody.innerHTML = '<div class="ticker-item"><span>WELCOME</span> Enjoy your premium streaming experience</div>';
+    }
   }
+
+  // Load Ticker
+  initTicker();
 </script>
 
 </body>

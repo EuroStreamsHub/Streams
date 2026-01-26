@@ -3,129 +3,269 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live TV</title>
+<title>Live TV Guide</title>
 <style>
-body {
-  margin:0;
-  font-family:'Segoe UI',Roboto,sans-serif;
-  background: radial-gradient(circle at top, #1e1e1e, #0b0b0b);
-  color:#fff;
-}
+  :root {
+    --primary: #00d2ff; /* TV Blue */
+    --bg: #0a0b0d;
+    --surface: #1a1c22;
+    --text: #ffffff;
+  }
 
-.header {
-  padding:1rem;
-  text-align:center;
-}
+  body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    padding-top: 80px;
+  }
 
-.controls {
-  display:flex;
-  justify-content:center;
-  gap:.5rem;
-  flex-wrap:wrap;
-  position:sticky;
-  top:0;
-  background:#121212;
-  padding:.5rem 1rem;
-  z-index:10;
-}
+  /* Header & Search */
+  header {
+    background: rgba(10, 11, 13, 0.9);
+    backdrop-filter: blur(12px);
+    position: fixed;
+    top: 0; width: 100%;
+    z-index: 100;
+    padding: 1rem 4%;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
 
-button.back-home {
-  background:#1f1f1f;
-  color:#fff;
-  padding:.5rem 1rem;
-  border:none;
-  border-radius:.4rem;
-  font-weight:600;
-  cursor:pointer;
-  transition:.2s;
-}
-button.back-home:hover { background:#ff6700; color:#000; }
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-right: 2rem;
+  }
 
-.controls input {
-  padding:.6rem 1rem;
-  border-radius:.4rem;
-  border:none;
-  width:220px;
-  max-width:90%;
-}
+  .back-home {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
 
-.grid {
-  display:flex;
-  flex-direction:column;
-  gap:.5rem;
-  padding:1rem;
-}
+  .search-box {
+    flex-grow: 1;
+    max-width: 400px;
+    position: relative;
+  }
 
-.card {
-  background:#121212;
-  border-radius:.5rem;
-  padding:.8rem 1rem;
-  cursor:pointer;
-  transition:.2s;
-  font-weight:600;
-}
-.card:hover { background:#ff6700; color:#000; }
+  input#search {
+    width: 100%;
+    background: #252830;
+    border: 1px solid #3f434e;
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: white;
+    outline: none;
+  }
+
+  input#search:focus { border-color: var(--primary); }
+
+  /* Channel Grid */
+  .container {
+    padding: 2rem 4%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .category-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .category-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .category-title::after {
+    content: '';
+    flex-grow: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: 'LIVE';
+    position: absolute;
+    top: 5px; right: 5px;
+    font-size: 0.6rem;
+    font-weight: 900;
+    color: var(--primary);
+    opacity: 0.5;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+    background: #252830;
+    border-color: var(--primary);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  }
+
+  .channel-icon {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #333, #111);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.8rem;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+
+  .channel-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Status Footer */
+  .status-footer {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-size: 0.8rem;
+  }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h2>Live TV Channels</h2>
-  <div class="controls">
-    <button class="back-home" onclick="goHome()">⬅ Home</button>
-    <input id="search" placeholder="Search channels…">
+<header>
+  <div class="logo-area">
+    <button class="back-home" onclick="goHome()">⬅</button>
+    <div style="font-weight: 800; font-size: 1.2rem; letter-spacing: -1px;">LIVE <span style="color: var(--primary);">TV</span></div>
   </div>
+  <div class="search-box">
+    <input id="search" placeholder="Quick find channel...">
+  </div>
+</header>
+
+<div class="container" id="main-content">
+  </div>
+
+<div class="status-footer">
+  Digital Signal Connected • High Definition Enabled
 </div>
 
-<div id="grid" class="grid"></div>
-
 <script>
-const grid = document.getElementById("grid");
+const container = document.getElementById("main-content");
 const searchInput = document.getElementById("search");
 
-let channels = [];
+let allChannels = [];
 
-// Back button
-function goHome() {
-  window.location.href = "index.html";
-}
+function goHome() { window.location.href = "index.html"; }
 
-// Fetch channels from API
 async function fetchChannels(){
-  const res = await fetch("https://beta.adstrim.ru/api/channels");
-  const data = await res.json();
-  channels = data.channels.filter(c=>c.show_on_livetv);
-  render();
+  try {
+    const res = await fetch("https://beta.adstrim.ru/api/channels");
+    const data = await res.json();
+    allChannels = data.channels.filter(c => c.show_on_livetv);
+    render();
+  } catch(e) {
+    container.innerHTML = "<h2>Broadcast offline. Please try again later.</h2>";
+  }
 }
 
-// Format name: remove [Country] and add spaces before capital letters
 function formatName(name){
-  let n = name.replace(/\[.*?\]/,''); // remove [Country]
-  n = n.replace(/([a-z])([A-Z])/g,'$1 $2'); // add space before capitals
+  let n = name.replace(/\[.*?\]/,''); 
+  n = n.replace(/([a-z])([A-Z])/g,'$1 $2'); 
   return n.trim();
 }
 
-// Render channels
+function getCategory(name) {
+  const n = name.toLowerCase();
+  if (n.includes('sport') || n.includes('bein') || n.includes('sky s')) return "Sports";
+  if (n.includes('news') || n.includes('cnn') || n.includes('bbc')) return "News & Info";
+  if (n.includes('movie') || n.includes('hbo') || n.includes('cinema')) return "Movies";
+  return "Entertainment";
+}
+
 function render(){
-  grid.innerHTML = "";
+  container.innerHTML = "";
   const q = searchInput.value.toLowerCase();
+  
+  const filtered = allChannels.filter(c => c.name.toLowerCase().includes(q));
+  
+  // Group by category
+  const grouped = filtered.reduce((acc, c) => {
+    const cat = getCategory(c.name);
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(c);
+    return acc;
+  }, {});
 
-  channels.filter(c=>c.name.toLowerCase().includes(q)).forEach(c=>{
-    const card = document.createElement("div");
-    card.className = "card";
-    card.textContent = formatName(c.name);
+  // Sort and display
+  Object.keys(grouped).sort().forEach(category => {
+    const section = document.createElement("div");
+    section.className = "category-section";
+    
+    section.innerHTML = `<div class="category-title">${category}</div>`;
+    
+    const grid = document.createElement("div");
+    grid.className = "grid";
 
-    card.onclick = ()=>{
-      location.href = `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(formatName(c.name))}`;
-    };
+    grouped[category].forEach(c => {
+      const formatted = formatName(c.name);
+      const initials = formatted.substring(0,2).toUpperCase();
+      
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="channel-icon">${initials}</div>
+        <div class="channel-name">${formatted}</div>
+      `;
 
-    grid.appendChild(card);
+      card.onclick = () => {
+        location.href = `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(formatted)}`;
+      };
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
   });
 }
 
 searchInput.addEventListener("input", render);
-
-// Initial load
 fetchChannels();
 </script>
 

@@ -64,17 +64,24 @@
     max-width: 1100px;
     margin: 1.5rem 0;
     text-align: left;
+    padding: 0 10px;
   }
 
   #mainTitle { font-size: 1.8rem; font-weight: 800; margin: 0; }
-  #subTitle { color: var(--accent); font-weight: 600; margin-top: 5px; font-size: 1rem; }
+  #subTitle { color: var(--accent); font-weight: 600; margin-top: 5px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+
+  .live-dot {
+    height: 10px; width: 10px; background-color: #ff0000;
+    border-radius: 50%; display: inline-block;
+    box-shadow: 0 0 8px #ff0000;
+  }
 
   /* Series Controls */
   #seriesControls {
     width: 95%;
     max-width: 1100px;
     margin-bottom: 5rem;
-    display: none; /* Only shown for TV type */
+    display: none;
   }
 
   .control-header {
@@ -94,7 +101,6 @@
     border-radius: 6px;
     font-size: 1rem;
     outline: none;
-    cursor: pointer;
   }
 
   .episodes-grid {
@@ -116,37 +122,23 @@
     transition: 0.2s;
   }
 
-  .ep-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+  .ep-card:hover { border-color: var(--primary); }
   .ep-card.active { background: var(--primary); border-color: var(--primary); }
-
-  /* Loader Animation */
-  .spinner {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 40px; height: 40px;
-    border: 3px solid rgba(255,255,255,0.1);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    display: none;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <header>
   <a href="javascript:history.back()" class="back-btn">⬅ BACK</a>
-  <div style="color: var(--primary); font-weight: 900;">STREAMING NOW</div>
+  <div style="color: var(--primary); font-weight: 900;">PORTAL VIEWER</div>
 </header>
 
 <div class="player-wrapper">
-  <div id="loader" class="spinner"></div>
   <iframe id="mainPlayer" allowfullscreen scrolling="no"></iframe>
 </div>
 
 <div class="info-bar">
-  <h1 id="mainTitle">Loading Title...</h1>
+  <h1 id="mainTitle">Loading...</h1>
   <div id="subTitle"></div>
 </div>
 
@@ -155,15 +147,18 @@
     <h3>Episodes</h3>
     <select id="seasonSelect" onchange="fetchEpisodes()"></select>
   </div>
-  <div class="episodes-grid" id="episodeGrid"></div>
+  <div id="episodeGrid" class="episodes-grid"></div>
 </div>
 
 <script>
-  const API_KEY = "12955008668c12c07496b04132f9ce44";
+  const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
   const params = new URLSearchParams(window.location.search);
-  const type = params.get('type');
-  const id = params.get('id');       // TMDB ID for TV
-  const imdb = params.get('imdb');   // IMDB ID for Movies
+  
+  // Route Data
+  const type = params.get('type');       // 'movie', 'tv', or 'livetv'
+  const id = params.get('id');           // TMDB ID
+  const imdb = params.get('imdb');       // IMDB ID
+  const channel = params.get('channel'); // Channel Name (for Sports/Live)
   const title = params.get('title');
 
   const player = document.getElementById('mainPlayer');
@@ -171,60 +166,75 @@
   const episodeGrid = document.getElementById('episodeGrid');
   const subTitle = document.getElementById('subTitle');
 
-  document.getElementById('mainTitle').innerText = title || "Streaming Content";
+  document.getElementById('mainTitle').innerText = title || "Now Playing";
 
   async function init() {
-    if (type === 'tv') {
+    // 1. LIVE TV & FOOTBALL LOGIC
+    if (type === 'livetv' || channel) {
+      subTitle.innerHTML = `<span class="live-dot"></span> LIVE BROADCAST`;
+      player.src = `https://beta.adstrim.ru/player/${encodeURIComponent(channel)}`;
+    } 
+    
+    // 2. SERIES LOGIC
+    else if (type === 'tv') {
       document.getElementById('seriesControls').style.display = 'block';
       await loadSeasons();
-    } else {
-      // Load Movie
+    } 
+    
+    // 3. MOVIE LOGIC
+    else {
+      subTitle.innerText = "Feature Film";
       player.src = `https://vidfast.pro/movie/${imdb || id}`;
     }
   }
 
   async function loadSeasons() {
-    const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${API_KEY}`);
-    const data = await res.json();
-    
-    // Filter to hide "Specials" (Season 0)
-    data.seasons.forEach(s => {
-      if(s.season_number === 0) return;
-      const opt = document.createElement('option');
-      opt.value = s.season_number;
-      opt.innerText = `Season ${s.season_number}`;
-      seasonSelect.appendChild(opt);
-    });
-    
-    fetchEpisodes();
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}`);
+      const data = await res.json();
+      
+      data.seasons.forEach(s => {
+        if(s.season_number === 0) return;
+        const opt = document.createElement('option');
+        opt.value = s.season_number;
+        opt.innerText = `Season ${s.season_number}`;
+        seasonSelect.appendChild(opt);
+      });
+      
+      fetchEpisodes();
+    } catch (e) {
+      console.error("Error loading series info");
+    }
   }
 
   async function fetchEpisodes() {
     const sNum = seasonSelect.value;
     episodeGrid.innerHTML = "";
     
-    const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${sNum}?api_key=${API_KEY}`);
-    const data = await res.json();
-    
-    data.episodes.forEach(ep => {
-      const card = document.createElement('div');
-      card.className = 'ep-card';
-      card.innerText = ep.episode_number;
-      card.onclick = () => playEpisode(sNum, ep.episode_number, card);
-      episodeGrid.appendChild(card);
-    });
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${sNum}?api_key=${TMDB_KEY}`);
+      const data = await res.json();
+      
+      data.episodes.forEach(ep => {
+        const card = document.createElement('div');
+        card.className = 'ep-card';
+        card.innerText = ep.episode_number;
+        card.onclick = () => playEpisode(sNum, ep.episode_number, card);
+        episodeGrid.appendChild(card);
+      });
 
-    // Auto-play first episode of the season if player is empty
-    if(episodeGrid.firstChild) episodeGrid.firstChild.click();
+      // Start with Ep 1
+      if(episodeGrid.firstChild) episodeGrid.firstChild.click();
+    } catch (e) {
+      console.error("Error loading episodes");
+    }
   }
 
   function playEpisode(s, e, element) {
-    // UI Update
     document.querySelectorAll('.ep-card').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
     subTitle.innerText = `Season ${s} • Episode ${e}`;
     
-    // Switch Stream
     const streamUrl = `https://vidfast.pro/tv/${id}/${s}/${e}`;
     if(player.src !== streamUrl) {
       player.src = streamUrl;

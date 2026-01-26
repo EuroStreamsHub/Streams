@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Viewer - Cinema Mode</title>
+<title>Stream Viewer | Cinema Mode</title>
 <style>
   :root {
     --primary: #e50914;
-    --bg: #0a0a0a;
-    --surface: #1a1a1a;
+    --bg: #050505;
+    --surface: #141414;
     --text: #ffffff;
+    --accent: #00d2ff;
   }
 
   body {
@@ -20,249 +21,217 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
   }
 
-  /* Header / Back Navigation */
-  .top-nav {
+  /* Navigation */
+  header {
     width: 100%;
     padding: 1.5rem 4%;
     display: flex;
+    justify-content: space-between;
     align-items: center;
     box-sizing: border-box;
   }
 
-  .back-button {
+  .back-btn {
     text-decoration: none;
     color: #fff;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
     background: rgba(255,255,255,0.1);
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: 6px;
+    font-weight: 600;
     transition: 0.3s;
   }
-  .back-button:hover { background: rgba(255,255,255,0.2); }
+  .back-btn:hover { background: rgba(255,255,255,0.2); }
 
-  h2#title {
-    margin: 1rem 0;
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -1px;
-  }
-
-  /* Main Cinema Container */
-  .cinema-wrapper {
+  /* Player Area */
+  .player-wrapper {
     width: 95%;
-    max-width: 1200px;
-    position: relative;
-    margin-bottom: 2rem;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #000;
-  }
-
-  .stream-container {
-    width: 100%;
+    max-width: 1100px;
     aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
     position: relative;
+    border: 1px solid #222;
   }
 
-  iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    z-index: 2;
+  iframe { width: 100%; height: 100%; border: none; }
+
+  .info-bar {
+    width: 95%;
+    max-width: 1100px;
+    margin: 1.5rem 0;
+    text-align: left;
   }
 
-  /* Enhanced Loader */
-  .loader {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 60px;
-    height: 60px;
-    border: 4px solid rgba(229, 9, 20, 0.1);
-    border-top: 4px solid var(--primary);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    animation: spin 0.8s linear infinite;
-    z-index: 1;
-  }
-  @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+  #mainTitle { font-size: 1.8rem; font-weight: 800; margin: 0; }
+  #subTitle { color: var(--accent); font-weight: 600; margin-top: 5px; font-size: 1rem; }
 
-  /* Control Bar */
-  .control-bar {
-    width: 100%;
-    max-width: 1200px;
+  /* Series Controls */
+  #seriesControls {
+    width: 95%;
+    max-width: 1100px;
+    margin-bottom: 5rem;
+    display: none; /* Only shown for TV type */
+  }
+
+  .control-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 4%;
-    box-sizing: border-box;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #222;
+    padding-bottom: 10px;
   }
 
-  .btn-group { display: flex; gap: 10px; }
-
-  button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
+  select#seasonSelect {
     background: var(--surface);
     color: white;
-    font-weight: 600;
+    border: 1px solid #333;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
     cursor: pointer;
-    transition: 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
-  button:hover { background: #333; }
-  button.primary-btn { background: var(--primary); }
-  button.primary-btn:hover { background: #ff1e1e; }
 
-  /* Mirror Section */
-  .mirrors-section {
-    width: 100%;
-    max-width: 1200px;
-    margin-top: 2rem;
-    padding: 0 4%;
-    box-sizing: border-box;
-    text-align: left;
-  }
-  .mirrors-label { color: #888; font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase; }
-  
-  .mirrors-grid {
-    display: flex;
-    flex-wrap: wrap;
+  .episodes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
     gap: 10px;
   }
-  .mirror-btn {
-    background: #222;
-    font-size: 0.85rem;
+
+  .ep-card {
+    background: var(--surface);
     border: 1px solid #333;
+    aspect-ratio: 1/1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
   }
-  .mirror-btn.active { border-color: var(--primary); color: var(--primary); }
+
+  .ep-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+  .ep-card.active { background: var(--primary); border-color: var(--primary); }
+
+  /* Loader Animation */
+  .spinner {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<div class="top-nav">
-  <a class="back-button" href="javascript:history.back()">⬅ Back to Browse</a>
+<header>
+  <a href="javascript:history.back()" class="back-btn">⬅ BACK</a>
+  <div style="color: var(--primary); font-weight: 900;">STREAMING NOW</div>
+</header>
+
+<div class="player-wrapper">
+  <div id="loader" class="spinner"></div>
+  <iframe id="mainPlayer" allowfullscreen scrolling="no"></iframe>
 </div>
 
-<h2 id="title">Loading Title...</h2>
-
-<div class="cinema-wrapper">
-  <div class="stream-container">
-    <div class="loader" id="loader"></div>
-    <iframe id="player" allowfullscreen sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>
-  </div>
+<div class="info-bar">
+  <h1 id="mainTitle">Loading Title...</h1>
+  <div id="subTitle"></div>
 </div>
 
-<div class="control-bar">
-  <div class="btn-group">
-    <button onclick="refreshStream()">↻ Refresh Player</button>
+<div id="seriesControls">
+  <div class="control-header">
+    <h3>Episodes</h3>
+    <select id="seasonSelect" onchange="fetchEpisodes()"></select>
   </div>
-  <div class="btn-group">
-    <button class="primary-btn" onclick="toggleFullScreen()">⛶ Fullscreen</button>
-  </div>
-</div>
-
-<div class="mirrors-section" id="mirrorSection" style="display:none;">
-  <div class="mirrors-label">Available Mirrors</div>
-  <div class="mirrors-grid" id="mirrors"></div>
+  <div class="episodes-grid" id="episodeGrid"></div>
 </div>
 
 <script>
-const params = new URLSearchParams(location.search);
-const type = params.get("type");
-const title = params.get("title");
-const mirrorParam = params.get("mirror");
-const channelParam = params.get("channel");
-const imdb = params.get("imdb");
+  const API_KEY = "12955008668c12c07496b04132f9ce44";
+  const params = new URLSearchParams(window.location.search);
+  const type = params.get('type');
+  const id = params.get('id');       // TMDB ID for TV
+  const imdb = params.get('imdb');   // IMDB ID for Movies
+  const title = params.get('title');
 
-const player = document.getElementById("player");
-const loader = document.getElementById("loader");
-const mirrorsDiv = document.getElementById("mirrors");
-const mirrorSection = document.getElementById("mirrorSection");
+  const player = document.getElementById('mainPlayer');
+  const seasonSelect = document.getElementById('seasonSelect');
+  const episodeGrid = document.getElementById('episodeGrid');
+  const subTitle = document.getElementById('subTitle');
 
-document.getElementById("title").textContent = title || "Now Playing";
+  document.getElementById('mainTitle').innerText = title || "Streaming Content";
 
-async function loadStream(channelOrMirror) {
-  loader.style.display = "block";
-  let src = "";
-
-  try {
-    if(type === "football"){
-      mirrorSection.style.display = "block";
-      const channel = channelOrMirror || mirrorParam;
-      src = `https://topembed.pw/channel/${encodeURIComponent(channel)}`;
-      
-      // Fetch dynamic mirrors for football
-      const res = await fetch('https://beta.adstrim.ru/api/events');
-      const data = await res.json();
-      const match = data.data.find(m => {
-        const home = m.home_team || m.teams?.home?.name;
-        const away = m.away_team || m.teams?.away?.name;
-        return `${home} vs ${away}` === title;
-      });
-
-      mirrorsDiv.innerHTML = '';
-      if(match && match.channels){
-        match.channels.forEach(ch => {
-          const btn = document.createElement('button');
-          btn.className = 'mirror-btn';
-          btn.textContent = ch.name;
-          if(ch.name === channel) btn.classList.add('active');
-          btn.onclick = () => loadStream(ch.name);
-          mirrorsDiv.appendChild(btn);
-        });
-      }
-    } 
-    else if(type === "livetv"){
-      src = `https://topembed.pw/channel/${encodeURIComponent(channelParam)}`;
-    } 
-    else if(type === "movie"){
-      src = `https://vidfast.pro/movie/${imdb}`;
+  async function init() {
+    if (type === 'tv') {
+      document.getElementById('seriesControls').style.display = 'block';
+      await loadSeasons();
+    } else {
+      // Load Movie
+      player.src = `https://vidfast.pro/movie/${imdb || id}`;
     }
-
-    if(src) player.src = src;
-
-  } catch(e) {
-    console.error(e);
   }
-}
 
-player.onload = () => {
-  loader.style.display = "none";
-};
-
-function refreshStream(){
-  const currentSrc = player.src;
-  player.src = "";
-  loader.style.display = "block";
-  setTimeout(() => { player.src = currentSrc; }, 100);
-}
-
-function toggleFullScreen(){
-  if (player.requestFullscreen) {
-    player.requestFullscreen();
-  } else if (player.webkitRequestFullscreen) { /* Safari */
-    player.webkitRequestFullscreen();
-  } else if (player.msRequestFullscreen) { /* IE11 */
-    player.msRequestFullscreen();
+  async function loadSeasons() {
+    const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${API_KEY}`);
+    const data = await res.json();
+    
+    // Filter to hide "Specials" (Season 0)
+    data.seasons.forEach(s => {
+      if(s.season_number === 0) return;
+      const opt = document.createElement('option');
+      opt.value = s.season_number;
+      opt.innerText = `Season ${s.season_number}`;
+      seasonSelect.appendChild(opt);
+    });
+    
+    fetchEpisodes();
   }
-}
 
-// Initial Load
-if(type === "football") loadStream(mirrorParam);
-else if(type === "livetv") loadStream(channelParam);
-else if(type === "movie") loadStream();
+  async function fetchEpisodes() {
+    const sNum = seasonSelect.value;
+    episodeGrid.innerHTML = "";
+    
+    const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${sNum}?api_key=${API_KEY}`);
+    const data = await res.json();
+    
+    data.episodes.forEach(ep => {
+      const card = document.createElement('div');
+      card.className = 'ep-card';
+      card.innerText = ep.episode_number;
+      card.onclick = () => playEpisode(sNum, ep.episode_number, card);
+      episodeGrid.appendChild(card);
+    });
+
+    // Auto-play first episode of the season if player is empty
+    if(episodeGrid.firstChild) episodeGrid.firstChild.click();
+  }
+
+  function playEpisode(s, e, element) {
+    // UI Update
+    document.querySelectorAll('.ep-card').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    subTitle.innerText = `Season ${s} • Episode ${e}`;
+    
+    // Switch Stream
+    const streamUrl = `https://vidfast.pro/tv/${id}/${s}/${e}`;
+    if(player.src !== streamUrl) {
+      player.src = streamUrl;
+    }
+  }
+
+  init();
 </script>
 
 </body>

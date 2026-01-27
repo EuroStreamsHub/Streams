@@ -10,14 +10,16 @@
     --bg: #050505;
     --surface: rgba(255, 255, 255, 0.05);
     --text: #ffffff;
-    --live: #27ae60;
+    --accent: #ffdd00;
   }
 
   body {
     margin: 0;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-color: var(--bg);
-    background: radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.15), transparent), linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=2000');
+    background: radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.15), transparent), 
+                linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
+                url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=2000');
     background-size: cover;
     background-attachment: fixed;
     color: var(--text);
@@ -27,48 +29,47 @@
     overflow-x: hidden;
   }
 
-  /* ---------- DYNAMIC TICKER ---------- */
+  /* ---------- TICKER ---------- */
   .ticker-wrap {
     width: 100%; overflow: hidden; height: 45px; background: #000;
     border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center;
     position: sticky; top: 0; z-index: 1001;
   }
-
   .ticker { display: inline-block; white-space: nowrap; animation: ticker-anim 40s linear infinite; padding-left: 100%; }
   .ticker-item { display: inline-block; padding: 0 3rem; font-size: 0.85rem; font-weight: 800; text-transform: uppercase; cursor: pointer; }
   .ticker-item:hover { color: var(--primary); }
   .ticker-item span { background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 4px; margin-right: 10px; color: #fff; }
 
-  .live-pulse {
-    display: inline-block; width: 8px; height: 8px; background: #ff0000;
-    border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px #ff0000;
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
   @keyframes ticker-anim { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
   /* ---------- DONATION HUB ---------- */
   .donation-top { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 2rem 0 1rem; gap: 15px; }
   
   .crypto-bar {
-    display: flex; gap: 15px; background: rgba(255, 255, 255, 0.05);
-    padding: 8px 18px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    background: rgba(255, 255, 255, 0.05); padding: 10px 18px; border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); max-width: 90%;
   }
 
-  .crypto-bar img { width: 28px; height: 28px; cursor: pointer; transition: 0.3s; filter: grayscale(0.3); }
-  .crypto-bar img:hover { transform: translateY(-3px) scale(1.1); filter: grayscale(0); }
+  .crypto-bar img { width: 28px; height: 28px; cursor: pointer; transition: 0.3s; }
+  .crypto-bar img:hover { transform: translateY(-3px) scale(1.1); }
 
   /* ---------- MODAL ---------- */
   #cryptoModal {
     display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #141414; border: 1px solid var(--primary); padding: 25px; border-radius: 15px;
-    z-index: 2000; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.9); width: 320px;
+    background: #141414; border: 1px solid var(--primary); padding: 25px; border-radius: 20px;
+    z-index: 2000; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.9); width: 340px;
   }
+  #mAddr { font-size: 0.75rem; background: #000; padding: 12px; border-radius: 8px; margin: 15px 0; word-break: break-all; color: #bbb; border: 1px solid #333; }
+  .modal-btns { display: flex; flex-direction: column; gap: 10px; }
+  .m-btn { border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .btn-open { background: var(--accent); color: #000; }
+  .btn-copy { background: var(--primary); color: #fff; }
+  .btn-close { background: transparent; color: #666; font-size: 0.8rem; margin-top: 10px; }
 
-  /* ---------- GRID & HEADER ---------- */
+  /* ---------- HEADER & GRID ---------- */
   header { text-align: center; padding: 1rem 1rem 2rem; }
-  header h1 { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; margin: 0; background: linear-gradient(#fff, #777); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  header h1 { font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 900; margin: 0; letter-spacing: -2px; text-transform: uppercase; }
   
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; padding: 2rem 8%; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
   .card { position: relative; background: var(--surface); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; cursor: pointer; overflow: hidden; transition: 0.4s; aspect-ratio: 16/10; }
@@ -86,12 +87,15 @@
   <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="sufclive" data-color="#FFDD00" data-emoji="🍺" data-font="Cookie" data-text="Buy me a beer" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
   
   <div class="crypto-bar">
-    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/btc.svg" onclick="openCryp('BTC', 'Bc1qtyl36xj24c2lw3udrxzm4hmcgqkswtsyrue2s0')" title="Bitcoin">
-    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/eth.svg" onclick="openCryp('ETH', '0x1b2434211e081cb50effb9e724ad594519d9d271')" title="Ethereum">
-    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/sol.svg" onclick="openCryp('SOL', 'BFzbhLCPJUPNwVUFbQ1nYcyBUpNZX5bHMU9616ZPyZ6o')" title="Solana">
-    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/ltc.svg" onclick="openCryp('LTC', 'ltc1q84heskg9zz4cadtprln8vkuvd9l2a2lmg8ekfe')" title="Litecoin">
-    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/doge.svg" onclick="openCryp('DOGE', 'DMQ8ZsRY7ThLdEjpNs6yyAWH8nXXrUuKod')" title="Dogecoin">
-    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/xmr.svg" onclick="openCryp('XMR', 'PASTE_YOUR_XMR_ADDRESS_HERE')" title="Monero">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/btc.svg" onclick="openCryp('Bitcoin', 'Bc1qtyl36xj24c2lw3udrxzm4hmcgqkswtsyrue2s0', 'bitcoin')" title="BTC">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/eth.svg" onclick="openCryp('Ethereum', '0x1b2434211e081cb50effb9e724ad594519d9d271', 'ethereum')" title="ETH">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/sol.svg" onclick="openCryp('Solana', 'BFzbhLCPJUPNwVUFbQ1nYcyBUpNZX5bHMU9616ZPyZ6o', 'solana')" title="SOL">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/usdt.svg" onclick="openCryp('USDT (Solana)', 'BFzbhLCPJUPNwVUFbQ1nYcyBUpNZX5bHMU9616ZPyZ6o', 'solana')" title="USDT-Sol">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/ltc.svg" onclick="openCryp('Litecoin', 'ltc1q84heskg9zz4cadtprln8vkuvd9l2a2lmg8ekfe', 'litecoin')" title="LTC">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/trx.svg" onclick="openCryp('Tron', 'TMS7nvzSh7zy7bHaLTb8qp9Xr257k9gcoV', 'tron')" title="TRX">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/bnb.svg" onclick="openCryp('BNB (BSC)', '0x1b2434211e081cb50effb9e724ad594519d9d271', 'ethereum')" title="BNB">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/matic.svg" onclick="openCryp('Polygon', '0x1b2434211e081cb50effb9e724ad594519d9d271', 'ethereum')" title="MATIC">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/doge.svg" onclick="openCryp('Dogecoin', 'DMQ8ZsRY7ThLdEjpNs6yyAWH8nXXrUuKod', 'dogecoin')" title="DOGE">
   </div>
 </div>
 
@@ -107,18 +111,40 @@
 </div>
 
 <div id="cryptoModal">
-  <h3 id="mCoin" style="color:var(--primary); margin:0;"></h3>
-  <div id="mAddr" style="font-size:0.75rem; background:#000; padding:12px; border-radius:8px; margin:15px 0; word-break:break-all;"></div>
-  <button id="copyBtn" onclick="copy()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; width:100%;">Copy Address</button>
-  <p onclick="document.getElementById('cryptoModal').style.display='none'" style="cursor:pointer; margin-top:15px; color:#666; font-size:0.8rem;">Close</p>
+  <h3 id="mCoin" style="color:var(--accent); margin:0;"></h3>
+  <div id="mAddr"></div>
+  <div class="modal-btns">
+    <button class="m-btn btn-open" id="mOpen">Launch Wallet App</button>
+    <button class="m-btn btn-copy" id="mCopy">Copy Address</button>
+  </div>
+  <button class="m-btn btn-close" onclick="document.getElementById('cryptoModal').style.display='none'">Close</button>
 </div>
 
 <script>
   const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
   let curA = "";
+  let curP = "";
 
-  function openCryp(c, a) { curA = a; document.getElementById('mCoin').innerText = c; document.getElementById('mAddr').innerText = a; document.getElementById('cryptoModal').style.display = 'block'; }
-  function copy() { navigator.clipboard.writeText(curA); const b = document.getElementById('copyBtn'); b.innerText = "COPIED!"; setTimeout(() => b.innerText = "Copy Address", 2000); }
+  function openCryp(name, addr, proto) { 
+    curA = addr; 
+    curP = proto;
+    document.getElementById('mCoin').innerText = name; 
+    document.getElementById('mAddr').innerText = addr; 
+    document.getElementById('cryptoModal').style.display = 'block';
+    
+    // Set Open Wallet action
+    document.getElementById('mOpen').onclick = () => {
+        window.location.href = `${proto}:${addr}`;
+    };
+    
+    // Set Copy action
+    document.getElementById('mCopy').onclick = () => {
+        navigator.clipboard.writeText(curA);
+        const b = document.getElementById('mCopy');
+        b.innerText = "COPIED!";
+        setTimeout(() => b.innerText = "Copy Address", 2000);
+    };
+  }
 
   async function initTicker() {
     try {
@@ -132,13 +158,13 @@
       let html = "";
       if (eD.data && eD.data.length > 0) {
         const match = eD.data[0];
-        html += `<div class="ticker-item" onclick="location.href='streamsviewer.html?type=football&title=${encodeURIComponent(match.home_team + " vs " + match.away_team)}&mirror=${encodeURIComponent(match.channels[0].name)}'"><span style="border:1px solid red;"><div class="live-pulse"></div>LIVE</span> ${match.home_team} vs ${match.away_team}</div>`;
+        html += `<div class="ticker-item" onclick="location.href='streamsviewer.html?title=${encodeURIComponent(match.home_team + " vs " + match.away_team)}&mirror=${encodeURIComponent(match.channels[0].name)}'"><span>LIVE NOW</span> ${match.home_team} vs ${match.away_team}</div>`;
       }
-      html += `<div class="ticker-item" onclick="location.href='moviesviewer.html?type=movie&imdb=${mD.results[0].id}&title=${encodeURIComponent(mD.results[0].title)}'"><span>NEW MOVIE</span> ${mD.results[0].title}</div>`;
+      html += `<div class="ticker-item" onclick="location.href='moviesviewer.html?type=movie&imdb=${mD.results[0].id}&title=${encodeURIComponent(mD.results[0].title)}'"><span>TRENDING MOVIE</span> ${mD.results[0].title}</div>`;
       html += `<div class="ticker-item" onclick="location.href='moviesviewer.html?type=tv&id=${tD.results[0].id}&title=${encodeURIComponent(tD.results[0].name)}'"><span>HOT SERIES</span> ${tD.results[0].name}</div>`;
       
       document.getElementById('tickerBody').innerHTML = html + html;
-    } catch(e) { document.getElementById('tickerBody').innerHTML = "Welcome to Stream Hub - Select a category below"; }
+    } catch(e) { document.getElementById('tickerBody').innerHTML = "Welcome to Stream Hub - All Systems Nominal"; }
   }
   initTicker();
 </script>

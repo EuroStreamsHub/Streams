@@ -226,7 +226,7 @@ function render(){
     `;
 
     card.onclick = () => {
-      location.href = `viewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(formatted)}`;
+      location.href = `livetvviewer.html?type=livetv&channel=${encodeURIComponent(c.name)}&title=${encodeURIComponent(formatted)}`;
     };
     grid.appendChild(card);
   });

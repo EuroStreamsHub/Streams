@@ -253,7 +253,7 @@ function renderMatches(matches){
     card.onclick = () => {
       if(!channels.length) return alert('No coverage available');
       const mirror = encodeURIComponent(channels[0].name);
-      window.location.href = `viewer.html?type=football&mirror=${mirror}&title=${encodeURIComponent(home+' vs '+away)}`;
+      window.location.href = `streamsviewer.html?type=football&mirror=${mirror}&title=${encodeURIComponent(home+' vs '+away)}`;
     };
 
     matchList.appendChild(card);

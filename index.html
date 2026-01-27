@@ -10,16 +10,14 @@
     --bg: #050505;
     --surface: rgba(255, 255, 255, 0.05);
     --text: #ffffff;
+    --live: #27ae60;
   }
 
   body {
     margin: 0;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-color: var(--bg);
-    background: 
-      radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.15), transparent),
-      linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
-      url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=2000');
+    background: radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.15), transparent), linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=2000');
     background-size: cover;
     background-attachment: fixed;
     color: var(--text);
@@ -31,151 +29,70 @@
 
   /* ---------- DYNAMIC TICKER ---------- */
   .ticker-wrap {
-    width: 100%;
-    overflow: hidden;
-    height: 45px;
-    background: #000;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 1001;
+    width: 100%; overflow: hidden; height: 45px; background: #000;
+    border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center;
+    position: sticky; top: 0; z-index: 1001;
   }
 
-  .style-1 { background: linear-gradient(90deg, #e50914, #000); }
-  .style-2 { background: linear-gradient(90deg, #00d2ff, #000); }
-  .style-3 { background: linear-gradient(90deg, #f2994a, #000); }
-  .style-4 { background: linear-gradient(90deg, #8e2de2, #000); }
-  .style-5 { background: linear-gradient(90deg, #27ae60, #000); }
-
-  .ticker {
-    display: inline-block;
-    white-space: nowrap;
-    animation: ticker-anim 45s linear infinite;
-    padding-left: 100%;
-  }
-
-  .ticker-item {
-    display: inline-block;
-    padding: 0 3rem;
-    font-size: 0.85rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-  }
-
+  .ticker { display: inline-block; white-space: nowrap; animation: ticker-anim 40s linear infinite; padding-left: 100%; }
+  .ticker-item { display: inline-block; padding: 0 3rem; font-size: 0.85rem; font-weight: 800; text-transform: uppercase; cursor: pointer; }
   .ticker-item:hover { color: var(--primary); }
+  .ticker-item span { background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 4px; margin-right: 10px; color: #fff; }
 
-  .ticker-item span {
-    background: rgba(255,255,255,0.15);
-    padding: 3px 10px;
-    border-radius: 4px;
-    margin-right: 10px;
-    color: #fff;
+  .live-pulse {
+    display: inline-block; width: 8px; height: 8px; background: #ff0000;
+    border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px #ff0000;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+  @keyframes ticker-anim { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+  /* ---------- DONATION HUB ---------- */
+  .donation-top { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 2rem 0 1rem; gap: 15px; }
+  
+  .crypto-bar {
+    display: flex; gap: 15px; background: rgba(255, 255, 255, 0.05);
+    padding: 8px 18px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
   }
 
-  @keyframes ticker-anim {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
+  .crypto-bar img { width: 28px; height: 28px; cursor: pointer; transition: 0.3s; filter: grayscale(0.3); }
+  .crypto-bar img:hover { transform: translateY(-3px) scale(1.1); filter: grayscale(0); }
+
+  /* ---------- MODAL ---------- */
+  #cryptoModal {
+    display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #141414; border: 1px solid var(--primary); padding: 25px; border-radius: 15px;
+    z-index: 2000; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.9); width: 320px;
   }
 
-  /* ---------- DONATION AREA ---------- */
-  .donation-top {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    padding: 1.5rem 0 0.5rem 0;
-  }
-
-  /* ---------- HEADER ---------- */
-  header {
-    text-align: center;
-    padding: 2rem 1rem 2rem;
-  }
-
-  header h1 {
-    font-size: clamp(2.5rem, 8vw, 4.5rem);
-    font-weight: 900;
-    letter-spacing: -3px;
-    margin: 0;
-    text-transform: uppercase;
-    background: linear-gradient(to bottom, #fff, #777);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  header p {
-    color: #aaa;
-    font-size: 1.1rem;
-    letter-spacing: 2px;
-    margin-top: 10px;
-  }
-
-  /* ---------- GRID ---------- */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    padding: 2rem 8% 5rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .card {
-    position: relative;
-    background: var(--surface);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 1.5rem;
-    cursor: pointer;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    aspect-ratio: 16/10;
-  }
-
-  .card:hover {
-    transform: scale(1.03) translateY(-8px);
-    border-color: var(--primary);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  }
-
-  .card-img {
-    width: 100%; height: 100%;
-    background-size: cover;
-    background-position: center;
-    filter: brightness(0.4);
-    transition: 0.5s;
-  }
-
-  .card:hover .card-img { filter: brightness(0.7); }
-
-  .card-content {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    justify-content: flex-end; padding: 2rem;
-    background: linear-gradient(transparent, rgba(0,0,0,0.8));
-  }
-
+  /* ---------- GRID & HEADER ---------- */
+  header { text-align: center; padding: 1rem 1rem 2rem; }
+  header h1 { font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; margin: 0; background: linear-gradient(#fff, #777); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; padding: 2rem 8%; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .card { position: relative; background: var(--surface); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; cursor: pointer; overflow: hidden; transition: 0.4s; aspect-ratio: 16/10; }
+  .card:hover { transform: scale(1.03); border-color: var(--primary); }
+  .card-img { width: 100%; height: 100%; background-size: cover; background-position: center; filter: brightness(0.4); }
+  .card-content { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; background: linear-gradient(transparent, rgba(0,0,0,0.8)); }
   .card h2 { margin: 0; font-size: 1.8rem; font-weight: 800; }
-  .card .tag { color: var(--primary); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
-
-  footer { padding: 3rem; text-align: center; width: 100%; opacity: 0.5; font-size: 0.8rem; }
 </style>
 </head>
 <body>
 
-<div class="ticker-wrap" id="tickerWrapper">
-  <div class="ticker" id="tickerBody">
-    <div class="ticker-item"><span>SYSTEM</span> Synchronizing Live Events...</div>
-  </div>
-</div>
+<div class="ticker-wrap"><div class="ticker" id="tickerBody"></div></div>
 
 <div class="donation-top">
-  <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="sufclive" data-color="#FFDD00" data-emoji="🍺"  data-font="Cookie" data-text="Buy me a beer" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+  <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="sufclive" data-color="#FFDD00" data-emoji="🍺" data-font="Cookie" data-text="Buy me a beer" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
+  
+  <div class="crypto-bar">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/btc.svg" onclick="openCryp('BTC', 'Bc1qtyl36xj24c2lw3udrxzm4hmcgqkswtsyrue2s0')" title="Bitcoin">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/eth.svg" onclick="openCryp('ETH', '0x1b2434211e081cb50effb9e724ad594519d9d271')" title="Ethereum">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/sol.svg" onclick="openCryp('SOL', 'BFzbhLCPJUPNwVUFbQ1nYcyBUpNZX5bHMU9616ZPyZ6o')" title="Solana">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/ltc.svg" onclick="openCryp('LTC', 'ltc1q84heskg9zz4cadtprln8vkuvd9l2a2lmg8ekfe')" title="Litecoin">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/doge.svg" onclick="openCryp('DOGE', 'DMQ8ZsRY7ThLdEjpNs6yyAWH8nXXrUuKod')" title="Dogecoin">
+    <img src="https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons/svg/color/xmr.svg" onclick="openCryp('XMR', 'PASTE_YOUR_XMR_ADDRESS_HERE')" title="Monero">
+  </div>
 </div>
 
 <header>
@@ -184,100 +101,46 @@
 </header>
 
 <div class="grid">
-  <div class="card" onclick="location.href='streams.html'">
-    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=800');"></div>
-    <div class="card-content">
-      <div class="tag">Live Sports</div>
-      <h2>Football Streams</h2>
-    </div>
-  </div>
-
-  <div class="card" onclick="location.href='movies.html'">
-    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800');"></div>
-    <div class="card-content">
-      <div class="tag">VOD Hub</div>
-      <h2>Movies & Series</h2>
-    </div>
-  </div>
-
-  <div class="card" onclick="location.href='livetv.html'">
-    <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=800');"></div>
-    <div class="card-content">
-      <div class="tag">Broadcast</div>
-      <h2>Live TV Guide</h2>
-    </div>
-  </div>
+  <div class="card" onclick="location.href='streams.html'"><div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=800');"></div><div class="card-content"><h2>Football Streams</h2></div></div>
+  <div class="card" onclick="location.href='movies.html'"><div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800');"></div><div class="card-content"><h2>Movies & Series</h2></div></div>
+  <div class="card" onclick="location.href='livetv.html'"><div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=800');"></div><div class="card-content"><h2>Live TV Guide</h2></div></div>
 </div>
 
-<footer>
-  &copy; 2026 Stream Portal Hub. All rights reserved.
-</footer>
+<div id="cryptoModal">
+  <h3 id="mCoin" style="color:var(--primary); margin:0;"></h3>
+  <div id="mAddr" style="font-size:0.75rem; background:#000; padding:12px; border-radius:8px; margin:15px 0; word-break:break-all;"></div>
+  <button id="copyBtn" onclick="copy()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; width:100%;">Copy Address</button>
+  <p onclick="document.getElementById('cryptoModal').style.display='none'" style="cursor:pointer; margin-top:15px; color:#666; font-size:0.8rem;">Close</p>
+</div>
 
 <script>
   const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
-  const EVENTS_API = "https://beta.adstrim.ru/api/events";
+  let curA = "";
+
+  function openCryp(c, a) { curA = a; document.getElementById('mCoin').innerText = c; document.getElementById('mAddr').innerText = a; document.getElementById('cryptoModal').style.display = 'block'; }
+  function copy() { navigator.clipboard.writeText(curA); const b = document.getElementById('copyBtn'); b.innerText = "COPIED!"; setTimeout(() => b.innerText = "Copy Address", 2000); }
 
   async function initTicker() {
-    const tickerBody = document.getElementById('tickerBody');
-    const tickerWrapper = document.getElementById('tickerWrapper');
-
-    const styles = ['style-1', 'style-2', 'style-3', 'style-4', 'style-5'];
-    tickerWrapper.className = 'ticker-wrap ' + styles[Math.floor(Math.random() * styles.length)];
-
     try {
-      const [eventsRes, movieRes, tvRes] = await Promise.all([
-        fetch(EVENTS_API),
+      const [eRes, mRes, tRes] = await Promise.all([
+        fetch("https://beta.adstrim.ru/api/events"),
         fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}`),
         fetch(`https://api.themoviedb.org/3/trending/tv/day?api_key=${TMDB_KEY}`)
       ]);
-
-      const eventsData = await eventsRes.json();
-      const movies = await movieRes.json();
-      const tv = await tvRes.json();
-
-      // 1. Process Football Match
-      let footballHtml = '';
-      if (eventsData.data && eventsData.data.length > 0) {
-        const match = eventsData.data[0]; // Get the first live match
-        const home = match.home_team || match.teams?.home?.name;
-        const away = match.away_team || match.teams?.away?.name;
-        const matchTitle = `${home} vs ${away}`;
-        // Note: We use the first channel's name as the mirror for the viewer
-        const mirror = match.channels && match.channels.length > 0 ? match.channels[0].name : "";
-        
-        footballHtml = `
-          <div class="ticker-item" onclick="location.href='streamsviewer.html?type=football&title=${encodeURIComponent(matchTitle)}&mirror=${encodeURIComponent(mirror)}'">
-            <span>LIVE NOW</span> ${matchTitle}
-          </div>`;
+      const eD = await eRes.json(); const mD = await mRes.json(); const tD = await tRes.json();
+      
+      let html = "";
+      if (eD.data && eD.data.length > 0) {
+        const match = eD.data[0];
+        html += `<div class="ticker-item" onclick="location.href='streamsviewer.html?type=football&title=${encodeURIComponent(match.home_team + " vs " + match.away_team)}&mirror=${encodeURIComponent(match.channels[0].name)}'"><span style="border:1px solid red;"><div class="live-pulse"></div>LIVE</span> ${match.home_team} vs ${match.away_team}</div>`;
       }
-
-      // 2. Process Movie
-      const movie = movies.results[0];
-      const movieHtml = `
-        <div class="ticker-item" onclick="location.href='moviesviewer.html?type=movie&imdb=${movie.id}&title=${encodeURIComponent(movie.title)}'">
-          <span>TRENDING MOVIE</span> ${movie.title}
-        </div>`;
-
-      // 3. Process Series
-      const series = tv.results[0];
-      const seriesHtml = `
-        <div class="ticker-item" onclick="location.href='moviesviewer.html?type=tv&id=${series.id}&title=${encodeURIComponent(series.name)}'">
-          <span>HOT SERIES</span> ${series.name}
-        </div>`;
-
-      const staticHtml = `<div class="ticker-item"><span>STATUS</span> ALL SERVERS OPERATIONAL</div>`;
-
-      const fullTicker = footballHtml + movieHtml + seriesHtml + staticHtml;
-      tickerBody.innerHTML = fullTicker + fullTicker; // Repeat for seamless scroll
-
-    } catch (e) {
-      console.error(e);
-      tickerBody.innerHTML = '<div class="ticker-item"><span>WELCOME</span> Select a category to start streaming</div>';
-    }
+      html += `<div class="ticker-item" onclick="location.href='moviesviewer.html?type=movie&imdb=${mD.results[0].id}&title=${encodeURIComponent(mD.results[0].title)}'"><span>NEW MOVIE</span> ${mD.results[0].title}</div>`;
+      html += `<div class="ticker-item" onclick="location.href='moviesviewer.html?type=tv&id=${tD.results[0].id}&title=${encodeURIComponent(tD.results[0].name)}'"><span>HOT SERIES</span> ${tD.results[0].name}</div>`;
+      
+      document.getElementById('tickerBody').innerHTML = html + html;
+    } catch(e) { document.getElementById('tickerBody').innerHTML = "Welcome to Stream Hub - Select a category below"; }
   }
-
   initTicker();
 </script>
-
 </body>
 </html>

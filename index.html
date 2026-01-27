@@ -43,7 +43,6 @@
     z-index: 1001;
   }
 
-  /* Style Variants */
   .style-1 { background: linear-gradient(90deg, #e50914, #000); }
   .style-2 { background: linear-gradient(90deg, #00d2ff, #000); }
   .style-3 { background: linear-gradient(90deg, #f2994a, #000); }
@@ -53,7 +52,7 @@
   .ticker {
     display: inline-block;
     white-space: nowrap;
-    animation: ticker-anim 35s linear infinite;
+    animation: ticker-anim 45s linear infinite;
     padding-left: 100%;
   }
 
@@ -64,7 +63,10 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
+    cursor: pointer;
   }
+
+  .ticker-item:hover { color: var(--primary); }
 
   .ticker-item span {
     background: rgba(255,255,255,0.15);
@@ -79,10 +81,18 @@
     100% { transform: translateX(-100%); }
   }
 
+  /* ---------- DONATION AREA ---------- */
+  .donation-top {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem 0 0.5rem 0;
+  }
+
   /* ---------- HEADER ---------- */
   header {
     text-align: center;
-    padding: 5rem 1rem 2rem;
+    padding: 2rem 1rem 2rem;
   }
 
   header h1 {
@@ -134,8 +144,7 @@
   }
 
   .card-img {
-    width: 100%;
-    height: 100%;
+    width: 100%; height: 100%;
     background-size: cover;
     background-position: center;
     filter: brightness(0.4);
@@ -145,19 +154,16 @@
   .card:hover .card-img { filter: brightness(0.7); }
 
   .card-content {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 2rem;
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: flex-end; padding: 2rem;
     background: linear-gradient(transparent, rgba(0,0,0,0.8));
   }
 
   .card h2 { margin: 0; font-size: 1.8rem; font-weight: 800; }
   .card .tag { color: var(--primary); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
 
-  footer { padding: 3rem; text-align: center; width: 100%; }
+  footer { padding: 3rem; text-align: center; width: 100%; opacity: 0.5; font-size: 0.8rem; }
 </style>
 </head>
 <body>
@@ -166,6 +172,10 @@
   <div class="ticker" id="tickerBody">
     <div class="ticker-item"><span>SYSTEM</span> Synchronizing Live Events...</div>
   </div>
+</div>
+
+<div class="donation-top">
+  <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="sufclive" data-color="#FFDD00" data-emoji="🍺"  data-font="Cookie" data-text="Buy me a beer" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
 </div>
 
 <header>
@@ -200,7 +210,7 @@
 </div>
 
 <footer>
-  <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="sufclive" data-color="#FFDD00" data-emoji="🍺"  data-font="Cookie" data-text="Buy me a beer" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+  &copy; 2026 Stream Portal Hub. All rights reserved.
 </footer>
 
 <script>
@@ -211,7 +221,6 @@
     const tickerBody = document.getElementById('tickerBody');
     const tickerWrapper = document.getElementById('tickerWrapper');
 
-    // Randomize style
     const styles = ['style-1', 'style-2', 'style-3', 'style-4', 'style-5'];
     tickerWrapper.className = 'ticker-wrap ' + styles[Math.floor(Math.random() * styles.length)];
 
@@ -226,27 +235,44 @@
       const movies = await movieRes.json();
       const tv = await tvRes.json();
 
-      // Get random football event
-      let footballMsg = "Major Matches Streaming Soon";
-      if (eventsData.events && eventsData.events.length > 0) {
-        const match = eventsData.events[Math.floor(Math.random() * eventsData.events.length)];
-        footballMsg = match.name || "Live Football Action";
+      // 1. Process Football Match
+      let footballHtml = '';
+      if (eventsData.data && eventsData.data.length > 0) {
+        const match = eventsData.data[0]; // Get the first live match
+        const home = match.home_team || match.teams?.home?.name;
+        const away = match.away_team || match.teams?.away?.name;
+        const matchTitle = `${home} vs ${away}`;
+        // Note: We use the first channel's name as the mirror for the viewer
+        const mirror = match.channels && match.channels.length > 0 ? match.channels[0].name : "";
+        
+        footballHtml = `
+          <div class="ticker-item" onclick="location.href='streamsviewer.html?type=football&title=${encodeURIComponent(matchTitle)}&mirror=${encodeURIComponent(mirror)}'">
+            <span>LIVE NOW</span> ${matchTitle}
+          </div>`;
       }
 
-      const movieMsg = movies.results[0].title;
-      const tvMsg = tv.results[0].name;
+      // 2. Process Movie
+      const movie = movies.results[0];
+      const movieHtml = `
+        <div class="ticker-item" onclick="location.href='moviesviewer.html?type=movie&imdb=${movie.id}&title=${encodeURIComponent(movie.title)}'">
+          <span>TRENDING MOVIE</span> ${movie.title}
+        </div>`;
 
-      const tickerContent = `
-        <div class="ticker-item"><span>LIVE FOOTBALL</span> ${footballMsg}</div>
-        <div class="ticker-item"><span>NEW MOVIE</span> ${movieMsg}</div>
-        <div class="ticker-item"><span>TRENDING SERIES</span> ${tvMsg}</div>
-        <div class="ticker-item"><span>STATUS</span> ALL SERVERS OPERATIONAL</div>
-      `;
+      // 3. Process Series
+      const series = tv.results[0];
+      const seriesHtml = `
+        <div class="ticker-item" onclick="location.href='moviesviewer.html?type=tv&id=${series.id}&title=${encodeURIComponent(series.name)}'">
+          <span>HOT SERIES</span> ${series.name}
+        </div>`;
 
-      tickerBody.innerHTML = tickerContent + tickerContent; // Duplicate for loop
+      const staticHtml = `<div class="ticker-item"><span>STATUS</span> ALL SERVERS OPERATIONAL</div>`;
+
+      const fullTicker = footballHtml + movieHtml + seriesHtml + staticHtml;
+      tickerBody.innerHTML = fullTicker + fullTicker; // Repeat for seamless scroll
 
     } catch (e) {
-      tickerBody.innerHTML = '<div class="ticker-item"><span>WELCOME</span> Ready for Kick-off? Select a category above.</div>';
+      console.error(e);
+      tickerBody.innerHTML = '<div class="ticker-item"><span>WELCOME</span> Select a category to start streaming</div>';
     }
   }
 

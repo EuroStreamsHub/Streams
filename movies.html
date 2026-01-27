@@ -178,9 +178,9 @@ async function playContent(id, title) {
   if (currentType === 'movie') {
     const res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`);
     const data = await res.json();
-    location.href = `viewer.html?type=movie&imdb=${data.imdb_id}&title=${encodeURIComponent(title)}`;
+    location.href = `moviesviewer.html?type=movie&imdb=${data.imdb_id}&title=${encodeURIComponent(title)}`;
   } else {
-    location.href = `viewer.html?type=tv&id=${id}&title=${encodeURIComponent(title)}`;
+    location.href = `moviesviewer.html?type=tv&id=${id}&title=${encodeURIComponent(title)}`;
   }
 }
 

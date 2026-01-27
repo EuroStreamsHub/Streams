@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinema Viewer</title>
+<style>
+  :root { --primary: #e50914; --bg: #050505; --surface: #1a1a1a; --text: #ffffff; }
+  body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; }
+  .top-nav { width: 100%; padding: 1.5rem 4%; display: flex; box-sizing: border-box; }
+  .back-button { text-decoration: none; color: #fff; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+  h2 { margin: 1rem 0; font-size: 2rem; color: var(--primary); }
+  .cinema-wrapper { width: 95%; max-width: 1200px; border: 1px solid #333; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 20px;}
+  .stream-container { width: 100%; aspect-ratio: 16/9; position: relative; }
+  iframe { width: 100%; height: 100%; border: none; }
+  .series-controls { width: 95%; max-width: 1200px; padding: 20px; background: var(--surface); border-radius: 8px; }
+  select { background: #000; color: #fff; padding: 10px; border: 1px solid var(--primary); margin-bottom: 15px; }
+  .ep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
+  .ep-btn { background: #333; border: none; color: white; padding: 10px; cursor: pointer; border-radius: 4px; }
+  .ep-btn.active { background: var(--primary); }
+</style>
+</head>
+<body>
+  <div class="top-nav"><a class="back-button" href="javascript:history.back()">⬅ Back</a></div>
+  <h2 id="title">Loading...</h2>
+  <div class="cinema-wrapper">
+    <div class="stream-container"><iframe id="player" allowfullscreen></iframe></div>
+  </div>
+  <div id="seriesSection" class="series-controls" style="display:none;">
+    Season: <select id="seasonSelect" onchange="loadEpisodes()"></select>
+    <div class="ep-grid" id="epGrid"></div>
+  </div>
+  <script>
+    const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
+    const params = new URLSearchParams(location.search);
+    const type = params.get("type");
+    const id = params.get("id");
+    const imdb = params.get("imdb");
+    const player = document.getElementById("player");
+    document.getElementById("title").textContent = params.get("title");
+
+    async function init() {
+      if (type === "tv") {
+        document.getElementById("seriesSection").style.display = "block";
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}`);
+        const data = await res.json();
+        data.seasons.forEach(s => { if(s.season_number > 0) {
+          const opt = document.createElement("option"); opt.value = s.season_number; opt.textContent = `Season ${s.season_number}`;
+          document.getElementById("seasonSelect").appendChild(opt);
+        }});
+        loadEpisodes();
+      } else {
+        player.src = `https://vidfast.pro/movie/${imdb}`;
+      }
+    }
+
+    async function loadEpisodes() {
+      const s = document.getElementById("seasonSelect").value;
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${s}?api_key=${TMDB_KEY}`);
+      const data = await res.json();
+      const grid = document.getElementById("epGrid");
+      grid.innerHTML = "";
+      data.episodes.forEach(ep => {
+        const btn = document.createElement("button"); btn.className = "ep-btn"; btn.textContent = ep.episode_number;
+        btn.onclick = () => {
+          document.querySelectorAll(".ep-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          player.src = `https://vidfast.pro/tv/${id}/${s}/${ep.episode_number}`;
+        };
+        grid.appendChild(btn);
+      });
+      grid.firstChild.click();
+    }
+    init();
+  </script>
+</body>
+</html>

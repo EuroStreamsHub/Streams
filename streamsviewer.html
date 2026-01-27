@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Viewer</title>
+<style>
+  :root { --primary: #00d2ff; --bg: #0a0a0a; --surface: #1a1a1a; --text: #ffffff; }
+  body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; }
+  .top-nav { width: 100%; padding: 1.5rem 4%; display: flex; box-sizing: border-box; }
+  .back-button { text-decoration: none; color: #fff; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+  h2 { margin: 1rem 0; font-size: 2rem; letter-spacing: -1px; }
+  .cinema-wrapper { width: 95%; max-width: 1200px; box-shadow: 0 0 30px rgba(0, 210, 255, 0.2); border: 1px solid #333; border-radius: 8px; overflow: hidden; background: #000; }
+  .stream-container { width: 100%; aspect-ratio: 16/9; position: relative; }
+  iframe { width: 100%; height: 100%; border: none; }
+  .mirrors-section { width: 95%; max-width: 1200px; margin-top: 1rem; }
+  .mirrors-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .mirror-btn { background: #222; border: 1px solid #333; color: white; padding: 10px 15px; cursor: pointer; border-radius: 4px; }
+  .mirror-btn.active { border-color: var(--primary); color: var(--primary); }
+  .loader { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; transform: translate(-50%, -50%); z-index: 1; }
+  @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="top-nav"><a class="back-button" href="javascript:history.back()">⬅ Back</a></div>
+  <h2 id="title">Loading Match...</h2>
+  <div class="cinema-wrapper">
+    <div class="stream-container">
+      <div id="loader" class="loader"></div>
+      <iframe id="player" allowfullscreen sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+    </div>
+  </div>
+  <div class="mirrors-section">
+    <div style="color: #888;">CHANNELS</div>
+    <div class="mirrors-grid" id="mirrors"></div>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const title = params.get("title");
+    const mirrorParam = params.get("mirror");
+    const player = document.getElementById("player");
+    document.getElementById("title").textContent = title || "Live Event";
+
+    async function loadFootball(channelName) {
+      document.getElementById("loader").style.display = "block";
+      const ch = channelName || mirrorParam;
+      player.src = `https://topembed.pw/channel/${encodeURIComponent(ch)}`;
+      const res = await fetch('https://beta.adstrim.ru/api/events');
+      const data = await res.json();
+      const mirrorsDiv = document.getElementById("mirrors");
+      const match = data.data.find(m => `${m.home_team || m.teams?.home?.name} vs ${m.away_team || m.teams?.away?.name}` === title);
+      mirrorsDiv.innerHTML = "";
+      if (match && match.channels) {
+        match.channels.forEach(chItem => {
+          const btn = document.createElement("button");
+          btn.className = `mirror-btn ${chItem.name === ch ? 'active' : ''}`;
+          btn.textContent = chItem.name;
+          btn.onclick = () => loadFootball(chItem.name);
+          mirrorsDiv.appendChild(btn);
+        });
+      }
+    }
+    player.onload = () => document.getElementById("loader").style.display = "none";
+    loadFootball();
+  </script>
+</body>
+</html>

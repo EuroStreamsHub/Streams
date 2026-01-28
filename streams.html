@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPORT HUB | Live Events</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
 <style>
   :root {
     --primary: #0072db;
@@ -35,7 +34,7 @@
   }
 
   .logo { color: var(--primary); font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-right: 2rem; cursor: pointer; }
-  .search-container { flex-grow: 1; max-width: 400px; position: relative; }
+  .search-container { flex-grow: 1; max-width: 400px; }
   input#search { width: 100%; background: #252830; border: 1px solid #3f434e; padding: 10px 15px; border-radius: 6px; color: white; outline: none; }
 
   /* Filter Bar */
@@ -58,16 +57,26 @@
   .dropdown-menu {
     display: none; position: absolute; top: 110%; left: 0; width: 250px;
     background: #1a1c22; border: 1px solid #444; border-radius: 12px;
-    z-index: 1001; max-height: 400px; overflow-y: auto; 
+    z-index: 1001; max-height: 450px; overflow: hidden; 
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
   }
-  .dropdown-menu.show { display: block; }
+  .dropdown-menu.show { display: flex; flex-direction: column; }
+  
+  .dropdown-header { padding: 12px 20px; border-bottom: 1px solid #333; background: #1a1c22; }
+  #sportOptions { overflow-y: auto; max-height: 250px; }
   .dropdown-item {
     display: flex; align-items: center; padding: 12px 20px; 
     cursor: pointer; gap: 12px; font-size: 14px; border-bottom: 1px solid #222;
   }
   .dropdown-item:hover { background: #252830; }
-  .dropdown-item input { width: 18px; height: 18px; accent-color: var(--primary); }
+  .dropdown-item input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
+  .dropdown-footer { padding: 12px; border-top: 1px solid #333; background: #1a1c22; }
+  .apply-btn {
+    width: 100%; padding: 10px; background: var(--primary); color: white; 
+    border: none; border-radius: 6px; font-weight: 700; cursor: pointer;
+  }
+  .apply-btn:hover { filter: brightness(1.2); }
 
   /* Match Grid */
   .match-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; padding: 1rem 4% 4rem; }
@@ -101,14 +110,19 @@
       <i class="fa-solid fa-chevron-down"></i>
     </button>
     <div class="dropdown-menu" id="sportsMenu">
-      <label class="dropdown-item">
-        <input type="checkbox" id="selectAll" checked> <b>Select All</b>
-      </label>
+      <div class="dropdown-header">
+        <label class="dropdown-item" style="padding:0; border:none;">
+          <input type="checkbox" id="selectAll" checked> <b>Select All</b>
+        </label>
+      </div>
       <div id="sportOptions"></div>
+      <div class="dropdown-footer">
+        <button class="apply-btn" id="applyBtn">Apply Filters</button>
+      </div>
     </div>
   </div>
   <button class="filter-btn" id="btnLive" onclick="setMode('live', this)">Live Now</button>
-  <button class="filter-btn" id="btnSoon" onclick="setMode('soon', this)">Starting Soon</button>
+  <button class="filter-btn" id="btnSoon" onclick="setMode('soon', this)">Soon</button>
 </div>
 
 <div class="match-grid" id="matchList">
@@ -138,7 +152,7 @@ let selectedSports = Object.values(sportsConfig).map(s => s.name);
 let activeMode = 'normal';
 const NOW = () => Math.floor(Date.now() / 1000);
 
-// Initialize Dropdown
+// Populate checkboxes
 const optionsBox = document.getElementById('sportOptions');
 Object.values(sportsConfig).forEach(sport => {
   optionsBox.innerHTML += `
@@ -148,24 +162,32 @@ Object.values(sportsConfig).forEach(sport => {
     </label>`;
 });
 
-// Dropdown Handlers
-document.getElementById('sportsToggle').onclick = (e) => {
-  e.stopPropagation();
-  document.getElementById('sportsMenu').classList.toggle('show');
-};
-window.onclick = () => document.getElementById('sportsMenu').classList.remove('show');
+// Dropdown Logic
+const sportsToggle = document.getElementById('sportsToggle');
+const sportsMenu = document.getElementById('sportsMenu');
+const applyBtn = document.getElementById('applyBtn');
 
-document.addEventListener('change', (e) => {
-  if (e.target.classList.contains('sport-cb') || e.target.id === 'selectAll') {
-    const cbs = document.querySelectorAll('.sport-cb');
-    if (e.target.id === 'selectAll') cbs.forEach(cb => cb.checked = e.target.checked);
-    selectedSports = Array.from(cbs).filter(cb => cb.checked).map(cb => cb.value);
-    
-    const label = selectedSports.length === cbs.length ? "All Sports" : `${selectedSports.length} Selected`;
-    document.querySelector('#sportsToggle span').innerText = label;
-    renderMatches(filterData());
-  }
-});
+sportsToggle.onclick = (e) => {
+  e.stopPropagation();
+  sportsMenu.classList.toggle('show');
+};
+
+sportsMenu.onclick = (e) => e.stopPropagation();
+
+applyBtn.onclick = () => {
+  const cbs = document.querySelectorAll('.sport-cb');
+  selectedSports = Array.from(cbs).filter(cb => cb.checked).map(cb => cb.value);
+  const label = selectedSports.length === cbs.length ? "All Sports" : `${selectedSports.length} Selected`;
+  document.querySelector('#sportsToggle span').innerText = label;
+  renderMatches(filterData());
+  sportsMenu.classList.remove('show');
+};
+
+document.getElementById('selectAll').onchange = (e) => {
+  document.querySelectorAll('.sport-cb').forEach(cb => cb.checked = e.target.checked);
+};
+
+window.onclick = () => sportsMenu.classList.remove('show');
 
 async function loadMatches() {
   try {
@@ -180,32 +202,25 @@ async function loadMatches() {
 
 function filterData() {
   let filtered = allMatches.filter(m => selectedSports.includes(m.sport));
-  
   const isLive = (m) => NOW() >= m.timestamp - 300 && NOW() <= m.timestamp + 7200;
   const isSoon = (m) => m.timestamp > NOW() + 300 && m.timestamp <= NOW() + 3600;
 
   if (activeMode === 'live') filtered = filtered.filter(isLive);
   else if (activeMode === 'soon') filtered = filtered.filter(isSoon);
-  else {
-    // Default: Next 12 Hours (43200 seconds)
-    filtered = filtered.filter(m => (m.timestamp >= NOW() && m.timestamp <= NOW() + 43200) || isLive(m));
-  }
+  else filtered = filtered.filter(m => (m.timestamp >= NOW() && m.timestamp <= NOW() + 43200) || isLive(m));
 
   const term = document.getElementById('search').value.toLowerCase();
   return filtered.filter(m => {
-    const teams = `${m.home_team} ${m.away_team}`.toLowerCase();
-    return teams.includes(term);
+    return `${m.home_team} ${m.away_team}`.toLowerCase().includes(term);
   }).sort((a,b) => a.timestamp - b.timestamp);
 }
 
 function renderMatches(matches) {
   const container = document.getElementById('matchList');
   container.innerHTML = matches.length === 0 ? '<div class="loader">No matches found.</div>' : '';
-
   matches.forEach(m => {
     const isLive = NOW() >= m.timestamp - 300 && NOW() <= m.timestamp + 7200;
     const timeStr = new Date(m.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
     const card = document.createElement('div');
     card.className = 'match-card';
     card.innerHTML = `
@@ -239,6 +254,5 @@ document.getElementById('search').oninput = () => renderMatches(filterData());
 loadMatches();
 setInterval(loadMatches, 60000);
 </script>
-
 </body>
 </html>

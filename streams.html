@@ -2,257 +2,148 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPORT HUB | Live Events</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<title>Streams | Source 1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  :root {
-    --primary: #0072db;
-    --live: #e50914;
-    --bg: #0f1014;
-    --surface: #1a1c22;
-    --text: #ffffff;
-    --gray: #9ca3af;
-  }
-
-  body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
-    padding-top: 80px;
-  }
-
-  /* Header & Search */
-  header {
-    background: rgba(15, 16, 20, 0.95);
-    backdrop-filter: blur(10px);
-    position: fixed; top: 0; width: 100%;
-    z-index: 1000; padding: 1rem 4%;
-    display: flex; align-items: center;
-    box-sizing: border-box; border-bottom: 1px solid #2a2d35;
-  }
-
-  .logo { color: var(--primary); font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-right: 2rem; cursor: pointer; }
-  .search-container { flex-grow: 1; max-width: 400px; }
-  input#search { width: 100%; background: #252830; border: 1px solid #3f434e; padding: 10px 15px; border-radius: 6px; color: white; outline: none; }
-
-  /* Filter Bar */
-  .filter-bar { display: flex; align-items: center; gap: 12px; padding: 1.5rem 4% 1rem; flex-wrap: wrap; }
-  
-  .filter-btn {
-    background: var(--surface); border: 1px solid #333; color: white;
-    padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.3s;
-  }
-  .filter-btn.active { background: var(--live); border-color: var(--live); }
-
-  /* Dropdown Styling */
-  .sports-dropdown { position: relative; min-width: 200px; }
-  .dropdown-toggle {
-    width: 100%; padding: 10px 18px; background: var(--surface); 
-    border: 1px solid #444; color: white; border-radius: 50px; 
-    display: flex; justify-content: space-between; align-items: center; 
-    cursor: pointer; font-weight: 700;
-  }
-  .dropdown-menu {
-    display: none; position: absolute; top: 110%; left: 0; width: 250px;
-    background: #1a1c22; border: 1px solid #444; border-radius: 12px;
-    z-index: 1001; max-height: 450px; overflow: hidden; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-  }
-  .dropdown-menu.show { display: flex; flex-direction: column; }
-  
-  .dropdown-header { padding: 12px 20px; border-bottom: 1px solid #333; background: #1a1c22; }
-  #sportOptions { overflow-y: auto; max-height: 250px; }
-  .dropdown-item {
-    display: flex; align-items: center; padding: 12px 20px; 
-    cursor: pointer; gap: 12px; font-size: 14px; border-bottom: 1px solid #222;
-  }
-  .dropdown-item:hover { background: #252830; }
-  .dropdown-item input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
-
-  .dropdown-footer { padding: 12px; border-top: 1px solid #333; background: #1a1c22; }
-  .apply-btn {
-    width: 100%; padding: 10px; background: var(--primary); color: white; 
-    border: none; border-radius: 6px; font-weight: 700; cursor: pointer;
-  }
-  .apply-btn:hover { filter: brightness(1.2); }
-
-  /* Match Grid */
-  .match-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; padding: 1rem 4% 4rem; }
-  .match-card {
-    background: var(--surface); border-radius: 12px; padding: 1.5rem; 
-    border: 1px solid #2a2d35; transition: 0.3s; cursor: pointer;
-  }
-  .match-card:hover { border-color: var(--primary); transform: translateY(-3px); }
-  .match-teams { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
-  .match-meta { display: flex; justify-content: space-between; border-top: 1px solid #333; padding-top: 10px; font-size: 0.8rem; }
-  
-  .live-indicator { color: var(--live); font-weight: bold; animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-  .loader { text-align: center; padding: 3rem; color: var(--gray); width: 100%; }
+:root {
+  --bg:#0f1014;
+  --surface:#1a1c22;
+  --border:#2a2d35;
+  --primary:#0072db;
+  --live:#e50914;
+  --text:#fff;
+}
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,sans-serif;
+  padding-top:80px;
+}
+header {
+  position:fixed;
+  inset:0 0 auto 0;
+  height:80px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:0 4%;
+  background:#0f1014f2;
+  border-bottom:1px solid var(--border);
+}
+.logo { font-weight:900; color:var(--primary); cursor:pointer; }
+.search input {
+  background:#252830;
+  border:1px solid #3f434e;
+  color:white;
+  padding:10px 14px;
+  border-radius:6px;
+}
+.source-switch a {
+  padding:8px 14px;
+  border-radius:999px;
+  text-decoration:none;
+  font-weight:800;
+  border:1px solid #3f434e;
+  color:#9ca3af;
+}
+.source-switch .active {
+  background:var(--primary);
+  color:white;
+  border-color:var(--primary);
+}
+.filters {
+  padding:1.2rem 4%;
+  display:flex;
+  gap:10px;
+}
+.filter-btn {
+  background:var(--surface);
+  border:1px solid var(--border);
+  padding:8px 18px;
+  border-radius:999px;
+  cursor:pointer;
+}
+.filter-btn.active {
+  background:var(--live);
+  border-color:var(--live);
+}
+.grid {
+  padding:1rem 4%;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:1.2rem;
+}
+.card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:1.2rem;
+  cursor:pointer;
+}
+.live { color:var(--live); font-weight:900; }
 </style>
 </head>
+
 <body>
 
 <header>
   <div class="logo" onclick="location.href='index.html'">SPORT HUB</div>
-  <div class="search-container">
-    <input type="text" id="search" placeholder="Search teams...">
+  <div class="search"><input id="search" placeholder="Search teams"></div>
+
+  <div class="source-switch">
+    <a href="streams.html" class="active">Source 1</a>
+    <a href="streams2.html">Source 2</a>
   </div>
 </header>
 
-<div class="filter-bar">
-  <div class="sports-dropdown">
-    <button class="dropdown-toggle" id="sportsToggle">
-      <span>All Sports</span>
-      <i class="fa-solid fa-chevron-down"></i>
-    </button>
-    <div class="dropdown-menu" id="sportsMenu">
-      <div class="dropdown-header">
-        <label class="dropdown-item" style="padding:0; border:none;">
-          <input type="checkbox" id="selectAll" checked> <b>Select All</b>
-        </label>
-      </div>
-      <div id="sportOptions"></div>
-      <div class="dropdown-footer">
-        <button class="apply-btn" id="applyBtn">Apply Filters</button>
-      </div>
-    </div>
-  </div>
-  <button class="filter-btn" id="btnLive" onclick="setMode('live', this)">Live Now</button>
-  <button class="filter-btn" id="btnSoon" onclick="setMode('soon', this)">Soon</button>
+<div class="filters">
+  <button class="filter-btn" onclick="setMode('live',this)">Live</button>
+  <button class="filter-btn" onclick="setMode('soon',this)">Soon</button>
 </div>
 
-<div class="match-grid" id="matchList">
-  <div class="loader">Loading live events...</div>
-</div>
+<div class="grid" id="grid">Loading…</div>
 
 <script>
-const sportsConfig = {
-  "5878de3b2651f1484316219": { name: "Football", emoji: "⚽" },
-  "5878de4a6d41e1484316234": { name: "Basketball", emoji: "🏀" },
-  "5878de77ced591484316279": { name: "Rugby", emoji: "🏉" },
-  "587e380cb00a81484666892": { name: "Tennis", emoji: "🎾" },
-  "587e7e5fa79841484684895": { name: "Ice Hockey", emoji: "🏒" },
-  "587e7e366f0a91484684854": { name: "NFL", emoji: "🏈" },
-  "587e37de12ab81484666846": { name: "Boxing", emoji: "🥊" },
-  "672cd83c40d761730992188": { name: "MMA", emoji: "🥋" },
-  "587e7fc467af81484685252": { name: "Motorsport", emoji: "🏎️" },
-  "5883e4f6b76091485038838": { name: "Baseball", emoji: "⚾" },
-  "58aea3c055d351487840192": { name: "Cricket", emoji: "🏏" },
-  "58aea3c7c52891487840199": { name: "Snooker", emoji: "🎱" },
-  "66ca015ddc944": { name: "Wrestling", emoji: "🤼" },
-  "671fdc15536d51730141205": { name: "Cycling", emoji: "🚴" }
-};
+let matches=[], mode="all";
+const NOW=()=>Math.floor(Date.now()/1000);
 
-let allMatches = [];
-let selectedSports = Object.values(sportsConfig).map(s => s.name);
-let activeMode = 'normal';
-const NOW = () => Math.floor(Date.now() / 1000);
-
-// Populate checkboxes
-const optionsBox = document.getElementById('sportOptions');
-Object.values(sportsConfig).forEach(sport => {
-  optionsBox.innerHTML += `
-    <label class="dropdown-item">
-      <input type="checkbox" class="sport-cb" value="${sport.name}" checked>
-      <span>${sport.emoji} ${sport.name}</span>
-    </label>`;
-});
-
-// Dropdown Logic
-const sportsToggle = document.getElementById('sportsToggle');
-const sportsMenu = document.getElementById('sportsMenu');
-const applyBtn = document.getElementById('applyBtn');
-
-sportsToggle.onclick = (e) => {
-  e.stopPropagation();
-  sportsMenu.classList.toggle('show');
-};
-
-sportsMenu.onclick = (e) => e.stopPropagation();
-
-applyBtn.onclick = () => {
-  const cbs = document.querySelectorAll('.sport-cb');
-  selectedSports = Array.from(cbs).filter(cb => cb.checked).map(cb => cb.value);
-  const label = selectedSports.length === cbs.length ? "All Sports" : `${selectedSports.length} Selected`;
-  document.querySelector('#sportsToggle span').innerText = label;
-  renderMatches(filterData());
-  sportsMenu.classList.remove('show');
-};
-
-document.getElementById('selectAll').onchange = (e) => {
-  document.querySelectorAll('.sport-cb').forEach(cb => cb.checked = e.target.checked);
-};
-
-window.onclick = () => sportsMenu.classList.remove('show');
-
-async function loadMatches() {
-  try {
-    const res = await fetch('https://beta.adstrim.ru/api/events');
-    const data = await res.json();
-    allMatches = data.data;
-    renderMatches(filterData());
-  } catch (e) {
-    document.getElementById('matchList').innerHTML = '<div class="loader">API Error.</div>';
-  }
+async function load(){
+  const r=await fetch("https://beta.adstrim.ru/api/events");
+  matches=(await r.json()).data;
+  render();
 }
-
-function filterData() {
-  let filtered = allMatches.filter(m => selectedSports.includes(m.sport));
-  const isLive = (m) => NOW() >= m.timestamp - 300 && NOW() <= m.timestamp + 7200;
-  const isSoon = (m) => m.timestamp > NOW() + 300 && m.timestamp <= NOW() + 3600;
-
-  if (activeMode === 'live') filtered = filtered.filter(isLive);
-  else if (activeMode === 'soon') filtered = filtered.filter(isSoon);
-  else filtered = filtered.filter(m => (m.timestamp >= NOW() && m.timestamp <= NOW() + 43200) || isLive(m));
-
-  const term = document.getElementById('search').value.toLowerCase();
-  return filtered.filter(m => {
-    return `${m.home_team} ${m.away_team}`.toLowerCase().includes(term);
-  }).sort((a,b) => a.timestamp - b.timestamp);
+function setMode(m,el){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  if(mode===m){mode="all";return render();}
+  el.classList.add('active');mode=m;render();
 }
-
-function renderMatches(matches) {
-  const container = document.getElementById('matchList');
-  container.innerHTML = matches.length === 0 ? '<div class="loader">No matches found.</div>' : '';
-  matches.forEach(m => {
-    const isLive = NOW() >= m.timestamp - 300 && NOW() <= m.timestamp + 7200;
-    const timeStr = new Date(m.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const card = document.createElement('div');
-    card.className = 'match-card';
-    card.innerHTML = `
-      <div class="match-teams">${m.home_team} <br>vs ${m.away_team}</div>
-      <div class="match-meta">
-        <span>${isLive ? '<span class="live-indicator">● LIVE</span>' : 'KO: ' + timeStr}</span>
-        <span style="color:var(--primary)">${m.sport.toUpperCase()}</span>
-      </div>
-    `;
-    card.onclick = () => {
-      const mirror = encodeURIComponent(m.channels[0]?.name || '');
-      window.location.href = `streamsviewer.html?mirror=${mirror}&title=${encodeURIComponent(m.home_team+' vs '+m.away_team)}`;
+function render(){
+  const q=document.getElementById("search").value.toLowerCase();
+  let out=matches.filter(m=>`${m.home_team} ${m.away_team}`.toLowerCase().includes(q));
+  out=out.filter(m=>{
+    const live=NOW()>=m.timestamp-300 && NOW()<=m.timestamp+7200;
+    const soon=m.timestamp>NOW() && m.timestamp<=NOW()+3600;
+    if(mode==="live") return live;
+    if(mode==="soon") return soon;
+    return true;
+  });
+  const g=document.getElementById("grid");
+  g.innerHTML="";
+  out.forEach(m=>{
+    const live=NOW()>=m.timestamp-300 && NOW()<=m.timestamp+7200;
+    const c=document.createElement("div");
+    c.className="card";
+    c.innerHTML=`<b>${m.home_team} vs ${m.away_team}</b><br>${live?'<span class="live">LIVE</span>':''}`;
+    c.onclick=()=>{
+      location.href=`streamviewer2.html?title=${encodeURIComponent(m.home_team+" vs "+m.away_team)}&legacy=1`;
     };
-    container.appendChild(card);
+    g.appendChild(c);
   });
 }
-
-function setMode(mode, el) {
-  if (activeMode === mode) {
-    activeMode = 'normal';
-    el.classList.remove('active');
-  } else {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    activeMode = mode;
-  }
-  renderMatches(filterData());
-}
-
-document.getElementById('search').oninput = () => renderMatches(filterData());
-loadMatches();
-setInterval(loadMatches, 60000);
+document.getElementById("search").oninput=render;
+load();
 </script>
 </body>
 </html>

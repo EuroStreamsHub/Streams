@@ -1,232 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SPORT HUB | Live Events</title>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streams</title>
 
 <style>
-:root {
-  --primary:#0072db;
-  --live:#e50914;
-  --bg:#0f1014;
-  --surface:#1a1c22;
-  --border:#2a2d35;
-  --text:#ffffff;
-  --muted:#9ca3af;
-}
-
-* { box-sizing:border-box; }
-
 body {
   margin:0;
-  font-family:Inter, system-ui, sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  padding-top:80px;
+  background:#0f1014;
+  color:white;
+  font-family:system-ui,sans-serif;
 }
 
-/* ================= HEADER ================= */
 header {
   position:fixed;
   top:0; left:0; right:0;
-  height:80px;
-  padding:0 4%;
+  height:70px;
+  background:#0f1014;
+  border-bottom:1px solid #2a2d35;
   display:flex;
   align-items:center;
-  gap:2rem;
-  background:rgba(15,16,20,.95);
-  backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);
+  padding:0 4%;
   z-index:1000;
 }
 
-.logo {
-  font-weight:900;
-  font-size:1.6rem;
-  color:var(--primary);
-  cursor:pointer;
-  text-transform:uppercase;
-}
+h1 { color:#0072db; font-size:1.4rem; }
 
-.search-box {
-  flex:1;
-  max-width:420px;
-}
-
-.search-box input {
-  width:100%;
-  background:#252830;
-  border:1px solid #3f434e;
-  padding:12px 16px;
-  border-radius:8px;
-  color:white;
-  outline:none;
-}
-
-/* ================= FILTER BAR ================= */
-.filter-bar {
-  padding:1.5rem 4% 1rem;
-  display:flex;
-  flex-wrap:wrap;
-  gap:12px;
-  align-items:center;
-}
-
-.filter-btn {
-  background:var(--surface);
-  border:1px solid var(--border);
-  color:white;
-  padding:10px 22px;
-  border-radius:20px;
-  cursor:pointer;
-  font-weight:700;
-}
-
-.filter-btn.active {
-  background:var(--live);
-  border-color:var(--live);
-}
-
-/* ================= DROPDOWN ================= */
-.dropdown {
-  position:relative;
-  min-width:220px;
-}
-
-.dropdown-toggle {
-  width:100%;
-  padding:10px 18px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  color:white;
-  border-radius:999px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  cursor:pointer;
-  font-weight:700;
-}
-
-.dropdown-menu {
-  display:none;
-  position:absolute;
-  top:115%;
-  left:0;
-  width:260px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px;
-  box-shadow:0 20px 40px rgba(0,0,0,.8);
-  z-index:1001;
-}
-
-.dropdown-menu.show {
-  display:flex;
-  flex-direction:column;
-}
-
-.dropdown-header,
-.dropdown-footer {
-  padding:12px 16px;
-  border-bottom:1px solid var(--border);
-}
-
-.dropdown-footer {
-  border-top:1px solid var(--border);
-  border-bottom:none;
-}
-
-.dropdown-list {
-  max-height:260px;
-  overflow-y:auto;
-}
-
-.dropdown-item {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:12px 16px;
-  cursor:pointer;
-  border-bottom:1px solid #222;
-}
-
-.dropdown-item:hover {
-  background:#252830;
-}
-
-.dropdown-item input {
-  width:18px;
-  height:18px;
-  accent-color:var(--primary);
-}
-
-.apply-btn {
-  width:100%;
-  padding:10px;
-  background:var(--primary);
-  color:white;
-  border:none;
-  border-radius:8px;
-  font-weight:800;
-  cursor:pointer;
-}
-
-/* ================= MATCH GRID ================= */
-.match-grid {
-  padding:1rem 4% 4rem;
+main {
+  padding:90px 4% 4rem;
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(320px,1fr));
-  gap:1.5rem;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:1.2rem;
 }
 
-.match-card {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:1.5rem;
+.card {
+  background:#1a1c22;
+  border:1px solid #2a2d35;
+  border-radius:12px;
+  padding:1.2rem;
   cursor:pointer;
-  transition:.25s;
+  transition:.2s;
 }
 
-.match-card:hover {
-  border-color:var(--primary);
-  transform:translateY(-4px);
+.card:hover {
+  border-color:#0072db;
+  transform:translateY(-3px);
 }
 
-.match-title {
-  font-size:1.1rem;
+.title {
   font-weight:800;
-  margin-bottom:1rem;
+  margin-bottom:.6rem;
 }
 
-.match-meta {
+.meta {
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  padding-top:10px;
-  border-top:1px solid var(--border);
-  font-size:.85rem;
-}
-
-.live {
-  color:var(--live);
-  font-weight:800;
-  animation:pulse 1.4s infinite;
-}
-
-@keyframes pulse {
-  0%,100% { opacity:1; }
-  50% { opacity:.4; }
-}
-
-.loader {
-  grid-column:1/-1;
-  text-align:center;
-  padding:3rem;
-  color:var(--muted);
+  font-size:.8rem;
+  color:#9ca3af;
 }
 </style>
 </head>
@@ -234,192 +65,51 @@ header {
 <body>
 
 <header>
-  <div class="logo" onclick="location.reload()">SPORT HUB</div>
-  <div class="search-box">
-    <input id="search" placeholder="Search matches…"/>
-  </div>
+  <h1>SPORT STREAMS</h1>
 </header>
 
-<div class="filter-bar">
-  <div class="dropdown">
-    <div class="dropdown-toggle" id="sportToggle">
-      <span>All Sports</span>
-      <i class="fa-solid fa-chevron-down"></i>
-    </div>
-
-    <div class="dropdown-menu" id="sportMenu">
-      <div class="dropdown-header">
-        <label class="dropdown-item" style="border:none;padding:0">
-          <input type="checkbox" id="selectAll" checked>
-          <strong>Select All</strong>
-        </label>
-      </div>
-
-      <div class="dropdown-list" id="sportList"></div>
-
-      <div class="dropdown-footer">
-        <button class="apply-btn" id="applySports">Apply</button>
-      </div>
-    </div>
-  </div>
-
-  <button class="filter-btn" id="btnLive">Live</button>
-  <button class="filter-btn" id="btnSoon">Soon</button>
-</div>
-
-<div class="match-grid" id="matchGrid">
-  <div class="loader">Loading matches…</div>
-</div>
+<main id="grid">
+  <div>Loading…</div>
+</main>
 
 <script>
-/* ================= CONFIG ================= */
 const API = "https://streamed.pk/api";
-let sports = {};
-let selectedSports = [];
-let allMatches = [];
-let mode = "normal";
+const grid = document.getElementById("grid");
 
-const now = () => Date.now();
-
-/* ================= SPORTS ================= */
-async function loadSports() {
-  const res = await fetch(`${API}/sports`);
-  const data = await res.json();
-
-  const list = document.getElementById("sportList");
-  list.innerHTML = "";
-
-  data.forEach(s => {
-    sports[s.id] = s.name;
-    selectedSports.push(s.id);
-
-    list.innerHTML += `
-      <label class="dropdown-item">
-        <input type="checkbox" class="sport-cb" value="${s.id}" checked>
-        ${s.name}
-      </label>
-    `;
-  });
-}
-
-/* ================= MATCHES ================= */
 async function loadMatches() {
   const res = await fetch(`${API}/matches/all`);
-  allMatches = await res.json();
-  render();
-}
+  const matches = await res.json();
 
-function isLive(m) {
-  return now() >= m.date - 5*60*1000 &&
-         now() <= m.date + 2*60*60*1000;
-}
-
-function isSoon(m) {
-  return m.date > now() &&
-         m.date <= now() + 60*60*1000;
-}
-
-function getFiltered() {
-  let list = allMatches.filter(m =>
-    selectedSports.includes(m.category)
-  );
-
-  if (mode === "live") list = list.filter(isLive);
-  if (mode === "soon") list = list.filter(isSoon);
-
-  const term = document.getElementById("search").value.toLowerCase();
-  return list.filter(m => m.title.toLowerCase().includes(term))
-             .sort((a,b) => a.date - b.date);
-}
-
-/* ================= RENDER ================= */
-function render() {
-  const grid = document.getElementById("matchGrid");
-  const matches = getFiltered();
   grid.innerHTML = "";
 
-  if (!matches.length) {
-    grid.innerHTML = `<div class="loader">No matches found</div>`;
-    return;
-  }
-
   matches.forEach(m => {
-    const card = document.createElement("div");
-    card.className = "match-card";
+    if (!m.sources || !m.sources.length) return;
 
-    const live = isLive(m);
-    const time = new Date(m.date).toLocaleTimeString([], {
-      hour:"2-digit", minute:"2-digit"
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const time = new Date(m.date).toLocaleString([], {
+      hour:"2-digit", minute:"2-digit", month:"short", day:"numeric"
     });
 
     card.innerHTML = `
-      <div class="match-title">${m.title}</div>
-      <div class="match-meta">
-        <span>${live ? '<span class="live">● LIVE</span>' : 'KO: ' + time}</span>
-        <span style="color:var(--primary)">${sports[m.category]}</span>
+      <div class="title">${m.title}</div>
+      <div class="meta">
+        <span>${m.category.toUpperCase()}</span>
+        <span>${time}</span>
       </div>
     `;
 
     card.onclick = () => {
-      const src = m.sources[0];
-      if (!src) return;
-
-      const embed =
-        `https://embedsports.top/embed/echo/${src.id}/${src.source}`;
-
       location.href =
-        `streamviewer2.html?embed=${encodeURIComponent(embed)}&title=${encodeURIComponent(m.title)}`;
+        `streamviewer2.html?title=${encodeURIComponent(m.title)}&sources=${encodeURIComponent(JSON.stringify(m.sources))}`;
     };
 
     grid.appendChild(card);
   });
 }
 
-/* ================= UI ================= */
-document.getElementById("btnLive").onclick = e => toggleMode("live", e.target);
-document.getElementById("btnSoon").onclick = e => toggleMode("soon", e.target);
-
-function toggleMode(m, btn) {
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  if (mode === m) mode = "normal";
-  else { mode = m; btn.classList.add("active"); }
-  render();
-}
-
-document.getElementById("search").oninput = render;
-
-document.getElementById("applySports").onclick = () => {
-  selectedSports = [...document.querySelectorAll(".sport-cb")]
-    .filter(cb => cb.checked)
-    .map(cb => cb.value);
-
-  document.querySelector("#sportToggle span").textContent =
-    selectedSports.length === Object.keys(sports).length
-      ? "All Sports"
-      : `${selectedSports.length} Selected`;
-
-  document.getElementById("sportMenu").classList.remove("show");
-  render();
-};
-
-document.getElementById("selectAll").onchange = e => {
-  document.querySelectorAll(".sport-cb").forEach(cb => cb.checked = e.target.checked);
-};
-
-/* dropdown */
-const toggle = document.getElementById("sportToggle");
-const menu = document.getElementById("sportMenu");
-
-toggle.onclick = e => { e.stopPropagation(); menu.classList.toggle("show"); };
-menu.onclick = e => e.stopPropagation();
-window.onclick = () => menu.classList.remove("show");
-
-/* ================= INIT ================= */
-(async () => {
-  await loadSports();
-  await loadMatches();
-  setInterval(loadMatches, 60000);
-})();
+loadMatches();
 </script>
 
 </body>

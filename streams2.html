@@ -3,61 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Streams</title>
+<title>SPORT HUB | Streams</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
-body {
-  margin:0;
-  background:#0f1014;
-  color:white;
-  font-family:system-ui,sans-serif;
+:root {
+  --primary:#0072db;
+  --live:#e50914;
+  --bg:#0f1014;
+  --surface:#1a1c22;
+  --border:#2a2d35;
+  --text:#ffffff;
+  --gray:#9ca3af;
 }
 
+body {
+  margin:0;
+  font-family:system-ui, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  padding-top:80px;
+}
+
+/* HEADER */
 header {
   position:fixed;
   top:0; left:0; right:0;
-  height:70px;
-  background:#0f1014;
-  border-bottom:1px solid #2a2d35;
+  height:80px;
+  background:rgba(15,16,20,.95);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
   display:flex;
   align-items:center;
+  gap:1.5rem;
   padding:0 4%;
   z-index:1000;
 }
 
-h1 { color:#0072db; font-size:1.4rem; }
+.logo {
+  color:var(--primary);
+  font-weight:900;
+  font-size:1.4rem;
+  cursor:pointer;
+}
 
-main {
-  padding:90px 4% 4rem;
+.back {
+  color:white;
+  text-decoration:none;
+  background:#252830;
+  padding:8px 14px;
+  border-radius:6px;
+  font-weight:700;
+}
+
+.search {
+  flex:1;
+  max-width:420px;
+}
+
+.search input {
+  width:100%;
+  padding:10px 14px;
+  background:#252830;
+  border:1px solid #3f434e;
+  border-radius:6px;
+  color:white;
+}
+
+/* FILTER BAR */
+.filters {
+  padding:1.5rem 4% 1rem;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+/* DROPDOWN */
+.dropdown {
+  position:relative;
+  min-width:220px;
+}
+
+.dropdown-toggle {
+  background:var(--surface);
+  border:1px solid var(--border);
+  padding:10px 18px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.dropdown-menu {
+  display:none;
+  position:absolute;
+  top:115%;
+  left:0;
+  width:260px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  z-index:1001;
+  box-shadow:0 20px 40px rgba(0,0,0,.8);
+}
+
+.dropdown-menu.show {
+  display:flex;
+  flex-direction:column;
+}
+
+.dropdown-header,
+.dropdown-footer {
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+}
+
+.dropdown-footer { border-bottom:none; }
+
+.dropdown-list {
+  max-height:260px;
+  overflow-y:auto;
+}
+
+.dropdown-item {
+  padding:10px 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  border-bottom:1px solid #222;
+}
+
+.dropdown-item input {
+  width:18px;
+  height:18px;
+}
+
+.apply {
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:var(--primary);
+  color:white;
+  font-weight:800;
+  cursor:pointer;
+}
+
+/* BUTTONS */
+.filter-btn {
+  background:var(--surface);
+  border:1px solid var(--border);
+  padding:10px 22px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+.filter-btn.active {
+  background:var(--live);
+  border-color:var(--live);
+}
+
+/* GRID */
+.grid {
+  padding:1rem 4% 4rem;
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
-  gap:1.2rem;
+  gap:1.5rem;
 }
 
 .card {
-  background:#1a1c22;
-  border:1px solid #2a2d35;
+  background:var(--surface);
+  border:1px solid var(--border);
   border-radius:12px;
-  padding:1.2rem;
+  padding:1.4rem;
   cursor:pointer;
-  transition:.2s;
+  transition:.25s;
 }
 
 .card:hover {
-  border-color:#0072db;
+  border-color:var(--primary);
   transform:translateY(-3px);
 }
 
 .title {
   font-weight:800;
-  margin-bottom:.6rem;
+  margin-bottom:1rem;
 }
 
 .meta {
   display:flex;
   justify-content:space-between;
+  border-top:1px solid var(--border);
+  padding-top:10px;
   font-size:.8rem;
-  color:#9ca3af;
+}
+
+.live {
+  color:var(--live);
+  font-weight:800;
+  animation:pulse 1.4s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50% { opacity:.4; }
+}
+
+.loader {
+  grid-column:1/-1;
+  text-align:center;
+  padding:3rem;
+  color:var(--gray);
 }
 </style>
 </head>
@@ -65,38 +227,127 @@ main {
 <body>
 
 <header>
-  <h1>SPORT STREAMS</h1>
+  <a class="back" href="index.html">⬅ Back</a>
+  <div class="logo">SPORT HUB</div>
+  <div class="search">
+    <input id="search" placeholder="Search teams…">
+  </div>
 </header>
 
-<main id="grid">
-  <div>Loading…</div>
-</main>
+<div class="filters">
+  <div class="dropdown">
+    <div class="dropdown-toggle" id="sportToggle">
+      <span>All Sports</span>
+      <i class="fa fa-chevron-down"></i>
+    </div>
+
+    <div class="dropdown-menu" id="sportMenu">
+      <div class="dropdown-header">
+        <label class="dropdown-item" style="border:none">
+          <input type="checkbox" id="selectAll" checked>
+          <strong>Select All</strong>
+        </label>
+      </div>
+      <div class="dropdown-list" id="sportList"></div>
+      <div class="dropdown-footer">
+        <button class="apply" id="applySports">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="filter-btn" id="btnLive">Live Now</button>
+  <button class="filter-btn" id="btnSoon">Soon</button>
+</div>
+
+<div class="grid" id="grid">
+  <div class="loader">Loading matches…</div>
+</div>
 
 <script>
 const API = "https://streamed.pk/api";
-const grid = document.getElementById("grid");
+let sports = {};
+let selectedSports = [];
+let matches = [];
+let mode = "all";
 
+const now = () => Date.now();
+
+/* LOAD SPORTS */
+async function loadSports() {
+  const res = await fetch(`${API}/sports`);
+  const data = await res.json();
+  const list = document.getElementById("sportList");
+
+  data.forEach(s => {
+    sports[s.id] = s.name;
+    selectedSports.push(s.id);
+
+    list.innerHTML += `
+      <label class="dropdown-item">
+        <input type="checkbox" class="sport-cb" value="${s.id}" checked>
+        ${s.name}
+      </label>
+    `;
+  });
+}
+
+/* LOAD MATCHES */
 async function loadMatches() {
   const res = await fetch(`${API}/matches/all`);
-  const matches = await res.json();
+  matches = await res.json();
+  render();
+}
 
+/* FILTER LOGIC */
+function isLive(m) {
+  return now() >= m.date - 5*60*1000 &&
+         now() <= m.date + 2*60*60*1000;
+}
+
+function isSoon(m) {
+  return m.date > now() &&
+         m.date <= now() + 60*60*1000;
+}
+
+function getFiltered() {
+  let list = matches.filter(m => selectedSports.includes(m.category));
+
+  if (mode === "live") list = list.filter(isLive);
+  if (mode === "soon") list = list.filter(isSoon);
+
+  const term = document.getElementById("search").value.toLowerCase();
+  return list
+    .filter(m => m.title.toLowerCase().includes(term))
+    .sort((a,b) => a.date - b.date);
+}
+
+/* RENDER */
+function render() {
+  const grid = document.getElementById("grid");
+  const list = getFiltered();
   grid.innerHTML = "";
 
-  matches.forEach(m => {
+  if (!list.length) {
+    grid.innerHTML = `<div class="loader">No matches found</div>`;
+    return;
+  }
+
+  list.forEach(m => {
     if (!m.sources || !m.sources.length) return;
 
     const card = document.createElement("div");
     card.className = "card";
 
-    const time = new Date(m.date).toLocaleString([], {
-      hour:"2-digit", minute:"2-digit", month:"short", day:"numeric"
+    const live = isLive(m);
+    const time = new Date(m.date).toLocaleTimeString([], {
+      hour:"2-digit", minute:"2-digit"
     });
 
     card.innerHTML = `
       <div class="title">${m.title}</div>
       <div class="meta">
-        <span>${m.category.toUpperCase()}</span>
-        <span>${time}</span>
+        <span>${live ? '<span class="live">● LIVE</span>' : 'KO: '+time}</span>
+        <span style="color:var(--primary)">${sports[m.category]}</span>
       </div>
     `;
 
@@ -109,7 +360,55 @@ async function loadMatches() {
   });
 }
 
-loadMatches();
+/* UI EVENTS */
+document.getElementById("search").oninput = render;
+
+document.getElementById("btnLive").onclick = e => toggle("live", e.target);
+document.getElementById("btnSoon").onclick = e => toggle("soon", e.target);
+
+function toggle(m, btn) {
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  if (mode === m) mode = "all";
+  else { mode = m; btn.classList.add("active"); }
+  render();
+}
+
+/* DROPDOWN */
+const toggleBtn = document.getElementById("sportToggle");
+const menu = document.getElementById("sportMenu");
+
+toggleBtn.onclick = e => {
+  e.stopPropagation();
+  menu.classList.toggle("show");
+};
+
+menu.onclick = e => e.stopPropagation();
+window.onclick = () => menu.classList.remove("show");
+
+document.getElementById("applySports").onclick = () => {
+  selectedSports = [...document.querySelectorAll(".sport-cb")]
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
+
+  toggleBtn.querySelector("span").textContent =
+    selectedSports.length === Object.keys(sports).length
+      ? "All Sports"
+      : `${selectedSports.length} Selected`;
+
+  menu.classList.remove("show");
+  render();
+};
+
+document.getElementById("selectAll").onchange = e => {
+  document.querySelectorAll(".sport-cb").forEach(cb => cb.checked = e.target.checked);
+};
+
+/* INIT */
+(async () => {
+  await loadSports();
+  await loadMatches();
+  setInterval(loadMatches, 60000);
+})();
 </script>
 
 </body>

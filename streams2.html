@@ -1,0 +1,195 @@
+<script>
+const API_BASE = "https://streamed.pk/api";
+
+let allMatches = [];
+let sportsMap = {};
+let selectedSports = [];
+let activeMode = 'normal';
+
+const NOW = () => Date.now();
+
+/* -----------------------------
+   LOAD SPORTS
+----------------------------- */
+async function loadSports() {
+  const res = await fetch(`${API_BASE}/sports`);
+  const sports = await res.json();
+
+  const optionsBox = document.getElementById('sportOptions');
+  optionsBox.innerHTML = "";
+
+  sports.forEach(s => {
+    sportsMap[s.id] = s.name;
+    selectedSports.push(s.id);
+
+    optionsBox.innerHTML += `
+      <label class="dropdown-item">
+        <input type="checkbox" class="sport-cb" value="${s.id}" checked>
+        <span>${s.name}</span>
+      </label>
+    `;
+  });
+}
+
+/* -----------------------------
+   LOAD MATCHES
+----------------------------- */
+async function loadMatches() {
+  try {
+    const res = await fetch(`${API_BASE}/matches/all`);
+    const data = await res.json();
+    allMatches = data;
+    renderMatches(filterData());
+  } catch (e) {
+    document.getElementById('matchList').innerHTML =
+      '<div class="loader">API Error.</div>';
+  }
+}
+
+/* -----------------------------
+   FILTERING
+----------------------------- */
+function filterData() {
+  let filtered = allMatches.filter(m =>
+    selectedSports.includes(m.category)
+  );
+
+  const isLive = m =>
+    NOW() >= m.date - 5 * 60 * 1000 &&
+    NOW() <= m.date + 2 * 60 * 60 * 1000;
+
+  const isSoon = m =>
+    m.date > NOW() + 5 * 60 * 1000 &&
+    m.date <= NOW() + 60 * 60 * 1000;
+
+  if (activeMode === 'live') filtered = filtered.filter(isLive);
+  else if (activeMode === 'soon') filtered = filtered.filter(isSoon);
+  else {
+    filtered = filtered.filter(m =>
+      isLive(m) || (m.date >= NOW() && m.date <= NOW() + 12 * 60 * 60 * 1000)
+    );
+  }
+
+  const term = document.getElementById('search').value.toLowerCase();
+  return filtered
+    .filter(m => m.title.toLowerCase().includes(term))
+    .sort((a, b) => a.date - b.date);
+}
+
+/* -----------------------------
+   RENDER MATCHES
+----------------------------- */
+function renderMatches(matches) {
+  const container = document.getElementById('matchList');
+  container.innerHTML = matches.length
+    ? ""
+    : '<div class="loader">No matches found.</div>';
+
+  matches.forEach(m => {
+    const isLive =
+      NOW() >= m.date - 5 * 60 * 1000 &&
+      NOW() <= m.date + 2 * 60 * 60 * 1000;
+
+    const timeStr = new Date(m.date).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const card = document.createElement('div');
+    card.className = 'match-card';
+
+    card.innerHTML = `
+      <div class="match-teams">
+        ${m.teams?.home?.name || ""}<br>
+        vs ${m.teams?.away?.name || ""}
+      </div>
+      <div class="match-meta">
+        <span>
+          ${isLive
+            ? '<span class="live-indicator">● LIVE</span>'
+            : 'KO: ' + timeStr}
+        </span>
+        <span style="color:var(--primary)">
+          ${sportsMap[m.category]?.toUpperCase() || m.category}
+        </span>
+      </div>
+    `;
+
+    card.onclick = () => {
+      const src = m.sources[0];
+      if (!src) return;
+
+      const embedUrl =
+        `https://embedsports.top/embed/echo/${src.id}/${src.source}`;
+
+      window.location.href =
+        `streamviewer2.html?embed=${encodeURIComponent(embedUrl)}&title=${encodeURIComponent(m.title)}`;
+    };
+
+    container.appendChild(card);
+  });
+}
+
+/* -----------------------------
+   FILTER UI
+----------------------------- */
+document.getElementById('applyBtn').onclick = () => {
+  const cbs = document.querySelectorAll('.sport-cb');
+  selectedSports = Array.from(cbs)
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
+
+  document.querySelector('#sportsToggle span').innerText =
+    selectedSports.length === cbs.length
+      ? "All Sports"
+      : `${selectedSports.length} Selected`;
+
+  renderMatches(filterData());
+  document.getElementById('sportsMenu').classList.remove('show');
+};
+
+document.getElementById('selectAll').onchange = e => {
+  document.querySelectorAll('.sport-cb').forEach(
+    cb => (cb.checked = e.target.checked)
+  );
+};
+
+function setMode(mode, el) {
+  if (activeMode === mode) {
+    activeMode = 'normal';
+    el.classList.remove('active');
+  } else {
+    document.querySelectorAll('.filter-btn').forEach(
+      b => b.classList.remove('active')
+    );
+    el.classList.add('active');
+    activeMode = mode;
+  }
+  renderMatches(filterData());
+}
+
+document.getElementById('search').oninput =
+  () => renderMatches(filterData());
+
+/* -----------------------------
+   DROPDOWN
+----------------------------- */
+const sportsToggle = document.getElementById('sportsToggle');
+const sportsMenu = document.getElementById('sportsMenu');
+
+sportsToggle.onclick = e => {
+  e.stopPropagation();
+  sportsMenu.classList.toggle('show');
+};
+sportsMenu.onclick = e => e.stopPropagation();
+window.onclick = () => sportsMenu.classList.remove('show');
+
+/* -----------------------------
+   INIT
+----------------------------- */
+(async () => {
+  await loadSports();
+  await loadMatches();
+  setInterval(loadMatches, 60000);
+})();
+  </script>

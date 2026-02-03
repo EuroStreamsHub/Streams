@@ -117,7 +117,7 @@ function render(){
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`<b>${m.home_team} vs ${m.away_team}</b><br>${live?'<span class="live">● LIVE</span>':''}`;
-    card.onclick=()=>location.href=`streamviewer.html?title=${encodeURIComponent(m.home_team+' vs '+m.away_team)}`;
+    card.onclick=()=>location.href=`streamsviewer.html?title=${encodeURIComponent(m.home_team+' vs '+m.away_team)}`;
     g.appendChild(card);
   });
 }

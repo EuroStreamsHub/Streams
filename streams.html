@@ -16,23 +16,36 @@
   --gray:#9ca3af;
 }
 
-body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); padding-top:80px; }
+body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); padding-top:140px; }
 
 header {
-  position:fixed; top:0; left:0; right:0; height:80px; background:rgba(15,16,20,0.95); 
-  backdrop-filter:blur(10px); display:flex; align-items:center; gap:12px; padding:0 4%; border-bottom:1px solid var(--border); z-index:1000;
+  position: fixed;
+  top:0; left:0; right:0;
+  background: rgba(15,16,20,0.95);
+  backdrop-filter: blur(10px);
+  padding: 0.6rem 4%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
 }
-.logo { font-weight:900; color:var(--primary); cursor:pointer; }
+
+.top-row, .mid-row, .bottom-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.top-row { justify-content:flex-start; }
+.mid-row { justify-content:flex-start; }
+.bottom-row { justify-content:flex-start; }
+
+.logo { font-weight:900; color:var(--primary); }
 .back { color:white; text-decoration:none; background:#252830; padding:6px 12px; border-radius:6px; font-weight:700; }
-.search input { flex:1; padding:8px 12px; border-radius:6px; border:1px solid #3f434e; background:#252830; color:white; outline:none; }
+input#search { flex:1; min-width:150px; padding:8px 12px; border-radius:6px; border:1px solid #3f434e; background:#252830; color:white; outline:none; }
 
-.filters { display:flex; gap:8px; margin-left:auto; }
-.filter-btn { background:var(--surface); border:1px solid var(--border); padding:6px 14px; border-radius:999px; cursor:pointer; font-weight:700; }
-.filter-btn.active { background:var(--live); border-color:var(--live); }
-
-.source-switch { display:flex; gap:8px; }
-.src-btn { padding:6px 14px; border-radius:999px; text-decoration:none; font-weight:800; border:1px solid #3f434e; color:#9ca3af; }
-.src-btn.active { background:var(--primary); color:white; border-color:var(--primary); }
+.filter-btn, .src-btn {
+  padding:6px 14px; border-radius:999px; font-weight:700; border:1px solid #3f434e;
+  cursor:pointer; background:var(--surface); color:#9ca3af;
+}
+.filter-btn.active { background: var(--live); border-color: var(--live); color:white; }
+.src-btn.active { background: var(--primary); border-color: var(--primary); color:white; }
 
 .grid { padding:1rem 4% 4rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1rem; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1rem; cursor:pointer; transition:.25s; }
@@ -40,23 +53,30 @@ header {
 .live { color:var(--live); font-weight:800; animation:pulse 1.5s infinite; }
 @keyframes pulse {0%,100%{opacity:1}50%{opacity:.5}}
 .loader { grid-column:1/-1; text-align:center; padding:2rem; color:var(--gray);}
+
+@media(min-width:768px){
+  header { flex-direction:row; align-items:center; gap:12px; }
+  .top-row,.mid-row,.bottom-row{ flex:unset; gap:8px; }
+}
 </style>
 </head>
 <body>
 
 <header>
-  <a class="back" href="index.html">⬅ Back</a>
-  <div class="logo">SPORT HUB</div>
-  <div class="search"><input id="search" placeholder="Search teams…"></div>
-  <br> <br>
-  <div class="filters">
+  <div class="top-row">
+    <a class="back" href="index.html">⬅ Back</a>
+    <div class="logo">SPORT HUB</div>
+  </div>
+
+  <div class="mid-row">
+    <input id="search" placeholder="Search teams…">
+  </div>
+
+  <div class="bottom-row">
     <button class="filter-btn" id="btnLive">Live</button>
     <button class="filter-btn" id="btnSoon">Soon</button>
-    <br> <br>
-    <div class="source-switch">
-      <a href="streams.html" class="src-btn active">Source 1</a>
-      <a href="streams2.html" class="src-btn">Source 2</a>
-    </div>
+    <a href="streams.html" class="src-btn active">Source 1</a>
+    <a href="streams2.html" class="src-btn">Source 2</a>
   </div>
 </header>
 
@@ -68,13 +88,12 @@ header {
 let matches=[], mode="all";
 const NOW=()=>Math.floor(Date.now()/1000);
 
-async function loadMatches() {
-  try {
-    const res = await fetch("https://beta.adstrim.ru/api/events");
-    const data = await res.json();
-    matches = data.data;
+async function loadMatches(){
+  try{
+    const res=await fetch("https://beta.adstrim.ru/api/events");
+    matches=(await res.json()).data;
     render();
-  } catch(e) {
+  }catch(e){
     document.getElementById("grid").innerHTML='<div class="loader">API Error</div>';
   }
 }
@@ -84,7 +103,7 @@ function isSoon(m){ return m.timestamp>NOW() && m.timestamp<=NOW()+3600; }
 
 function render(){
   const term=document.getElementById("search").value.toLowerCase();
-  let list = matches.filter(m=>`${m.home_team} ${m.away_team}`.toLowerCase().includes(term));
+  let list=matches.filter(m=>`${m.home_team} ${m.away_team}`.toLowerCase().includes(term));
 
   if(mode==="live") list=list.filter(isLive);
   if(mode==="soon") list=list.filter(isSoon);
@@ -104,17 +123,17 @@ function render(){
 }
 
 document.getElementById("search").oninput=render;
-document.getElementById("btnLive").onclick=e=>toggleMode('live', e.target);
-document.getElementById("btnSoon").onclick=e=>toggleMode('soon', e.target);
+document.getElementById("btnLive").onclick=e=>toggleMode('live',e.target);
+document.getElementById("btnSoon").onclick=e=>toggleMode('soon',e.target);
 
-function toggleMode(m, btn){
+function toggleMode(m,btn){
   document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
   if(mode===m){mode="all"; render(); return;}
   mode=m; btn.classList.add("active"); render();
 }
 
 loadMatches();
-setInterval(loadMatches, 60000);
+setInterval(loadMatches,60000);
 </script>
 </body>
 </html>

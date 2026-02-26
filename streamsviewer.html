@@ -44,7 +44,7 @@
     async function loadFootball(channelName) {
       document.getElementById("loader").style.display = "block";
       const ch = channelName || mirrorParam;
-      player.src = `https://viewembed.ru/event/${encodeURIComponent(ch)}`;
+      player.src = `https://viewembed.ru/channel/${encodeURIComponent(ch)}`;
       const res = await fetch('https://beta.adstrim.ru/api/events');
       const data = await res.json();
       const mirrorsDiv = document.getElementById("mirrors");

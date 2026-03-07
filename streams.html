@@ -50,7 +50,9 @@ input#search { flex:1; min-width:150px; padding:8px 12px; border-radius:6px; bor
 .grid { padding:1rem 4% 4rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1rem; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1rem; cursor:pointer; transition:.25s; }
 .card:hover { border-color:var(--primary); transform:translateY(-2px); }
+.card .meta { font-size:0.8rem; color:var(--gray); margin-top:4px; }
 .live { color:var(--live); font-weight:800; animation:pulse 1.5s infinite; }
+.soon-badge { color:#f59e0b; font-weight:700; }
 @keyframes pulse {0%,100%{opacity:1}50%{opacity:.5}}
 .loader { grid-column:1/-1; text-align:center; padding:2rem; color:var(--gray);}
 
@@ -91,7 +93,11 @@ const NOW=()=>Math.floor(Date.now()/1000);
 async function loadMatches(){
   try{
     const res=await fetch("https://beta.adstrim.ru/api/events");
-    matches=(await res.json()).data;
+    const all=(await res.json()).data;
+
+    // Only keep matches that haven't fully ended (within 2hrs of kickoff or still upcoming)
+    matches = all.filter(m => m.timestamp >= NOW() - 7200);
+
     render();
   }catch(e){
     document.getElementById("grid").innerHTML='<div class="loader">API Error</div>';
@@ -99,7 +105,17 @@ async function loadMatches(){
 }
 
 function isLive(m){ return NOW()>=m.timestamp-300 && NOW()<=m.timestamp+7200; }
-function isSoon(m){ return m.timestamp>NOW() && m.timestamp<=NOW()+3600; }
+function isSoon(m){ return m.timestamp>NOW()+300 && m.timestamp<=NOW()+3600; }
+function isUpcoming(m){ return m.timestamp>NOW()+3600; }
+
+function formatKickoff(ts){
+  const d=new Date(ts*1000);
+  return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + ' · ' + d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short'});
+}
+
+function minsLive(m){
+  return Math.floor((NOW()-m.timestamp)/60);
+}
 
 function render(){
   const term=document.getElementById("search").value.toLowerCase();
@@ -108,15 +124,35 @@ function render(){
   if(mode==="live") list=list.filter(isLive);
   if(mode==="soon") list=list.filter(isSoon);
 
+  // Sort: live first, then by kickoff time
+  list.sort((a,b)=>{
+    const aLive=isLive(a)?0:1;
+    const bLive=isLive(b)?0:1;
+    if(aLive!==bLive) return aLive-bLive;
+    return a.timestamp-b.timestamp;
+  });
+
   const g=document.getElementById("grid");
   g.innerHTML="";
   if(list.length===0){ g.innerHTML='<div class="loader">No matches found.</div>'; return; }
 
   list.forEach(m=>{
     const live=isLive(m);
+    const soon=isSoon(m);
     const card=document.createElement("div");
     card.className="card";
-    card.innerHTML=`<b>${m.home_team} vs ${m.away_team}</b><br>${live?'<span class="live">● LIVE</span>':''}`;
+
+    let badge="";
+    if(live){
+      const mins=minsLive(m);
+      badge=`<span class="live">● LIVE${mins>0?' '+mins+"'":" - Starting Soon"}</span>`;
+    } else if(soon){
+      badge=`<span class="soon-badge">⏱ Soon — ${formatKickoff(m.timestamp)}</span>`;
+    } else {
+      badge=`<span class="meta">🕒 ${formatKickoff(m.timestamp)}</span>`;
+    }
+
+    card.innerHTML=`<b>${m.home_team} vs ${m.away_team}</b><br>${badge}`;
     card.onclick=()=>location.href=`streamsviewer.html?title=${encodeURIComponent(m.home_team+' vs '+m.away_team)}`;
     g.appendChild(card);
   });

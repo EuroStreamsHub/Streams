@@ -6,7 +6,6 @@
 <title>SPORT HUB | Streams Source 2</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-/* SAME STYLES AS streams.html */
 :root {--primary:#0072db;--live:#e50914;--bg:#0f1014;--surface:#1a1c22;--border:#2a2d35;--text:#ffffff;--gray:#9ca3af;}
 body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding-top:140px;}
 header{position:fixed;top:0;left:0;right:0;background:rgba(15,16,20,0.95);backdrop-filter:blur(10px);padding:.6rem 4%;flex-direction:column;display:flex;gap:6px;border-bottom:1px solid var(--border);z-index:1000;}
@@ -21,7 +20,9 @@ input#search{flex:1;min-width:150px;padding:8px 12px;border-radius:6px;border:1p
 .grid{padding:1rem 4% 4rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;cursor:pointer;transition:.25s;}
 .card:hover{border-color:var(--primary);transform:translateY(-2px);}
+.card .meta{font-size:0.8rem;color:var(--gray);margin-top:4px;}
 .live{color:var(--live);font-weight:800;animation:pulse 1.5s infinite;}
+.soon-badge{color:#f59e0b;font-weight:700;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .loader{grid-column:1/-1;text-align:center;padding:2rem;color:var(--gray);}
 @media(min-width:768px){header{flex-direction:row;align-items:center;gap:12px;}.top-row,.mid-row,.bottom-row{flex:unset;gap:8px;}}
@@ -34,16 +35,14 @@ input#search{flex:1;min-width:150px;padding:8px 12px;border-radius:6px;border:1p
     <a class="back" href="index.html">⬅ Back</a>
     <div class="logo">SPORT HUB</div>
   </div>
-
   <div class="mid-row">
     <input id="search" placeholder="Search teams…">
   </div>
-
   <div class="bottom-row">
     <button class="filter-btn" id="btnLive">Live</button>
     <button class="filter-btn" id="btnSoon">Soon</button>
-    <a href="streams.html" class="src-btn" id="src1">Source 1</a>
-    <a href="streams2.html" class="src-btn active" id="src2">Source 2</a>
+    <a href="streams.html" class="src-btn">Source 1</a>
+    <a href="streams2.html" class="src-btn active">Source 2</a>
   </div>
 </header>
 
@@ -53,19 +52,29 @@ input#search{flex:1;min-width:150px;padding:8px 12px;border-radius:6px;border:1p
 
 <script>
 const API="https://streamed.pk/api";
-let matches=[],mode="all";
+let matches=[], mode="all";
 const NOW=()=>Date.now();
+const LIVE_WINDOW = 90 * 60e3; // 90 minutes in ms
 
 async function loadMatches(){
   try{
     const res=await fetch(`${API}/matches/all`);
-    matches=await res.json();
+    const all=await res.json();
+    // Only keep matches that haven't ended (within 90 mins of kickoff or still upcoming)
+    matches = all.filter(m => m.date >= NOW() - LIVE_WINDOW);
     render();
-  }catch(e){document.getElementById("grid").innerHTML='<div class="loader">API Error</div>';}
+  }catch(e){
+    document.getElementById("grid").innerHTML='<div class="loader">API Error</div>';
+  }
 }
 
-function isLive(m){ return NOW()>=m.date-5*60e3 && NOW()<=m.date+2*3600e3; }
-function isSoon(m){ return m.date>NOW() && m.date<=NOW()+3600e3; }
+function isLive(m){ return NOW()>=m.date-5*60e3 && NOW()<=m.date+LIVE_WINDOW; }
+function isSoon(m){ return m.date>NOW()+5*60e3 && m.date<=NOW()+3600e3; }
+
+function formatKickoff(ts){
+  const d=new Date(ts);
+  return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' · '+d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short'});
+}
 
 function render(){
   const term=document.getElementById("search").value.toLowerCase();
@@ -73,15 +82,34 @@ function render(){
   if(mode==="live") list=list.filter(isLive);
   if(mode==="soon") list=list.filter(isSoon);
 
+  // Sort: live first, then by kickoff time
+  list.sort((a,b)=>{
+    const aLive=isLive(a)?0:1;
+    const bLive=isLive(b)?0:1;
+    if(aLive!==bLive) return aLive-bLive;
+    return a.date-b.date;
+  });
+
   const g=document.getElementById("grid");
   g.innerHTML="";
   if(list.length===0){ g.innerHTML='<div class="loader">No matches found.</div>'; return; }
 
   list.forEach(m=>{
     const live=isLive(m);
+    const soon=isSoon(m);
     const card=document.createElement("div");
     card.className="card";
-    card.innerHTML=`<b>${m.title}</b><br>${live?'<span class="live">● LIVE</span>':''}`;
+
+    let badge="";
+    if(live){
+      badge=`<span class="live">● LIVE</span>`;
+    } else if(soon){
+      badge=`<span class="soon-badge">⏱ Soon — ${formatKickoff(m.date)}</span>`;
+    } else {
+      badge=`<span class="meta">🕒 ${formatKickoff(m.date)}</span>`;
+    }
+
+    card.innerHTML=`<b>${m.title}</b><br>${badge}`;
     card.onclick=()=>location.href=`streamviewer2.html?id=${m.id}&title=${encodeURIComponent(m.title)}&sources=${encodeURIComponent(JSON.stringify(m.sources))}`;
     g.appendChild(card);
   });

@@ -144,8 +144,7 @@ function render(){
 
     let badge="";
     if(live){
-      const mins=minsLive(m);
-      badge=`<span class="live">● LIVE${mins>0?' '+mins+"'":" - Starting Soon"}</span>`;
+      badge=`<span class="live">● LIVE</span>`;
     } else if(soon){
       badge=`<span class="soon-badge">⏱ Soon — ${formatKickoff(m.timestamp)}</span>`;
     } else {

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Piece Viewer</title>
+
+<link rel="preconnect" href="https://vidfast.pro">
+
+<style>
+  body {
+    margin: 0;
+    background: #050505;
+    color: white;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 { color: #e50914; margin: 20px 0; }
+
+  .player-wrapper {
+    width: 320px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: black;
+    position: relative;
+  }
+
+  iframe {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border: none;
+    display: none;
+  }
+
+  .loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    font-size: 14px;
+  }
+
+  select, button {
+    margin: 10px;
+    padding: 10px;
+    background: #000;
+    color: #fff;
+    border: 1px solid #e50914;
+  }
+
+  .episodes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 8px;
+    max-width: 400px;
+  }
+
+  .episodes button.active {
+    background: #e50914;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>One Piece</h1>
+
+<div class="player-wrapper">
+  <div class="loader" id="loader">Loading stream...</div>
+  <iframe id="player" allowfullscreen></iframe>
+</div>
+
+<select id="season"></select>
+<div class="episodes" id="episodes"></div>
+
+<script>
+const TMDB_KEY = "12955008668c12c07496b04132f9ce44";
+const TMDB_ID = 37854;
+
+const player = document.getElementById("player");
+const loader = document.getElementById("loader");
+
+async function init() {
+  const res = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_ID}?api_key=${TMDB_KEY}`);
+  const data = await res.json();
+
+  const seasonSelect = document.getElementById("season");
+
+  data.seasons.forEach(s => {
+    if (s.season_number > 0) {
+      const opt = document.createElement("option");
+      opt.value = s.season_number;
+      opt.textContent = `Season ${s.season_number}`;
+      seasonSelect.appendChild(opt);
+    }
+  });
+
+  seasonSelect.onchange = loadEpisodes;
+  loadEpisodes();
+}
+
+async function loadEpisodes() {
+  const season = document.getElementById("season").value;
+
+  const res = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_ID}/season/${season}?api_key=${TMDB_KEY}`);
+  const data = await res.json();
+
+  const container = document.getElementById("episodes");
+  container.innerHTML = "";
+
+  data.episodes.forEach(ep => {
+    const btn = document.createElement("button");
+    btn.textContent = ep.episode_number;
+
+    btn.onclick = () => {
+      document.querySelectorAll(".episodes button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      loadStream(season, ep.episode_number);
+    };
+
+    container.appendChild(btn);
+  });
+
+  container.firstChild.click();
+}
+
+function loadStream(season, episode) {
+  loader.style.display = "flex";
+  player.style.display = "none";
+
+  // Slight delay helps "feel" like preload
+  const url = `https://vidfast.pro/tv/${TMDB_ID}/${season}/${episode}`;
+
+  player.src = "";
+
+  setTimeout(() => {
+    player.src = url;
+  }, 300);
+}
+
+// Detect when iframe likely ready (best effort)
+player.onload = () => {
+  loader.style.display = "none";
+  player.style.display = "block";
+};
+
+init();
+</script>
+
+</body>
+</html>

@@ -313,17 +313,26 @@ function renderGrid(list) {
 
   if (!list || list.length === 0) {
     grid.innerHTML = '<div class="state-msg">No results found.</div>';
-    
-    const title = item.title || item.name;
-    const year  = (item.release_date || item.first_air_date || '').split('-')[0];
+    document.getElementById('resultCount').textContent = '';
+    return;
+  }
+
+  document.getElementById('resultCount').textContent = `${list.length} titles`;
+
+  list.forEach((item, i) => {
+    const title  = item.title || item.name;
+    const year   = (item.release_date || item.first_air_date || '').split('-')[0];
     const rating = item.vote_average ? item.vote_average.toFixed(1) : null;
+    const poster = item.poster_path
+      ? `${IMG_BASE}${item.poster_path}`
+      : 'https://via.placeholder.com/500x750/111111/555555?text=No+Image';
 
     const card = document.createElement('div');
     card.className = 'card';
     card.style.animationDelay = `${Math.min(i * 0.03, 0.6)}s`;
 
     card.innerHTML = `
-      <div class="poster" style="background-image:url(${IMG_BASE}${item.poster_path})">
+      <div class="poster" style="background-image:url(${poster})">
         ${rating ? `<div class="rating-badge">★ ${rating}</div>` : ''}
         <div class="play-icon">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="white" opacity="0.9">

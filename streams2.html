@@ -3,130 +3,381 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPORT HUB | Streams Source 2</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<title>SPORT HUB | Football Streams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-:root {--primary:#0072db;--live:#e50914;--bg:#0f1014;--surface:#1a1c22;--border:#2a2d35;--text:#ffffff;--gray:#9ca3af;}
-body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding-top:140px;}
-header{position:fixed;top:0;left:0;right:0;background:rgba(15,16,20,0.95);backdrop-filter:blur(10px);padding:.6rem 4%;flex-direction:column;display:flex;gap:6px;border-bottom:1px solid var(--border);z-index:1000;}
-.top-row,.mid-row,.bottom-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.top-row{justify-content:flex-start;}.mid-row{justify-content:flex-start;}.bottom-row{justify-content:flex-start;}
-.logo{font-weight:900;color:var(--primary);}
-.back{color:white;text-decoration:none;background:#252830;padding:6px 12px;border-radius:6px;font-weight:700;}
-input#search{flex:1;min-width:150px;padding:8px 12px;border-radius:6px;border:1px solid #3f434e;background:#252830;color:white;outline:none;}
-.filter-btn,.src-btn{padding:6px 14px;border-radius:999px;font-weight:700;border:1px solid #3f434e;cursor:pointer;background:var(--surface);color:#9ca3af;}
-.filter-btn.active{background:var(--live);border-color:var(--live);color:white;}
-.src-btn.active{background:var(--primary);border-color:var(--primary);color:white;}
-.grid{padding:1rem 4% 4rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;cursor:pointer;transition:.25s;}
-.card:hover{border-color:var(--primary);transform:translateY(-2px);}
-.card .meta{font-size:0.8rem;color:var(--gray);margin-top:4px;}
-.live{color:var(--live);font-weight:800;animation:pulse 1.5s infinite;}
-.soon-badge{color:#f59e0b;font-weight:700;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-.loader{grid-column:1/-1;text-align:center;padding:2rem;color:var(--gray);}
-@media(min-width:768px){header{flex-direction:row;align-items:center;gap:12px;}.top-row,.mid-row,.bottom-row{flex:unset;gap:8px;}}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #0072db;
+    --red: #e50914;
+    --amber: #f59e0b;
+    --green: #22c55e;
+    --bg: #080808;
+    --surface: #111;
+    --surface2: #161616;
+    --border: rgba(255,255,255,0.07);
+    --text: #fff;
+    --muted: #555;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 64px;
+    background: rgba(8,8,8,0.96);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+    display: flex; align-items: center;
+    padding: 0 4%;
+    gap: 16px;
+  }
+
+  .back {
+    color: var(--text); text-decoration: none;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    padding: 7px 14px; border-radius: 4px;
+    font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .back:hover { background: rgba(255,255,255,0.12); }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem; letter-spacing: 3px;
+    color: #fff; flex-shrink: 0;
+  }
+  .logo span { color: var(--blue); }
+
+  .search-wrap {
+    flex: 1; max-width: 380px; position: relative;
+  }
+  .search-wrap svg {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
+  }
+  input#search {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    padding: 9px 12px 9px 38px;
+    border-radius: 4px;
+    color: #fff; outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  input#search:focus {
+    border-color: var(--blue);
+    background: rgba(0,114,219,0.08);
+  }
+  input#search::placeholder { color: var(--muted); }
+
+  .filters { display: flex; gap: 8px; margin-left: auto; }
+  .filter-btn {
+    padding: 7px 16px; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: transparent; color: var(--muted);
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .filter-btn:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
+  .filter-btn.live-active {
+    background: var(--red); border-color: var(--red); color: #fff;
+  }
+  .filter-btn.soon-active {
+    background: var(--amber); border-color: var(--amber); color: #000;
+  }
+
+  /* ── MAIN ── */
+  main { padding-top: 64px; }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex; align-items: center; gap: 24px;
+    padding: 1rem 4%;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .stats-bar strong { color: #fff; font-size: 0.9rem; }
+  #liveCount {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--green);
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 1.5s infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+    50% { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    padding-bottom: 4rem;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    padding: 1.4rem 1.6rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeIn 0.4s forwards;
+  }
+  .card:hover { background: var(--surface2); }
+
+  /* left accent bar */
+  .card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .card.is-live::before { background: var(--red); }
+  .card.is-soon::before { background: var(--amber); }
+  .card:not(.is-live):not(.is-soon)::before { background: var(--muted); opacity: 0.3; }
+
+  .card-teams {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem; letter-spacing: 1px;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 0.7rem;
+  }
+  .card-vs {
+    font-size: 0.9rem; color: var(--muted);
+    margin: 0 6px;
+  }
+
+  .card-meta {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.72rem;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 2px;
+    font-weight: 700; font-size: 0.65rem;
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  .badge-live {
+    background: rgba(229,9,20,0.15);
+    color: var(--red);
+    border: 1px solid rgba(229,9,20,0.3);
+  }
+  .badge-live-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--red);
+    animation: pulse-red 1.2s infinite;
+  }
+  @keyframes pulse-red {
+    0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+  .badge-soon {
+    background: rgba(245,158,11,0.12);
+    color: var(--amber);
+    border: 1px solid rgba(245,158,11,0.25);
+  }
+  .badge-upcoming {
+    background: rgba(255,255,255,0.04);
+    color: var(--muted);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .card-time { color: var(--muted); font-size: 0.72rem; }
+
+  /* ── LOADER / EMPTY ── */
+  .state-msg {
+    grid-column: 1/-1;
+    padding: 5rem 2rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem; letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid rgba(255,255,255,0.06);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="top-row">
-    <a class="back" href="index.html">⬅ Back</a>
-    <div class="logo">SPORT HUB</div>
+  <a class="back" href="index.html">← Back</a>
+  <div class="logo">SPORT<span>HUB</span></div>
+
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input id="search" placeholder="Search teams or competitions…">
   </div>
-  <div class="mid-row">
-    <input id="search" placeholder="Search teams…">
-  </div>
-  <div class="bottom-row">
-    <button class="filter-btn" id="btnLive">Live</button>
-    <button class="filter-btn" id="btnSoon">Soon</button>
-    <a href="streams.html" class="src-btn">Source 1</a>
-    <a href="streams2.html" class="src-btn active">Source 2</a>
+
+  <div class="filters">
+    <button class="filter-btn" id="btnLive">● Live</button>
+    <button class="filter-btn" id="btnSoon">⏱ Soon</button>
   </div>
 </header>
 
-<div class="grid" id="grid">
-  <div class="loader">Loading matches…</div>
-</div>
+<main>
+  <div class="stats-bar">
+    <div id="liveCount"><span class="live-dot"></span><strong id="liveNum">0</strong>&nbsp;live now</div>
+    <div><strong id="totalNum">0</strong>&nbsp;matches</div>
+    <div id="lastUpdate" style="margin-left:auto;">Loading…</div>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="state-msg"><div class="spinner"></div>Loading matches…</div>
+  </div>
+</main>
 
 <script>
-const API="https://streamed.pk/api";
-let matches=[], mode="all";
-const NOW=()=>Date.now();
-const LIVE_WINDOW = 90 * 60e3; // 90 minutes in ms
+const API = "https://streamed.pk/api";
+let matches = [], mode = "all";
+const NOW = () => Date.now();
+const LIVE_WINDOW = 90 * 60e3;
 
-async function loadMatches(){
-  try{
-    const res=await fetch(`${API}/matches/all`);
-    const all=await res.json();
-    // Only keep matches that haven't ended (within 90 mins of kickoff or still upcoming)
+async function loadMatches() {
+  try {
+    const res = await fetch(`${API}/matches/all`);
+    const all = await res.json();
     matches = all.filter(m => m.date >= NOW() - LIVE_WINDOW);
+    document.getElementById('lastUpdate').textContent =
+      'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     render();
-  }catch(e){
-    document.getElementById("grid").innerHTML='<div class="loader">API Error</div>';
+  } catch(e) {
+    document.getElementById('grid').innerHTML =
+      '<div class="state-msg">Could not load matches. Retrying…</div>';
   }
 }
 
-function isLive(m){ return NOW()>=m.date-5*60e3 && NOW()<=m.date+LIVE_WINDOW; }
-function isSoon(m){ return m.date>NOW()+5*60e3 && m.date<=NOW()+3600e3; }
+const isLive     = m => NOW() >= m.date - 5*60e3 && NOW() <= m.date + LIVE_WINDOW;
+const isSoon     = m => m.date > NOW() + 5*60e3  && m.date <= NOW() + 3600e3;
 
-function formatKickoff(ts){
-  const d=new Date(ts);
-  return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' · '+d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short'});
+function formatKickoff(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) +
+    ' · ' + d.toLocaleDateString([], {weekday:'short', day:'numeric', month:'short'});
 }
 
-function render(){
-  const term=document.getElementById("search").value.toLowerCase();
-  let list=matches.filter(m=>m.title.toLowerCase().includes(term));
-  if(mode==="live") list=list.filter(isLive);
-  if(mode==="soon") list=list.filter(isSoon);
+function render() {
+  const term = document.getElementById("search").value.toLowerCase();
+  let list = matches.filter(m => m.title.toLowerCase().includes(term));
+  if (mode === "live") list = list.filter(isLive);
+  if (mode === "soon") list = list.filter(isSoon);
 
-  // Sort: live first, then by kickoff time
-  list.sort((a,b)=>{
-    const aLive=isLive(a)?0:1;
-    const bLive=isLive(b)?0:1;
-    if(aLive!==bLive) return aLive-bLive;
-    return a.date-b.date;
+  list.sort((a, b) => {
+    const aL = isLive(a) ? 0 : 1, bL = isLive(b) ? 0 : 1;
+    if (aL !== bL) return aL - bL;
+    return a.date - b.date;
   });
 
-  const g=document.getElementById("grid");
-  g.innerHTML="";
-  if(list.length===0){ g.innerHTML='<div class="loader">No matches found.</div>'; return; }
+  const liveCount = matches.filter(isLive).length;
+  document.getElementById('liveNum').textContent = liveCount;
+  document.getElementById('totalNum').textContent = list.length;
 
-  list.forEach(m=>{
-    const live=isLive(m);
-    const soon=isSoon(m);
-    const card=document.createElement("div");
-    card.className="card";
+  const g = document.getElementById("grid");
+  g.innerHTML = "";
 
-    let badge="";
-    if(live){
-      badge=`<span class="live">● LIVE</span>`;
-    } else if(soon){
-      badge=`<span class="soon-badge">⏱ Soon — ${formatKickoff(m.date)}</span>`;
+  if (list.length === 0) {
+    g.innerHTML = '<div class="state-msg">No matches found.</div>';
+    return;
+  }
+
+  list.forEach((m, i) => {
+    const live = isLive(m), soon = isSoon(m);
+    const card = document.createElement("div");
+    card.className = `card ${live ? 'is-live' : soon ? 'is-soon' : ''}`;
+    card.style.animationDelay = `${Math.min(i * 0.04, 0.5)}s`;
+
+    // Split title into teams if possible
+    const parts = m.title.split(' vs ');
+    const teamsHTML = parts.length === 2
+      ? `${parts[0]}<span class="card-vs">vs</span>${parts[1]}`
+      : m.title;
+
+    let badge = '';
+    if (live) {
+      badge = `<span class="badge badge-live"><span class="badge-live-dot"></span>Live</span>`;
+    } else if (soon) {
+      badge = `<span class="badge badge-soon">Soon</span>`;
     } else {
-      badge=`<span class="meta">🕒 ${formatKickoff(m.date)}</span>`;
+      badge = `<span class="badge badge-upcoming">Upcoming</span>`;
     }
 
-    card.innerHTML=`<b>${m.title}</b><br>${badge}`;
-    card.onclick=()=>location.href=`streamviewer2.html?id=${m.id}&title=${encodeURIComponent(m.title)}&sources=${encodeURIComponent(JSON.stringify(m.sources))}`;
+    card.innerHTML = `
+      <div class="card-teams">${teamsHTML}</div>
+      <div class="card-meta">
+        ${badge}
+        <span class="card-time">${formatKickoff(m.date)}</span>
+      </div>
+    `;
+
+    card.onclick = () => location.href =
+      `streamviewer2.html?id=${m.id}&title=${encodeURIComponent(m.title)}&sources=${encodeURIComponent(JSON.stringify(m.sources))}`;
     g.appendChild(card);
   });
 }
 
-document.getElementById("search").oninput=render;
-document.getElementById("btnLive").onclick=e=>toggleMode('live',e.target);
-document.getElementById("btnSoon").onclick=e=>toggleMode('soon',e.target);
+document.getElementById("search").oninput = render;
 
-function toggleMode(m,btn){
-  document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
-  if(mode===m){mode="all"; render(); return;}
-  mode=m; btn.classList.add("active"); render();
-}
+document.getElementById("btnLive").onclick = function() {
+  document.querySelectorAll(".filter-btn").forEach(b => b.className = 'filter-btn');
+  if (mode === 'live') { mode = 'all'; render(); return; }
+  mode = 'live';
+  this.classList.add('live-active');
+  render();
+};
+
+document.getElementById("btnSoon").onclick = function() {
+  document.querySelectorAll(".filter-btn").forEach(b => b.className = 'filter-btn');
+  if (mode === 'soon') { mode = 'all'; render(); return; }
+  mode = 'soon';
+  this.classList.add('soon-active');
+  render();
+};
 
 loadMatches();
-setInterval(loadMatches,60000);
+setInterval(loadMatches, 60000);
 </script>
 </body>
 </html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 | Live Streams</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root {
+  --primary:#0072db;
+  --live:#e50914;
+  --bg:#0f1014;
+  --surface:#1a1c22;
+  --border:#2a2d35;
+  --text:#ffffff;
+  --gray:#9ca3af;
+}
+
+body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); padding-top:120px; }
+
+header {
+  position:fixed;
+  top:0; left:0; right:0;
+  background:rgba(15,16,20,0.95);
+  backdrop-filter:blur(10px);
+  padding:0.6rem 4%;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  border-bottom:1px solid var(--border);
+  z-index:1000;
+}
+
+.top-row, .bottom-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.logo { font-weight:900; color:var(--primary); font-size:1.1rem; }
+.back { color:white; text-decoration:none; background:#252830; padding:6px 12px; border-radius:6px; font-weight:700; }
+input#search { flex:1; min-width:150px; padding:8px 12px; border-radius:6px; border:1px solid #3f434e; background:#252830; color:white; outline:none; }
+
+.filter-btn {
+  padding:6px 14px; border-radius:999px; font-weight:700; border:1px solid #3f434e;
+  cursor:pointer; background:var(--surface); color:#9ca3af;
+}
+.filter-btn.active { background:var(--live); border-color:var(--live); color:white; }
+
+.grid { padding:1rem 4% 4rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1rem; }
+
+.card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:1rem;
+  cursor:pointer;
+  transition:.25s;
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+.card:hover { border-color:var(--primary); transform:translateY(-2px); }
+.card img { width:60px; height:40px; object-fit:cover; border-radius:6px; flex-shrink:0; }
+.card-info { flex:1; min-width:0; }
+.card-title { font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-meta { font-size:0.8rem; color:var(--gray); margin-top:3px; }
+.live-badge { color:var(--live); font-weight:800; animation:pulse 1.5s infinite; }
+.soon-badge { color:#f59e0b; font-weight:700; }
+.stream-count { font-size:0.75rem; color:var(--gray); margin-top:4px; }
+
+@keyframes pulse {0%,100%{opacity:1}50%{opacity:.5}}
+.loader { grid-column:1/-1; text-align:center; padding:2rem; color:var(--gray); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top-row">
+    <a class="back" href="javascript:history.back()">⬅ Back</a>
+    <div class="logo">⚽ WORLD CUP 2026</div>
+    <input id="search" placeholder="Search matches…">
+  </div>
+  <div class="bottom-row">
+    <button class="filter-btn" id="btnLive">● Live</button>
+    <button class="filter-btn" id="btnSoon">⏱ Soon</button>
+  </div>
+</header>
+
+<div class="grid" id="grid">
+  <div class="loader">Loading matches…</div>
+</div>
+
+<script>
+let events = [], mode = "all";
+
+const API = "https://api.nuevasantino.xyz/api/live-upcoming";
+
+function parseTime(t) {
+  // t is like "2026-06-15T15:00"
+  return new Date(t).getTime();
+}
+
+const NOW = () => Date.now();
+
+function isLive(e) {
+  const t = parseTime(e.time);
+  return NOW() >= t - 5 * 60 * 1000 && NOW() <= t + 2 * 60 * 60 * 1000;
+}
+function isSoon(e) {
+  const t = parseTime(e.time);
+  return NOW() < t - 5 * 60 * 1000 && NOW() >= t - 60 * 60 * 1000;
+}
+function formatTime(t) {
+  const d = new Date(t);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    + ' · ' + d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+async function load() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    events = (data.events || []).filter(e => {
+      const t = parseTime(e.time);
+      return t >= NOW() - 2 * 60 * 60 * 1000;
+    });
+    render();
+  } catch(err) {
+    document.getElementById("grid").innerHTML = '<div class="loader">Failed to load. Try again.</div>';
+  }
+}
+
+function render() {
+  const term = document.getElementById("search").value.toLowerCase();
+  let list = events.filter(e => e.name.toLowerCase().includes(term));
+
+  if (mode === "live") list = list.filter(isLive);
+  if (mode === "soon") list = list.filter(isSoon);
+
+  list.sort((a, b) => {
+    const aL = isLive(a) ? 0 : 1, bL = isLive(b) ? 0 : 1;
+    if (aL !== bL) return aL - bL;
+    return parseTime(a.time) - parseTime(b.time);
+  });
+
+  const g = document.getElementById("grid");
+  g.innerHTML = "";
+
+  if (!list.length) {
+    g.innerHTML = '<div class="loader">No matches found.</div>';
+    return;
+  }
+
+  list.forEach(e => {
+    const live = isLive(e), soon = isSoon(e);
+    const t = parseTime(e.time);
+
+    let badge = "";
+    if (live) badge = `<span class="live-badge">● LIVE</span>`;
+    else if (soon) badge = `<span class="soon-badge">⏱ Soon — ${formatTime(t)}</span>`;
+    else badge = `<span class="card-meta">🕒 ${formatTime(t)}</span>`;
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${e.logo}" onerror="this.style.display='none'">
+      <div class="card-info">
+        <div class="card-title">${e.name}</div>
+        <div class="card-meta">${badge}</div>
+        <div class="stream-count">${e.streams.length} stream${e.streams.length !== 1 ? 's' : ''} available</div>
+      </div>
+    `;
+    card.onclick = () => {
+      const first = e.streams[0]?.url || "";
+      location.href = `WorldCupViewer.html?slug=${encodeURIComponent(e.url)}&title=${encodeURIComponent(e.name)}`;
+    };
+    g.appendChild(card);
+  });
+}
+
+document.getElementById("search").oninput = render;
+
+function toggleMode(m, btn) {
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  if (mode === m) { mode = "all"; render(); return; }
+  mode = m; btn.classList.add("active"); render();
+}
+
+document.getElementById("btnLive").onclick = e => toggleMode("live", e.target);
+document.getElementById("btnSoon").onclick = e => toggleMode("soon", e.target);
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

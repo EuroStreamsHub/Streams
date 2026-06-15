@@ -91,9 +91,9 @@ let events = [], mode = "all";
 
 const API = "https://api.nuevasantino.xyz/api/live-upcoming";
 
+// API times are ET (UTC-4) in summer
 function parseTime(t) {
-  // t is like "2026-06-15T15:00"
-  return new Date(t).getTime();
+  return new Date(t + "-04:00").getTime();
 }
 
 const NOW = () => Date.now();
@@ -106,10 +106,10 @@ function isSoon(e) {
   const t = parseTime(e.time);
   return NOW() < t - 5 * 60 * 1000 && NOW() >= t - 60 * 60 * 1000;
 }
-function formatTime(t) {
-  const d = new Date(t);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    + ' · ' + d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+function formatTime(ms) {
+  const d = new Date(ms);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
+    + ' · ' + d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/London' });
 }
 
 async function load() {
@@ -117,8 +117,7 @@ async function load() {
     const res = await fetch(API);
     const data = await res.json();
     events = (data.events || []).filter(e => {
-      const t = parseTime(e.time);
-      return t >= NOW() - 2 * 60 * 60 * 1000;
+      return parseTime(e.time) >= NOW() - 2 * 60 * 60 * 1000;
     });
     render();
   } catch(err) {
@@ -167,7 +166,6 @@ function render() {
       </div>
     `;
     card.onclick = () => {
-      const first = e.streams[0]?.url || "";
       location.href = `WorldCupViewer.html?slug=${encodeURIComponent(e.url)}&title=${encodeURIComponent(e.name)}`;
     };
     g.appendChild(card);

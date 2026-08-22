@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPORT HUB | Football Streams</title>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -38,20 +37,19 @@
   }
 
   /* ── HEADER ── */
-
   header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    min-height: 64px;
     background: rgba(8,8,8,0.96);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
     z-index: 1000;
     display: flex;
     align-items: center;
-    padding: 0 4%;
+    padding: 10px 4%;
     gap: 16px;
   }
 
@@ -124,11 +122,11 @@
   }
 
   /* ── FILTERS ── */
-
   .filters {
     display: flex;
     gap: 8px;
     margin-left: auto;
+    flex-shrink: 0;
   }
 
   .filter-btn {
@@ -164,13 +162,11 @@
   }
 
   /* ── MAIN ── */
-
   main {
     padding-top: 64px;
   }
 
   /* ── STATS BAR ── */
-
   .stats-bar {
     display: flex;
     align-items: center;
@@ -214,7 +210,6 @@
   }
 
   /* ── GRID ── */
-
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -224,7 +219,6 @@
   }
 
   /* ── CARD ── */
-
   .card {
     background: var(--surface);
     padding: 1.4rem 1.6rem;
@@ -341,7 +335,6 @@
   }
 
   /* ── LOADER / EMPTY ── */
-
   .state-msg {
     grid-column: 1/-1;
     padding: 5rem 2rem;
@@ -376,27 +369,52 @@
   }
 
   /* ── MOBILE ── */
-
   @media (max-width: 700px) {
+
     header {
+      min-height: 110px;
       height: auto;
-      min-height: 64px;
       flex-wrap: wrap;
       padding: 10px 4%;
+      gap: 10px;
     }
 
-    .search-wrap {
-      order: 3;
-      flex-basis: 100%;
-      max-width: none;
+    /* FIRST ROW:
+       Back + SPORT HUB + Live + Soon
+    */
+
+    .back {
+      padding: 7px 10px;
+      font-size: 0.7rem;
+    }
+
+    .logo {
+      font-size: 1.3rem;
     }
 
     .filters {
       margin-left: auto;
+      gap: 5px;
+    }
+
+    .filter-btn {
+      padding: 7px 10px;
+      font-size: 0.68rem;
+    }
+
+    /* SECOND ROW:
+       Search only
+    */
+
+    .search-wrap {
+      order: 10;
+      flex-basis: 100%;
+      width: 100%;
+      max-width: none;
     }
 
     main {
-      padding-top: 116px;
+      padding-top: 110px;
     }
 
     .stats-bar {
@@ -408,6 +426,7 @@
       grid-template-columns: 1fr;
     }
   }
+
 </style>
 </head>
 
@@ -415,13 +434,16 @@
 
 <header>
 
-  <a class="back" href="index.html">← Back</a>
+  <a class="back" href="index.html">
+    ← Back
+  </a>
 
   <div class="logo">
     SPORT<span>HUB</span>
   </div>
 
   <div class="search-wrap">
+
     <svg
       width="14"
       height="14"
@@ -429,16 +451,23 @@
       fill="none"
       stroke="currentColor"
       stroke-width="2.5">
+
       <circle cx="11" cy="11" r="8"/>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+
+      <line
+        x1="21"
+        y1="21"
+        x2="16.65"
+        y2="16.65"/>
+
     </svg>
 
     <input
       id="search"
       placeholder="Search teams or competitions…">
+
   </div>
 
-  <!-- ONLY LIVE AND SOON BUTTONS -->
   <div class="filters">
 
     <button
@@ -457,39 +486,56 @@
 
 </header>
 
+
 <main>
 
   <div class="stats-bar">
 
     <div id="liveCount">
+
       <span class="live-dot"></span>
-      <strong id="liveNum">0</strong>&nbsp;live now
+
+      <strong id="liveNum">0</strong>
+
+      &nbsp;live now
+
     </div>
 
     <div>
-      <strong id="totalNum">0</strong>&nbsp;matches
+
+      <strong id="totalNum">0</strong>
+
+      &nbsp;matches
+
     </div>
 
     <div
       id="lastUpdate"
       style="margin-left:auto;">
+
       Loading…
+
     </div>
 
   </div>
+
 
   <div
     class="grid"
     id="grid">
 
     <div class="state-msg">
+
       <div class="spinner"></div>
+
       Loading matches…
+
     </div>
 
   </div>
 
 </main>
+
 
 <script>
 
@@ -503,92 +549,105 @@ const NOW = () => Date.now();
 const LIVE_WINDOW = 90 * 60e3;
 
 
-/* ─────────────────────────────
-   LOAD MATCHES
-───────────────────────────── */
+/* ── LOAD MATCHES ── */
 
 async function loadMatches() {
 
   try {
 
-    const res = await fetch(`${API}/matches/all`);
+    const res =
+      await fetch(`${API}/matches/all`);
 
-    const all = await res.json();
+    const all =
+      await res.json();
 
-    matches = all.filter(
-      m => m.date >= NOW() - LIVE_WINDOW
-    );
+    matches =
+      all.filter(
+        m => m.date >= NOW() - LIVE_WINDOW
+      );
 
     document.getElementById('lastUpdate').textContent =
       'Updated ' +
-      new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      new Date().toLocaleTimeString(
+        [],
+        {
+          hour: '2-digit',
+          minute: '2-digit'
+        }
+      );
 
     render();
 
-  } catch (e) {
+  } catch(e) {
 
     document.getElementById('grid').innerHTML =
-      '<div class="state-msg">Could not load matches. Retrying…</div>';
+      '<div class="state-msg">' +
+      'Could not load matches. Retrying…' +
+      '</div>';
 
   }
 
 }
 
 
-/* ─────────────────────────────
-   MATCH STATUS
-───────────────────────────── */
+/* ── STATUS ── */
 
-const isLive = m =>
-  NOW() >= m.date - 5 * 60e3 &&
-  NOW() <= m.date + LIVE_WINDOW;
+const isLive =
+  m =>
+    NOW() >= m.date - 5 * 60e3 &&
+    NOW() <= m.date + LIVE_WINDOW;
 
-const isSoon = m =>
-  m.date > NOW() + 5 * 60e3 &&
-  m.date <= NOW() + 3600e3;
+const isSoon =
+  m =>
+    m.date > NOW() + 5 * 60e3 &&
+    m.date <= NOW() + 3600e3;
 
 
-/* ─────────────────────────────
-   DATE FORMAT
-───────────────────────────── */
+/* ── KICKOFF FORMAT ── */
 
 function formatKickoff(ts) {
 
   const d = new Date(ts);
 
   return (
-    d.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    }) +
+    d.toLocaleTimeString(
+      [],
+      {
+        hour: '2-digit',
+        minute: '2-digit'
+      }
+    ) +
     ' · ' +
-    d.toLocaleDateString([], {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
-    })
+    d.toLocaleDateString(
+      [],
+      {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+      }
+    )
   );
 
 }
 
 
-/* ─────────────────────────────
-   RENDER MATCHES
-───────────────────────────── */
+/* ── RENDER ── */
 
 function render() {
 
   const term =
-    document.getElementById("search")
+    document
+      .getElementById("search")
       .value
       .toLowerCase();
 
-  let list = matches.filter(m =>
-    m.title.toLowerCase().includes(term)
-  );
+  let list =
+    matches.filter(
+      m =>
+        m.title
+          .toLowerCase()
+          .includes(term)
+    );
 
   if (mode === "live") {
     list = list.filter(isLive);
@@ -615,7 +674,7 @@ function render() {
   });
 
 
-  /* Statistics */
+  /* Update statistics */
 
   const liveCount =
     matches.filter(isLive).length;
@@ -638,7 +697,9 @@ function render() {
   if (list.length === 0) {
 
     g.innerHTML =
-      '<div class="state-msg">No matches found.</div>';
+      '<div class="state-msg">' +
+      'No matches found.' +
+      '</div>';
 
     return;
 
@@ -668,18 +729,14 @@ function render() {
       `${Math.min(i * 0.04, 0.5)}s`;
 
 
-    /* Split teams */
+    /* Split title into teams */
 
     const parts =
       m.title.split(' vs ');
 
     const teamsHTML =
       parts.length === 2
-
-        ? `${parts[0]}
-           <span class="card-vs">vs</span>
-           ${parts[1]}`
-
+        ? `${parts[0]}<span class="card-vs">vs</span>${parts[1]}`
         : m.title;
 
 
@@ -715,44 +772,31 @@ function render() {
     /* Card HTML */
 
     card.innerHTML = `
-
       <div class="card-teams">
         ${teamsHTML}
       </div>
 
       <div class="card-meta">
-
         ${badge}
 
         <span class="card-time">
           ${formatKickoff(m.date)}
         </span>
-
       </div>
-
     `;
 
 
     /*
-      Keep sources here because
-      streamviewer2.html still needs
-      them to load the stream.
+      Keep the sources here because
+      streamviewer2.html needs them.
 
-      They are NOT displayed as a
-      Sources button on this page.
+      This does NOT create a Sources
+      button on this page.
     */
 
-    card.onclick = () => {
-
+    card.onclick = () =>
       location.href =
-        `streamviewer2.html` +
-        `?id=${m.id}` +
-        `&title=${encodeURIComponent(m.title)}` +
-        `&sources=${encodeURIComponent(
-          JSON.stringify(m.sources)
-        )}`;
-
-    };
+        `streamviewer2.html?id=${m.id}&title=${encodeURIComponent(m.title)}&sources=${encodeURIComponent(JSON.stringify(m.sources))}`;
 
 
     g.appendChild(card);
@@ -762,25 +806,22 @@ function render() {
 }
 
 
-/* ─────────────────────────────
-   SEARCH
-───────────────────────────── */
+/* ── SEARCH ── */
 
-document.getElementById("search")
-  .oninput = render;
+document.getElementById("search").oninput =
+  render;
 
 
-/* ─────────────────────────────
-   LIVE BUTTON
-───────────────────────────── */
+/* ── LIVE FILTER ── */
 
-document.getElementById("btnLive")
-  .onclick = function() {
+document.getElementById("btnLive").onclick =
+  function() {
 
     document
       .querySelectorAll(".filter-btn")
-      .forEach(b =>
-        b.className = 'filter-btn'
+      .forEach(
+        b =>
+          b.className = 'filter-btn'
       );
 
     if (mode === 'live') {
@@ -802,17 +843,16 @@ document.getElementById("btnLive")
   };
 
 
-/* ─────────────────────────────
-   SOON BUTTON
-───────────────────────────── */
+/* ── SOON FILTER ── */
 
-document.getElementById("btnSoon")
-  .onclick = function() {
+document.getElementById("btnSoon").onclick =
+  function() {
 
     document
       .querySelectorAll(".filter-btn")
-      .forEach(b =>
-        b.className = 'filter-btn'
+      .forEach(
+        b =>
+          b.className = 'filter-btn'
       );
 
     if (mode === 'soon') {
@@ -834,14 +874,12 @@ document.getElementById("btnSoon")
   };
 
 
-/* ─────────────────────────────
-   INITIAL LOAD
-───────────────────────────── */
+/* ── START ── */
 
 loadMatches();
 
 
-/* Refresh every minute */
+/* Refresh every 60 seconds */
 
 setInterval(
   loadMatches,

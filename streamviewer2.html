@@ -207,7 +207,7 @@
     sources.forEach((s, i) => {
       counters[s.source] = (counters[s.source] || 0) + 1;
       const index = counters[s.source];
-      const embed = `https://embedsports.top/embed/${s.source}/${s.id}/${index}`;
+      const embed = `https://embed.st/embed/${s.source}/${s.id}/${index}`;
 
       const btn = document.createElement("button");
       btn.className = "ch-btn";
@@ -218,7 +218,7 @@
     });
 
     load(
-      `https://embedsports.top/embed/${sources[0].source}/${sources[0].id}/1`,
+      `https://embed.st/embed/${sources[0].source}/${sources[0].id}/1`,
       grid.firstChild
     );
   }

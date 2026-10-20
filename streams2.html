@@ -531,7 +531,7 @@
     color: #fff;
   }
 
-  #sportSel {
+  #sportSel, #countrySel {
     margin-left: auto;
     padding: 8px 12px;
     border-radius: 4px;
@@ -544,7 +544,7 @@
     max-width: 55%;
   }
 
-  #sportSel:focus { border-color: var(--blue); }
+  #sportSel:focus, #countrySel:focus { border-color: var(--blue); }
 
   .card-badges {
     position: absolute;
@@ -568,6 +568,32 @@
     text-transform: uppercase;
     margin-top: 0.6rem;
   }
+
+  .more-btn {
+    grid-column: 1/-1;
+    margin: 1.2rem auto;
+    padding: 10px 26px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .more-btn:hover { background: var(--surface2); }
+
+  .badge-q {
+    background: rgba(0,114,219,0.12);
+    color: var(--blue);
+    border: 1px solid rgba(0,114,219,0.3);
+  }
+
+  .tv-flags { font-size: 1.1rem; }
 
   /* ── MOBILE ── */
   @media (max-width: 700px) {
@@ -693,7 +719,7 @@
 
   </div>
 
-  <div class="filters">
+  <div class="filters" id="filtersBox">
 
     <button
       class="filter-btn"
@@ -719,8 +745,12 @@
     <div class="source-bar">
       <button class="src-btn active" id="src1" type="button">Source 1</button>
       <button class="src-btn" id="src2" type="button">Source 2</button>
+      <button class="src-btn" id="src3" type="button">Live TV</button>
       <select id="sportSel" hidden>
         <option value="all">All sports</option>
+      </select>
+      <select id="countrySel" hidden>
+        <option value="all">All countries</option>
       </select>
     </div>
 
@@ -741,7 +771,7 @@
 
         <strong id="totalNum">0</strong>
 
-        &nbsp;matches
+        &nbsp;<span id="totalLabel">matches</span>
 
       </div>
 
@@ -844,6 +874,13 @@ let source = 1;
 let matches2 = [];
 let loaded2 = false;
 let sport = "all";
+
+/* Live TV (matchora channels) */
+const API3 = "https://matchora.to/api/v1/channels";
+let channels = [];
+let loaded3 = false;
+let country = "all";
+let tvLimit = 60;
 const current = () => source === 1 ? matches : matches2;
 
 const NOW = () => Math.floor(Date.now() / 1000);
@@ -1025,6 +1062,14 @@ function render() {
       .getElementById("search")
       .value
       .toLowerCase();
+
+  if (source === 3) {
+    renderTV(term);
+    return;
+  }
+
+  document.getElementById('liveCount').style.display = '';
+  document.getElementById('totalLabel').textContent = 'matches';
 
   let list =
     current().filter(
@@ -1388,6 +1433,10 @@ async function loadMatches2() {
           { name: "Auto", url: e.embed_url },
           ...(e.channels || [])
             .filter(c => !c.dead)
+            .sort((a, b) =>
+              (b.playing ? 1 : 0) - (a.playing ? 1 : 0) ||
+              (b.watching || 0) - (a.watching || 0)
+            )
             .map(c => ({
               name: `${c.country || ""} ${c.name}`.trim(),
               url: c.embed_url
@@ -1435,23 +1484,151 @@ document.getElementById("sportSel").onchange = function() {
   render();
 };
 
+/* ── LIVE TV ── */
+function flag(code) {
+  if (!/^[A-Za-z]{2}$/.test(code || "")) return "📺";
+  return String.fromCodePoint(
+    ...code.toUpperCase().split("").map(c => 127397 + c.charCodeAt(0))
+  );
+}
+
+function countryName(code) {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) || code;
+  } catch (e) {
+    return code;
+  }
+}
+
+async function loadChannels() {
+  try {
+    const res = await fetch(API3);
+    const data = await res.json();
+
+    channels = (data.channels || []).map(c => ({
+      name: c.name || "Channel",
+      countries: c.countries || [],
+      quality: c.quality || "",
+      featured: !!c.featured,
+      _sources: (c.feeds || [])
+        .filter(f => f.embed_url)
+        .map(f => ({
+          name: `${f.country || ""} ${f.label || c.name} ${f.quality || ""}`.trim(),
+          url: f.embed_url
+        }))
+    }));
+
+    loaded3 = true;
+    buildCountryMenu();
+    render();
+  } catch (e) {
+    document.getElementById('grid').innerHTML =
+      '<div class="state-msg">Could not load channels.</div>';
+  }
+}
+
+function buildCountryMenu() {
+  const sel = document.getElementById("countrySel");
+  const counts = {};
+  channels.forEach(c => c.countries.forEach(k => {
+    counts[k] = (counts[k] || 0) + 1;
+  }));
+
+  const codes = Object.keys(counts)
+    .sort((a, b) => countryName(a).localeCompare(countryName(b)));
+
+  sel.innerHTML =
+    `<option value="all">All countries (${channels.length})</option>` +
+    codes.map(k =>
+      `<option value="${escapeAttr(k)}">${flag(k)} ${escapeAttr(countryName(k))} (${counts[k]})</option>`
+    ).join('');
+
+  sel.value = country;
+}
+
+function renderTV(term) {
+  let list = channels.filter(c =>
+    c.name.toLowerCase().includes(term) &&
+    (country === "all" || c.countries.includes(country))
+  );
+
+  list.sort((a, b) =>
+    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) ||
+    a.name.localeCompare(b.name)
+  );
+
+  document.getElementById('liveCount').style.display = 'none';
+  document.getElementById('totalNum').textContent = list.length;
+  document.getElementById('totalLabel').textContent = 'channels';
+
+  const g = document.getElementById("grid");
+  g.innerHTML = "";
+
+  if (list.length === 0) {
+    g.innerHTML = '<div class="state-msg">No channels found.</div>';
+    return;
+  }
+
+  list.slice(0, tvLimit).forEach((c, i) => {
+    const card = document.createElement("div");
+    card.className = "card" + (c.featured ? " is-soon" : "");
+    card.style.animationDelay = `${Math.min(i * 0.02, 0.4)}s`;
+
+    card.innerHTML = `
+      <div class="card-body">
+        <div class="card-teams">${escapeAttr(c.name)}</div>
+        <div class="card-meta">
+          <span class="tv-flags">${c.countries.slice(0, 4).map(flag).join(' ')}</span>
+          ${c.quality ? `<span class="badge badge-q">${escapeAttr(c.quality)}</span>` : ''}
+          ${c.featured ? '<span class="badge badge-soon">Featured</span>' : ''}
+        </div>
+      </div>
+    `;
+
+    card.onclick = () => openPlayer(c.name, c._sources);
+    g.appendChild(card);
+  });
+
+  if (list.length > tvLimit) {
+    const more = document.createElement("button");
+    more.className = "more-btn";
+    more.type = "button";
+    more.textContent = `Show more (${list.length - tvLimit} left)`;
+    more.onclick = () => { tvLimit += 60; render(); };
+    g.appendChild(more);
+  }
+}
+
+document.getElementById("countrySel").onchange = function() {
+  country = this.value;
+  tvLimit = 60;
+  render();
+};
+
 /* ── SOURCE SWITCH ── */
 function switchSource(n) {
   source = n;
+  tvLimit = 60;
 
-  document.getElementById("src1").classList.toggle("active", n === 1);
-  document.getElementById("src2").classList.toggle("active", n === 2);
+  [1, 2, 3].forEach(i =>
+    document.getElementById("src" + i).classList.toggle("active", i === n)
+  );
+
   document.getElementById("sportSel").hidden = (n !== 2);
+  document.getElementById("countrySel").hidden = (n !== 3);
+  document.getElementById("filtersBox").style.display = (n === 3 ? "none" : "");
 
   document.getElementById("search").placeholder =
-    n === 1
-      ? "Search teams or competitions…"
-      : "Search teams or leagues…";
+    n === 1 ? "Search teams or competitions…" :
+    n === 2 ? "Search teams or leagues…" :
+              "Search channels…";
 
-  if (n === 2 && !loaded2) {
+  const needsLoad = (n === 2 && !loaded2) || (n === 3 && !loaded3);
+
+  if (needsLoad) {
     document.getElementById("grid").innerHTML =
-      '<div class="state-msg"><div class="spinner"></div>Loading matches…</div>';
-    loadMatches2();
+      '<div class="state-msg"><div class="spinner"></div>Loading…</div>';
+    n === 2 ? loadMatches2() : loadChannels();
   } else {
     render();
   }
@@ -1459,16 +1636,16 @@ function switchSource(n) {
 
 document.getElementById("src1").onclick = () => switchSource(1);
 document.getElementById("src2").onclick = () => switchSource(2);
+document.getElementById("src3").onclick = () => switchSource(3);
 
 /* ── START ── */
 loadMatches();
 
-/* Refresh every 60 seconds (active source only) */
-setInterval(
-  () => source === 1 ? loadMatches() : loadMatches2(),
-  60000
-);
-
+/* Refresh every 60 seconds (match sources only) */
+setInterval(() => {
+  if (source === 1) loadMatches();
+  else if (source === 2) loadMatches2();
+}, 60000);
 </script>
 
 </body>

@@ -174,9 +174,11 @@ body {
    HERO
 ========================= */
 
+a.card { display: block; color: inherit; text-decoration: none; }
+
 .hero {
   text-align: center;
-  padding: 3.5rem 5% 2.5rem;
+  padding: 1.4rem 5% 1.1rem;
 }
 
 .hero-eyebrow {
@@ -204,8 +206,8 @@ body {
 
 .hero h1 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(4rem, 10vw, 7.5rem);
-  line-height: 0.8;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  line-height: 1;
   letter-spacing: 2px;
 }
 
@@ -215,7 +217,7 @@ body {
 }
 
 .hero p {
-  margin-top: 1.3rem;
+  margin-top: 0.4rem;
 
   color: #666;
 
@@ -273,7 +275,7 @@ body {
 .card {
   position: relative;
 
-  height: 330px;
+  height: 290px;
 
   overflow: hidden;
   cursor: pointer;
@@ -532,11 +534,11 @@ footer strong {
   }
 
   .hero {
-    padding: 2.7rem 5% 2rem;
+    padding: 1rem 5% 0.8rem;
   }
 
   .hero h1 {
-    font-size: clamp(4rem, 20vw, 6rem);
+    font-size: clamp(2.4rem, 12vw, 3.2rem);
   }
 
   .hero p {
@@ -553,15 +555,24 @@ footer strong {
   }
 
   .card {
-    height: 280px;
+    height: 175px;
   }
 
   .card-content {
-    padding: 1.5rem;
+    padding: 1rem 1.2rem;
   }
 
   .card h2 {
-    font-size: 2.7rem;
+    font-size: 2rem;
+  }
+
+  .card-description {
+    display: none;
+  }
+
+  .watch {
+    margin-top: 10px;
+    padding: 6px 10px;
   }
 
   .support {
@@ -643,13 +654,10 @@ footer strong {
 
 <section class="hero">
 
-  <div class="hero-eyebrow">
-    All Access
-  </div>
+  
 
   <h1>
-    STREAM<br>
-    <span>HUB</span>
+    STREAM <span>HUB</span>
   </h1>
 
   <p>
@@ -686,10 +694,7 @@ footer strong {
 
     <!-- FOOTBALL -->
 
-    <div
-      class="card"
-      onclick="location.href='streams2.html'"
-    >
+    <a class="card" href="streams2.html">
 
       <div
         class="card-image"
@@ -718,18 +723,13 @@ footer strong {
         <div class="watch">
           Watch Football
         </div>
-
       </div>
-
-    </div>
+    </a>
 
 
     <!-- MOVIES -->
 
-    <div
-      class="card"
-      onclick="location.href='movies.html'"
-    >
+    <a class="card" href="movies.html">
 
       <div
         class="card-image"
@@ -758,10 +758,8 @@ footer strong {
         <div class="watch">
           Browse Library
         </div>
-
       </div>
-
-    </div>
+    </a>
 
   </div>
 

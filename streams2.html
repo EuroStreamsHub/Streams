@@ -499,6 +499,76 @@
     letter-spacing: 1px;
   }
 
+  /* ── SOURCE TABS ── */
+  .source-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 1rem 4% 0;
+    flex-wrap: wrap;
+  }
+
+  .src-btn {
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .src-btn:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
+
+  .src-btn.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+  }
+
+  #sportSel {
+    margin-left: auto;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    outline: none;
+    max-width: 55%;
+  }
+
+  #sportSel:focus { border-color: var(--blue); }
+
+  .card-badges {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+  }
+
+  .card-badges img {
+    width: 28%;
+    max-height: 70%;
+    object-fit: contain;
+  }
+
+  .card-league {
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 0.6rem;
+  }
+
   /* ── MOBILE ── */
   @media (max-width: 700px) {
 
@@ -646,6 +716,15 @@
 
   <div id="listView">
 
+    <div class="source-bar">
+      <button class="src-btn active" id="src1" type="button">Source 1</button>
+      <button class="src-btn" id="src2" type="button">Source 2</button>
+      <select id="sportSel" hidden>
+        <option value="all">All sports</option>
+      </select>
+    </div>
+
+
     <div class="stats-bar">
 
       <div id="liveCount">
@@ -727,8 +806,7 @@
         </div>
 
         <iframe
-          id="player"
-          allowfullscreen>
+          id="player" allow="autoplay; fullscreen" allowfullscreen>
         </iframe>
 
       </div>
@@ -760,6 +838,14 @@ const API = "https://api.ppv.st/api/streams";
 let matches = [];
 let mode = "all";
 
+/* Source 2 (matchora) */
+const API2 = "https://matchora.to/api/v1/schedule?watchable=1";
+let source = 1;
+let matches2 = [];
+let loaded2 = false;
+let sport = "all";
+const current = () => source === 1 ? matches : matches2;
+
 const NOW = () => Math.floor(Date.now() / 1000);
 
 
@@ -786,7 +872,7 @@ function flattenStreams(categories) {
 /* ── SOURCES ── */
 
 function getSources(stream) {
-
+  if (stream._sources) return stream._sources;
   const sources = [];
 
   if (stream.iframe) {
@@ -941,12 +1027,16 @@ function render() {
       .toLowerCase();
 
   let list =
-    matches.filter(
+    current().filter(
       m =>
         (m.name || "")
           .toLowerCase()
           .includes(term)
     );
+
+  if (source === 2 && sport !== "all") {
+    list = list.filter(m => m.category_name === sport);
+  }
 
   if (mode === "live") {
     list = list.filter(isLive);
@@ -976,7 +1066,7 @@ function render() {
   /* Update statistics */
 
   const liveCount =
-    matches.filter(isLive).length;
+    current().filter(isLive).length;
 
   document.getElementById('liveNum')
     .textContent = liveCount;
@@ -1072,9 +1162,21 @@ function render() {
 
     /* Card HTML */
 
-    const posterHTML =
-      m.poster
-        ? `<img class="card-poster" src="${escapeAttr(m.poster)}" alt="" loading="lazy">`
+    let posterHTML = '';
+    if (m._badges) {
+      posterHTML =
+        '<div class="card-badges">' +
+        m._badges.map(b =>
+          `<img src="${escapeAttr(b)}" alt="" loading="lazy">`
+        ).join('') +
+        '</div>';
+    } else if (m.poster) {
+      posterHTML =
+        `<img class="card-poster" src="${escapeAttr(m.poster)}" alt="" loading="lazy">`;
+    }
+    const leagueHTML =
+      m.league
+        ? `<div class="card-league">${escapeAttr(m.sport_name)} · ${escapeAttr(m.league)}</div>`
         : '';
 
     card.innerHTML = `
@@ -1094,6 +1196,7 @@ function render() {
             ${m.starts_at ? formatKickoff(m.starts_at) : ''}
           </span>
         </div>
+        ${leagueHTML}
       </div>
     `;
 
@@ -1264,15 +1367,105 @@ document.getElementById("backBtn").onclick =
   closePlayer;
 
 
-/* ── START ── */
+/* ── SOURCE 2 LOAD ── */
+async function loadMatches2() {
+  try {
+    const res = await fetch(API2, { cache: "no-store" });
+    const data = await res.json();
 
+    matches2 = (data.events || [])
+      .filter(e => !e.finished)
+      .map(e => ({
+        name: `${e.home} vs ${e.away}`,
+        category_name: e.sport || "Other",
+        sport_name: e.sport || "Other",
+        league: e.league || "",
+        starts_at: e.kickoff,
+        always_live: e.live ? 1 : 0,
+        ends_at: 0,
+        _badges: [e.home_badge, e.away_badge].filter(Boolean),
+        _sources: [
+          { name: "Auto", url: e.embed_url },
+          ...(e.channels || [])
+            .filter(c => !c.dead)
+            .map(c => ({
+              name: `${c.country || ""} ${c.name}`.trim(),
+              url: c.embed_url
+            }))
+        ]
+      }))
+      .filter(m => statusOf(m) !== "past");
+
+    loaded2 = true;
+    buildSportMenu();
+
+    document.getElementById('lastUpdate').textContent =
+      'Updated ' +
+      new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    render();
+  } catch (e) {
+    document.getElementById('grid').innerHTML =
+      '<div class="state-msg">Could not load Source 2. Retrying…</div>';
+  }
+}
+
+/* ── SPORT DROPDOWN ── */
+function buildSportMenu() {
+  const sel = document.getElementById("sportSel");
+  const counts = {};
+  matches2.forEach(m => {
+    counts[m.category_name] = (counts[m.category_name] || 0) + 1;
+  });
+
+  const names = Object.keys(counts).sort();
+  if (sport !== "all" && !counts[sport]) sport = "all";
+
+  sel.innerHTML =
+    `<option value="all">All sports (${matches2.length})</option>` +
+    names.map(n =>
+      `<option value="${escapeAttr(n)}">${escapeAttr(n)} (${counts[n]})</option>`
+    ).join('');
+
+  sel.value = sport;
+}
+
+document.getElementById("sportSel").onchange = function() {
+  sport = this.value;
+  render();
+};
+
+/* ── SOURCE SWITCH ── */
+function switchSource(n) {
+  source = n;
+
+  document.getElementById("src1").classList.toggle("active", n === 1);
+  document.getElementById("src2").classList.toggle("active", n === 2);
+  document.getElementById("sportSel").hidden = (n !== 2);
+
+  document.getElementById("search").placeholder =
+    n === 1
+      ? "Search teams or competitions…"
+      : "Search teams or leagues…";
+
+  if (n === 2 && !loaded2) {
+    document.getElementById("grid").innerHTML =
+      '<div class="state-msg"><div class="spinner"></div>Loading matches…</div>';
+    loadMatches2();
+  } else {
+    render();
+  }
+}
+
+document.getElementById("src1").onclick = () => switchSource(1);
+document.getElementById("src2").onclick = () => switchSource(2);
+
+/* ── START ── */
 loadMatches();
 
-
-/* Refresh every 60 seconds */
-
+/* Refresh every 60 seconds (active source only) */
 setInterval(
-  loadMatches,
+  () => source === 1 ? loadMatches() : loadMatches2(),
   60000
 );
 

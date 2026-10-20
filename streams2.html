@@ -531,8 +531,7 @@
     color: #fff;
   }
 
-  #sportSel, #countrySel {
-    margin-left: auto;
+  #sportSel, #countrySel, #dateSel {
     padding: 8px 12px;
     border-radius: 4px;
     border: 1px solid var(--border);
@@ -544,7 +543,7 @@
     max-width: 55%;
   }
 
-  #sportSel:focus, #countrySel:focus { border-color: var(--blue); }
+  #sportSel:focus, #countrySel:focus, #dateSel:focus { border-color: var(--blue); }
 
   .card-badges {
     position: absolute;
@@ -594,6 +593,52 @@
   }
 
   .tv-flags { font-size: 1.1rem; }
+
+  .sel-group {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .card.static {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .card:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: -2px;
+  }
+
+  .fav-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fav-btn.on {
+    color: var(--amber);
+    border-color: var(--amber);
+  }
+
+  .card-body.tv { padding-right: 3.2rem; }
 
   /* ── MOBILE ── */
   @media (max-width: 700px) {
@@ -746,12 +791,15 @@
       <button class="src-btn active" id="src1" type="button">Source 1</button>
       <button class="src-btn" id="src2" type="button">Source 2</button>
       <button class="src-btn" id="src3" type="button">Live TV</button>
-      <select id="sportSel" hidden>
-        <option value="all">All sports</option>
-      </select>
-      <select id="countrySel" hidden>
-        <option value="all">All countries</option>
-      </select>
+      <div class="sel-group">
+        <select id="dateSel" hidden></select>
+        <select id="sportSel" hidden>
+          <option value="all">All sports</option>
+        </select>
+        <select id="countrySel" hidden>
+          <option value="all">All countries</option>
+        </select>
+      </div>
     </div>
 
 
@@ -869,7 +917,7 @@ let matches = [];
 let mode = "all";
 
 /* Source 2 (matchora) */
-const API2 = "https://matchora.to/api/v1/schedule?watchable=1";
+const api2Url = () => "https://matchora.to/api/v1/schedule?watchable=1&date=" + date;
 let source = 1;
 let matches2 = [];
 let loaded2 = false;
@@ -971,16 +1019,7 @@ async function loadMatches() {
         }
       );
 
-    render();
-
-  } catch(e) {
-
-    document.getElementById('grid').innerHTML =
-      '<div class="state-msg">' +
-      'Could not load matches. Retrying…' +
-      '</div>';
-
-  }
+    if (source === 1) render(); } catch(e) { if (source === 1) document.getElementById('grid').innerHTML = '<div class="state-msg">' + 'Could not load matches. Retrying…' + '</div>'; }
 
 }
 
@@ -1053,10 +1092,199 @@ function formatKickoff(ts) {
 }
 
 
+/* ── FAVOURITES / SAVED STATE ── */
+const FAV_KEY = "sh_favs";
+const STATE_KEY = "sh_state";
+
+let favs = new Set();
+try {
+  favs = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || "[]"));
+} catch (e) {}
+
+const isFav = m => favs.has(m._fk);
+const favCmp = (a, b) => (isFav(b) ? 1 : 0) - (isFav(a) ? 1 : 0);
+
+function toggleFav(m) {
+  if (favs.has(m._fk)) favs.delete(m._fk);
+  else favs.add(m._fk);
+  try {
+    localStorage.setItem(FAV_KEY, JSON.stringify([...favs]));
+  } catch (e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({ source, sport, country, date })
+    );
+  } catch (e) {}
+}
+
+/* ── DATE (Source 2) ── */
+function ymd(d) {
+  const z = n => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
+}
+
+let date = ymd(new Date());
+
+function buildDateMenu() {
+  const sel = document.getElementById("dateSel");
+  let html = "";
+  for (let i = 0; i < 4; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const label =
+      i === 0 ? "Today" :
+      i === 1 ? "Tomorrow" :
+      d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+    html += `<option value="${ymd(d)}">${label}</option>`;
+  }
+  sel.innerHTML = html;
+  sel.value = date;
+  if (sel.value !== date) {   /* saved date is stale */
+    sel.value = ymd(new Date());
+    date = sel.value;
+  }
+}
+
+/* ── PAINT (shared by all sources) ── */
+let animateNext = true;
+let lastKey = "";
+let savedScroll = 0;
+
+function paint(list, makeCard, emptyMsg) {
+  const g = document.getElementById("grid");
+  const shown = source === 3 ? list.slice(0, tvLimit) : list;
+
+  /* Skip the rebuild if nothing visible changed (stops refresh flicker) */
+  const key =
+    source + "|" +
+    shown.map(m =>
+      m._fk + (isFav(m) ? "*" : "") + statusOf(m) + (isSoon(m) ? "s" : "")
+    ).join(",") +
+    "|" + list.length;
+
+  if (key === lastKey && g.querySelector(".card")) return;
+  lastKey = key;
+
+  g.innerHTML = "";
+
+  if (list.length === 0) {
+    g.innerHTML = `<div class="state-msg">${emptyMsg}</div>`;
+    lastKey = "";
+    return;
+  }
+
+  shown.forEach((m, i) => {
+    const card = makeCard(m);
+
+    if (animateNext) {
+      card.style.animationDelay = `${Math.min(i * 0.03, 0.5)}s`;
+    } else {
+      card.classList.add("static");
+    }
+
+    /* keyboard access */
+    card.tabIndex = 0;
+    card.onkeydown = e => {
+      if ((e.key === "Enter" || e.key === " ") && e.target === card) {
+        e.preventDefault();
+        card.click();
+      }
+    };
+
+    /* favourite star */
+    const fav = isFav(m);
+    const star = document.createElement("button");
+    star.type = "button";
+    star.className = "fav-btn" + (fav ? " on" : "");
+    star.textContent = fav ? "★" : "☆";
+    star.setAttribute("aria-label", fav ? "Remove from favourites" : "Add to favourites");
+    star.setAttribute("aria-pressed", fav ? "true" : "false");
+    star.onclick = e => {
+      e.stopPropagation();
+      toggleFav(m);
+      render();
+    };
+    card.appendChild(star);
+
+    g.appendChild(card);
+  });
+
+  if (list.length > shown.length) {
+    const more = document.createElement("button");
+    more.className = "more-btn";
+    more.type = "button";
+    more.textContent = `Show more (${list.length - shown.length} left)`;
+    more.onclick = () => { tvLimit += 60; render(); };
+    g.appendChild(more);
+  }
+
+  animateNext = false;
+}
+
+/* ── MATCH CARD ── */
+function buildMatchCard(m) {
+  const live = isLive(m);
+  const soon = isSoon(m);
+
+  const card = document.createElement("div");
+  card.className = `card ${live ? 'is-live' : soon ? 'is-soon' : ''}`;
+
+  const name = m.name || "Untitled";
+  const parts = name.split(' vs ');
+  const teamsHTML =
+    parts.length === 2
+      ? `${escapeAttr(parts[0])}<span class="card-vs">vs</span>${escapeAttr(parts[1])}`
+      : escapeAttr(name);
+
+  const badge = live
+    ? `<span class="badge badge-live"><span class="badge-live-dot"></span>Live</span>`
+    : soon
+      ? `<span class="badge badge-soon">Soon</span>`
+      : `<span class="badge badge-upcoming">Upcoming</span>`;
+
+  let posterHTML = '';
+  if (m._badges) {
+    posterHTML =
+      '<div class="card-badges">' +
+      m._badges.map(b =>
+        `<img src="${escapeAttr(b)}" alt="" loading="lazy">`
+      ).join('') +
+      '</div>';
+  } else if (m.poster) {
+    posterHTML =
+      `<img class="card-poster" src="${escapeAttr(m.poster)}" alt="" loading="lazy">`;
+  }
+
+  const leagueHTML =
+    m.league
+      ? `<div class="card-league">${escapeAttr(m.sport_name)} · ${escapeAttr(m.league)}</div>`
+      : '';
+
+  card.innerHTML = `
+    <div class="card-poster-wrap">${posterHTML}</div>
+    <div class="card-body">
+      <div class="card-teams">${teamsHTML}</div>
+      <div class="card-meta">
+        ${badge}
+        <span class="card-time">
+          ${m.starts_at ? formatKickoff(m.starts_at) : ''}
+        </span>
+      </div>
+      ${leagueHTML}
+    </div>
+  `;
+
+  const sources = getSources(m);
+  card.onclick = () => openPlayer(name, sources);
+  return card;
+}
+
 /* ── RENDER ── */
-
 function render() {
-
   const term =
     document
       .getElementById("search")
@@ -1071,195 +1299,36 @@ function render() {
   document.getElementById('liveCount').style.display = '';
   document.getElementById('totalLabel').textContent = 'matches';
 
-  let list =
-    current().filter(
-      m =>
-        (m.name || "")
-          .toLowerCase()
-          .includes(term)
-    );
+  const all = current();
+  all.forEach(m => {
+    if (!m._fk) m._fk = "s1:" + (m.id ?? m.name);
+  });
+
+  let list = all.filter(m =>
+    ((m.name || "") + " " + (m.league || ""))
+      .toLowerCase()
+      .includes(term)
+  );
 
   if (source === 2 && sport !== "all") {
     list = list.filter(m => m.category_name === sport);
   }
+  if (mode === "live") list = list.filter(isLive);
+  if (mode === "soon") list = list.filter(isSoon);
 
-  if (mode === "live") {
-    list = list.filter(isLive);
-  }
+  /* favourites first, then live, then by kickoff */
+  list.sort((a, b) =>
+    favCmp(a, b) ||
+    ((isLive(a) ? 0 : 1) - (isLive(b) ? 0 : 1)) ||
+    (Number(a.starts_at || 0) - Number(b.starts_at || 0))
+  );
 
-  if (mode === "soon") {
-    list = list.filter(isSoon);
-  }
+  document.getElementById('liveNum').textContent =
+    all.filter(isLive).length;
+  document.getElementById('totalNum').textContent = list.length;
 
-
-  /* Sort live matches first */
-
-  list.sort((a, b) => {
-
-    const aL = isLive(a) ? 0 : 1;
-    const bL = isLive(b) ? 0 : 1;
-
-    if (aL !== bL) {
-      return aL - bL;
-    }
-
-    return Number(a.starts_at || 0) - Number(b.starts_at || 0);
-
-  });
-
-
-  /* Update statistics */
-
-  const liveCount =
-    current().filter(isLive).length;
-
-  document.getElementById('liveNum')
-    .textContent = liveCount;
-
-  document.getElementById('totalNum')
-    .textContent = list.length;
-
-
-  /* Grid */
-
-  const g =
-    document.getElementById("grid");
-
-  g.innerHTML = "";
-
-
-  if (list.length === 0) {
-
-    g.innerHTML =
-      '<div class="state-msg">' +
-      'No matches found.' +
-      '</div>';
-
-    return;
-
-  }
-
-
-  /* Create match cards */
-
-  list.forEach((m, i) => {
-
-    const live = isLive(m);
-    const soon = isSoon(m);
-
-    const card =
-      document.createElement("div");
-
-    card.className =
-      `card ${
-        live
-          ? 'is-live'
-          : soon
-            ? 'is-soon'
-            : ''
-      }`;
-
-    card.style.animationDelay =
-      `${Math.min(i * 0.04, 0.5)}s`;
-
-
-    /* Split title into teams */
-
-    const name = m.name || "Untitled";
-
-    const parts =
-      name.split(' vs ');
-
-    const teamsHTML =
-      parts.length === 2
-        ? `${parts[0]}<span class="card-vs">vs</span>${parts[1]}`
-        : name;
-
-
-    /* Badge */
-
-    let badge = '';
-
-    if (live) {
-
-      badge =
-        `<span class="badge badge-live">
-          <span class="badge-live-dot"></span>
-          Live
-        </span>`;
-
-    } else if (soon) {
-
-      badge =
-        `<span class="badge badge-soon">
-          Soon
-        </span>`;
-
-    } else {
-
-      badge =
-        `<span class="badge badge-upcoming">
-          Upcoming
-        </span>`;
-
-    }
-
-
-    /* Card HTML */
-
-    let posterHTML = '';
-    if (m._badges) {
-      posterHTML =
-        '<div class="card-badges">' +
-        m._badges.map(b =>
-          `<img src="${escapeAttr(b)}" alt="" loading="lazy">`
-        ).join('') +
-        '</div>';
-    } else if (m.poster) {
-      posterHTML =
-        `<img class="card-poster" src="${escapeAttr(m.poster)}" alt="" loading="lazy">`;
-    }
-    const leagueHTML =
-      m.league
-        ? `<div class="card-league">${escapeAttr(m.sport_name)} · ${escapeAttr(m.league)}</div>`
-        : '';
-
-    card.innerHTML = `
-      <div class="card-poster-wrap">
-        ${posterHTML}
-      </div>
-
-      <div class="card-body">
-        <div class="card-teams">
-          ${teamsHTML}
-        </div>
-
-        <div class="card-meta">
-          ${badge}
-
-          <span class="card-time">
-            ${m.starts_at ? formatKickoff(m.starts_at) : ''}
-          </span>
-        </div>
-        ${leagueHTML}
-      </div>
-    `;
-
-
-    /* Open the in-page player on click */
-
-    const sources = getSources(m);
-
-    card.onclick = () =>
-      openPlayer(name, sources);
-
-
-    g.appendChild(card);
-
-  });
-
+  paint(list, buildMatchCard, "No matches found.");
 }
-
 
 /* ── SEARCH ── */
 
@@ -1359,6 +1428,7 @@ playerEl.onload = () => {
 
 function openPlayer(title, sources) {
 
+  savedScroll = window.scrollY;
   playerTitle.textContent = title;
 
   mirrorGrid.innerHTML = "";
@@ -1397,6 +1467,9 @@ function openPlayer(title, sources) {
 
   window.scrollTo({ top: 0, behavior: "instant" });
 
+  /* Phone back button closes the player instead of leaving the page */
+  history.pushState({ view: "player" }, "");
+
 }
 
 function closePlayer() {
@@ -1405,22 +1478,37 @@ function closePlayer() {
 
   playerView.style.display = "none";
   listView.style.display = "block";
+  window.scrollTo({ top: savedScroll, behavior: "instant" });
 
 }
 
-document.getElementById("backBtn").onclick =
-  closePlayer;
+/* On-screen back goes through history so the stack stays in sync */
+document.getElementById("backBtn").onclick = () => {
+  if (history.state && history.state.view === "player") {
+    history.back();
+  } else {
+    closePlayer();
+  }
+};
+
+/* Phone / browser back */
+window.addEventListener("popstate", () => {
+  if (playerView.style.display !== "none") {
+    closePlayer();
+  }
+});
 
 
 /* ── SOURCE 2 LOAD ── */
 async function loadMatches2() {
   try {
-    const res = await fetch(API2, { cache: "no-store" });
+    const res = await fetch(api2Url(), { cache: "no-store" });
     const data = await res.json();
 
     matches2 = (data.events || [])
       .filter(e => !e.finished)
       .map(e => ({
+        _fk: "s2:" + e.id,
         name: `${e.home} vs ${e.away}`,
         category_name: e.sport || "Other",
         sport_name: e.sport || "Other",
@@ -1452,11 +1540,7 @@ async function loadMatches2() {
       'Updated ' +
       new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    render();
-  } catch (e) {
-    document.getElementById('grid').innerHTML =
-      '<div class="state-msg">Could not load Source 2. Retrying…</div>';
-  }
+    if (source === 2) render(); } catch (e) { if (source === 2) document.getElementById('grid').innerHTML = '<div class="state-msg">Could not load Source 2. Retrying…</div>'; }
 }
 
 /* ── SPORT DROPDOWN ── */
@@ -1481,6 +1565,7 @@ function buildSportMenu() {
 
 document.getElementById("sportSel").onchange = function() {
   sport = this.value;
+  saveState();
   render();
 };
 
@@ -1506,6 +1591,7 @@ async function loadChannels() {
     const data = await res.json();
 
     channels = (data.channels || []).map(c => ({
+      _fk: "tv:" + (c.name || "Channel"),
       name: c.name || "Channel",
       countries: c.countries || [],
       quality: c.quality || "",
@@ -1520,10 +1606,12 @@ async function loadChannels() {
 
     loaded3 = true;
     buildCountryMenu();
-    render();
+    if (source === 3) render();
   } catch (e) {
-    document.getElementById('grid').innerHTML =
-      '<div class="state-msg">Could not load channels.</div>';
+    if (source === 3) {
+      document.getElementById('grid').innerHTML =
+        '<div class="state-msg">Could not load channels.</div>';
+    }
   }
 }
 
@@ -1533,6 +1621,8 @@ function buildCountryMenu() {
   channels.forEach(c => c.countries.forEach(k => {
     counts[k] = (counts[k] || 0) + 1;
   }));
+
+  if (country !== "all" && !counts[country]) country = "all";
 
   const codes = Object.keys(counts)
     .sort((a, b) => countryName(a).localeCompare(countryName(b)));
@@ -1546,14 +1636,35 @@ function buildCountryMenu() {
   sel.value = country;
 }
 
+function buildTVCard(c) {
+  const card = document.createElement("div");
+  card.className = "card" + (c.featured ? " is-soon" : "");
+
+  card.innerHTML = `
+    <div class="card-body tv">
+      <div class="card-teams">${escapeAttr(c.name)}</div>
+      <div class="card-meta">
+        <span class="tv-flags">${c.countries.slice(0, 4).map(flag).join(' ')}</span>
+        ${c.quality ? `<span class="badge badge-q">${escapeAttr(c.quality)}</span>` : ''}
+        ${c.featured ? '<span class="badge badge-soon">Featured</span>' : ''}
+      </div>
+    </div>
+  `;
+
+  card.onclick = () => openPlayer(c.name, c._sources);
+  return card;
+}
+
 function renderTV(term) {
-  let list = channels.filter(c =>
+  const list = channels.filter(c =>
     c.name.toLowerCase().includes(term) &&
     (country === "all" || c.countries.includes(country))
   );
 
+  /* favourites first, then featured, then A–Z */
   list.sort((a, b) =>
-    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) ||
+    favCmp(a, b) ||
+    ((b.featured ? 1 : 0) - (a.featured ? 1 : 0)) ||
     a.name.localeCompare(b.name)
   );
 
@@ -1561,59 +1672,38 @@ function renderTV(term) {
   document.getElementById('totalNum').textContent = list.length;
   document.getElementById('totalLabel').textContent = 'channels';
 
-  const g = document.getElementById("grid");
-  g.innerHTML = "";
-
-  if (list.length === 0) {
-    g.innerHTML = '<div class="state-msg">No channels found.</div>';
-    return;
-  }
-
-  list.slice(0, tvLimit).forEach((c, i) => {
-    const card = document.createElement("div");
-    card.className = "card" + (c.featured ? " is-soon" : "");
-    card.style.animationDelay = `${Math.min(i * 0.02, 0.4)}s`;
-
-    card.innerHTML = `
-      <div class="card-body">
-        <div class="card-teams">${escapeAttr(c.name)}</div>
-        <div class="card-meta">
-          <span class="tv-flags">${c.countries.slice(0, 4).map(flag).join(' ')}</span>
-          ${c.quality ? `<span class="badge badge-q">${escapeAttr(c.quality)}</span>` : ''}
-          ${c.featured ? '<span class="badge badge-soon">Featured</span>' : ''}
-        </div>
-      </div>
-    `;
-
-    card.onclick = () => openPlayer(c.name, c._sources);
-    g.appendChild(card);
-  });
-
-  if (list.length > tvLimit) {
-    const more = document.createElement("button");
-    more.className = "more-btn";
-    more.type = "button";
-    more.textContent = `Show more (${list.length - tvLimit} left)`;
-    more.onclick = () => { tvLimit += 60; render(); };
-    g.appendChild(more);
-  }
+  paint(list, buildTVCard, "No channels found.");
 }
 
 document.getElementById("countrySel").onchange = function() {
   country = this.value;
   tvLimit = 60;
+  saveState();
   render();
+};
+
+document.getElementById("dateSel").onchange = function() {
+  date = this.value;
+  loaded2 = false;
+  animateNext = true;
+  saveState();
+  document.getElementById("grid").innerHTML =
+    '<div class="state-msg"><div class="spinner"></div>Loading…</div>';
+  loadMatches2();
 };
 
 /* ── SOURCE SWITCH ── */
 function switchSource(n) {
   source = n;
   tvLimit = 60;
+  animateNext = true;
+  lastKey = "";
 
   [1, 2, 3].forEach(i =>
     document.getElementById("src" + i).classList.toggle("active", i === n)
   );
 
+  document.getElementById("dateSel").hidden = (n !== 2);
   document.getElementById("sportSel").hidden = (n !== 2);
   document.getElementById("countrySel").hidden = (n !== 3);
   document.getElementById("filtersBox").style.display = (n === 3 ? "none" : "");
@@ -1623,15 +1713,22 @@ function switchSource(n) {
     n === 2 ? "Search teams or leagues…" :
               "Search channels…";
 
-  const needsLoad = (n === 2 && !loaded2) || (n === 3 && !loaded3);
+  const needsLoad =
+    (n === 1 && !matches.length) ||
+    (n === 2 && !loaded2) ||
+    (n === 3 && !loaded3);
 
   if (needsLoad) {
     document.getElementById("grid").innerHTML =
       '<div class="state-msg"><div class="spinner"></div>Loading…</div>';
-    n === 2 ? loadMatches2() : loadChannels();
+    if (n === 1) loadMatches();
+    else if (n === 2) loadMatches2();
+    else loadChannels();
   } else {
     render();
   }
+
+  saveState();
 }
 
 document.getElementById("src1").onclick = () => switchSource(1);
@@ -1639,7 +1736,19 @@ document.getElementById("src2").onclick = () => switchSource(2);
 document.getElementById("src3").onclick = () => switchSource(3);
 
 /* ── START ── */
-loadMatches();
+let startSource = 1;
+try {
+  const st = JSON.parse(localStorage.getItem(STATE_KEY) || "{}");
+  sport = st.sport || "all";
+  country = st.country || "all";
+  date = st.date || date;
+  startSource = [1, 2, 3].includes(st.source) ? st.source : 1;
+} catch (e) {}
+
+buildDateMenu();
+
+if (startSource === 1) loadMatches();
+else switchSource(startSource);
 
 /* Refresh every 60 seconds (match sources only) */
 setInterval(() => {
